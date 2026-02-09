@@ -128,7 +128,7 @@ export default function ProfilePage() {
                 />
               ) : (
                 <span className="text-2xl font-bold text-primary sm:text-4xl">
-                  {profile.firstName?.charAt(0)?.toUpperCase() || "U"}
+                  {(profile.firstName?.charAt(0) || "").toUpperCase()}{(profile.lastName?.charAt(0) || "").toUpperCase()}
                 </span>
               )}
             </div>

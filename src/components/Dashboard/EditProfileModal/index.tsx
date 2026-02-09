@@ -274,7 +274,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                       />
                     ) : (
                       <span className="text-xl font-bold text-primary">
-                        {formData.firstName?.charAt(0)?.toUpperCase() || "U"}
+                        {(formData.firstName?.charAt(0) || "").toUpperCase()}{(formData.lastName?.charAt(0) || "").toUpperCase()}
                       </span>
                     )}
                   </div>

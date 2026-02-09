@@ -110,7 +110,7 @@ const ProfileDropdown = () => {
             />
           ) : (
             <span className="text-sm font-semibold">
-              {userName.charAt(0).toUpperCase()}
+              {userName.split(" ").map(n => n.charAt(0).toUpperCase()).join("")}
             </span>
           )}
         </div>
