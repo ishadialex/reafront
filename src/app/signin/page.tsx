@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { loadReCaptchaScript, executeReCaptcha } from "@/utils/recaptcha";
 import axios from "axios";
 import { api } from "@/lib/api";
 
@@ -15,16 +14,11 @@ function SigninContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
   const [requiresVerification, setRequiresVerification] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
   const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false);
   const [showExistingSessionModal, setShowExistingSessionModal] = useState(false);
   const [existingSessionData, setExistingSessionData] = useState<any>(null);
-
-  const RECAPTCHA_SITE_KEY =
-    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-    "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"; // Test key
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -36,18 +30,6 @@ function SigninContent() {
       setTimeout(() => setSessionTimeoutWarning(false), 10000);
     }
   }, [searchParams]);
-
-  // Load reCAPTCHA script on mount
-  useEffect(() => {
-    loadReCaptchaScript(RECAPTCHA_SITE_KEY)
-      .then(() => {
-        setRecaptchaLoaded(true);
-      })
-      .catch((error) => {
-        console.error("Failed to load reCAPTCHA:", error);
-        setError("Failed to load security verification. Please refresh the page.");
-      });
-  }, [RECAPTCHA_SITE_KEY]);
 
   const storeSessionAndRedirect = (data: { user: any; accessToken: string; refreshToken: string }) => {
     localStorage.setItem("accessToken", data.accessToken);
@@ -79,18 +61,9 @@ function SigninContent() {
     setError("");
     setRequiresVerification(false);
 
-    if (!recaptchaLoaded) {
-      setError("Security verification not ready. Please try again.");
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      // Execute reCAPTCHA v3
-      const token = await executeReCaptcha(RECAPTCHA_SITE_KEY, "login");
-      console.log("reCAPTCHA token:", token);
-
       // Call backend login API using axios
       const response = await axios.post(
         `${API_URL}/api/auth/login`,
@@ -403,29 +376,6 @@ function SigninContent() {
                     <p className="text-blue-800 dark:text-blue-400">
                       Password: Demo1234!
                     </p>
-                  </div>
-
-                  {/* reCAPTCHA v3 notice */}
-                  <div className="text-center text-xs text-body-color dark:text-body-color-dark">
-                    This site is protected by reCAPTCHA and the Google{" "}
-                    <a
-                      href="https://policies.google.com/privacy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Privacy Policy
-                    </a>{" "}
-                    and{" "}
-                    <a
-                      href="https://policies.google.com/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Terms of Service
-                    </a>{" "}
-                    apply.
                   </div>
                 </form>
                 <p className="text-body-color text-center text-base font-medium">
