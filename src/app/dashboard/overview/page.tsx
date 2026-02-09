@@ -29,6 +29,7 @@ interface Investment {
   id: string;
   propertyTitle: string;
   amount: number;
+  expectedROI: number;
   expectedReturn: number;
   monthlyReturn: number;
   status: "active" | "completed" | "pending";
@@ -120,6 +121,7 @@ const fetchInvestments = async (): Promise<Investment[]> => {
         id: inv.id,
         propertyTitle: inv.propertyTitle || "Investment",
         amount: inv.amount,
+        expectedROI: inv.expectedROI || 0,
         expectedReturn: inv.expectedReturn || 0,
         monthlyReturn: inv.monthlyReturn || 0,
         status: inv.status,
@@ -301,18 +303,20 @@ export default function DashboardOverviewPage() {
   // Calculate stats from investments
   const stats = useMemo(() => {
     const totalInvested = data.balanceSummary?.investedFunds ?? data.investments.reduce((sum, inv) => sum + inv.amount, 0);
-    const totalExpectedReturns = data.investments.reduce((sum, inv) => sum + inv.expectedReturn, 0);
-    const monthlyIncome = data.investments.reduce((sum, inv) => sum + inv.monthlyReturn, 0);
-    const activeCount = data.investments.filter((inv) => inv.status === "active").length;
-    const totalROI = totalInvested > 0 ? ((totalExpectedReturns / totalInvested) * 100).toFixed(1) : "0";
+    const generatedIncome =
+      (data.balanceSummary?.profits ?? 0) +
+      (data.balanceSummary?.referralBonuses ?? 0) +
+      (data.balanceSummary?.adminBonuses ?? 0);
+    const activeInvestments = data.investments.filter((inv) => inv.status === "active");
+    const activeCount = activeInvestments.length;
+    const totalROI = activeInvestments.reduce((sum, inv) => sum + inv.expectedROI, 0);
 
     return {
       accountBalance: data.balanceSummary?.balance ?? data.user?.accountBalance ?? 0,
       totalInvested,
-      totalExpectedReturns,
-      monthlyIncome,
-      activeCount,
       totalROI,
+      generatedIncome,
+      activeCount,
     };
   }, [data.investments, data.user, data.balanceSummary]);
 
@@ -537,11 +541,11 @@ export default function DashboardOverviewPage() {
               </p>
             </div>
 
-            {/* Monthly Income */}
+            {/* Generated Income */}
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-medium text-body-color dark:text-body-color-dark">
-                  Monthly Income
+                  Generated Income
                 </p>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
                   <svg className="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -550,14 +554,14 @@ export default function DashboardOverviewPage() {
                 </div>
               </div>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400 md:text-3xl">
-                ${stats.monthlyIncome.toLocaleString()}
+                ${stats.generatedIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-                Expected monthly returns
+                Profits + Referral + Bonuses
               </p>
             </div>
 
-            {/* Total ROI */}
+            {/* Portfolio ROI */}
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-medium text-body-color dark:text-body-color-dark">
@@ -569,11 +573,11 @@ export default function DashboardOverviewPage() {
                   </svg>
                 </div>
               </div>
-              <p className="text-2xl font-bold text-black dark:text-white md:text-3xl">
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 md:text-3xl">
                 {stats.totalROI}%
               </p>
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-                Expected annual return
+                Total across {stats.activeCount} active investment{stats.activeCount !== 1 ? "s" : ""}
               </p>
             </div>
           </>
