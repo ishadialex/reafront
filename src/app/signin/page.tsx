@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import SignInSkeleton from "@/components/SignInSkeleton";
 import axios from "axios";
 import { api } from "@/lib/api";
 
@@ -533,7 +533,7 @@ function SigninContent() {
 
 const SigninPage = () => {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<SignInSkeleton />}>
       <SigninContent />
     </Suspense>
   );

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AxiosError } from "axios";
 import { api } from "@/lib/api";
 import { TabWrapper } from "./TabWrapper";
+import SettingsSkeleton from "@/components/SettingsSkeleton";
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -25,13 +26,17 @@ interface ActiveSession {
 
 function SettingsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("password");
+  const urlTab = searchParams.get("tab");
+  const initialTab = (urlTab === "notifications" || urlTab === "privacy" || urlTab === "sessions" || urlTab === "danger") ? urlTab : "password";
+  const [activeTab, setActiveTab] = useState<"password" | "notifications" | "privacy" | "sessions" | "danger">(initialTab);
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
+  const handleTabChange = useCallback((tab: string) => {
+    const validTab = (tab === "notifications" || tab === "privacy" || tab === "sessions" || tab === "danger") ? tab : "password";
+    setActiveTab(validTab);
     router.replace(`?tab=${tab}`, { scroll: false });
-  };
+  }, [router]);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -59,6 +64,13 @@ function SettingsContent() {
   // Sessions state
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [cachedSessionsCount, setCachedSessionsCount] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('settingsSessionsCount');
+      return cached ? parseInt(cached, 10) : 5;
+    }
+    return 5;
+  });
 
   // Delete account state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -122,6 +134,11 @@ function SettingsContent() {
       const result = await api.getSessions();
       if (result.success && result.data) {
         setSessions(result.data);
+        const count = result.data.length;
+        setCachedSessionsCount(count);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('settingsSessionsCount', count.toString());
+        }
       }
     } catch (error) {
       console.error("Failed to fetch sessions:", error);
@@ -390,21 +407,14 @@ function SettingsContent() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-body-color dark:text-body-color-dark">Loading settings...</p>
-        </div>
-      </div>
-    );
+    return <SettingsSkeleton tab={activeTab} sessionsCount={cachedSessionsCount} />;
   }
 
   return (
     <div className="mx-auto max-w-4xl">
       {/* Tab synchronization with URL */}
       <Suspense fallback={null}>
-        <TabWrapper onTabChange={setActiveTab} />
+        <TabWrapper onTabChange={handleTabChange} />
       </Suspense>
       {/* Notifications */}
       {successMessage && (
@@ -1162,14 +1172,7 @@ function SettingsContent() {
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-body-color dark:text-body-color-dark">Loading settings...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<SettingsSkeleton />}>
       <SettingsContent />
     </Suspense>
   );

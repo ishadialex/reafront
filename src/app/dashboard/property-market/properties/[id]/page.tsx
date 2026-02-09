@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { InvestmentProperty } from "@/types/investment";
 import InvestmentModal from "@/components/InvestmentModal";
+import PropertyDetailSkeleton from "@/components/PropertyDetailSkeleton";
 import { api } from "@/lib/api";
 
 export default function PropertyDetailPage() {
@@ -50,14 +51,7 @@ export default function PropertyDetailPage() {
   }, [params.id]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-body-color dark:text-body-color-dark">Loading property details...</p>
-        </div>
-      </div>
-    );
+    return <PropertyDetailSkeleton />;
   }
 
   if (!property) {

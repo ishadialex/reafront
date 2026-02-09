@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { TabWrapper } from "./TabWrapper";
+import SupportSkeleton from "@/components/SupportSkeleton";
+import TicketDetailSkeleton from "@/components/TicketDetailSkeleton";
 
 interface FileAttachment {
   id: string;
@@ -46,17 +48,29 @@ interface CreateTicketForm {
 
 function SupportContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"tickets" | "new">("tickets");
+  const urlTab = searchParams.get("tab");
+  const initialTab = urlTab === "new" ? "new" : "tickets";
+  const [activeTab, setActiveTab] = useState<"tickets" | "new">(initialTab);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [isLoadingTicket, setIsLoadingTicket] = useState(false);
 
-  const handleTabChange = (tab: "tickets" | "new") => {
+  // Cache ticket count for better skeleton loading
+  const [cachedTicketCount, setCachedTicketCount] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('supportTicketCount');
+      return cached ? parseInt(cached, 10) : 3;
+    }
+    return 3;
+  });
+
+  const handleTabChange = useCallback((tab: "tickets" | "new") => {
     setActiveTab(tab);
     setSelectedTicket(null);
     router.replace(`?tab=${tab}`, { scroll: false });
-  };
+  }, [router]);
 
   const handleSelectTicket = async (ticket: SupportTicket) => {
     setIsLoadingTicket(true);
@@ -116,6 +130,12 @@ function SupportContent() {
       const result = await api.getSupportTickets();
       if (result.success && result.data) {
         setTickets(result.data);
+        // Cache ticket count for better skeleton loading next time
+        const count = result.data.length;
+        setCachedTicketCount(count);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('supportTicketCount', count.toString());
+        }
       }
     } catch (err) {
       console.error("Failed to fetch tickets:", err);
@@ -396,30 +416,18 @@ function SupportContent() {
     );
   };
 
+  // Check ticket detail loading first to show correct skeleton
+  if (isLoadingTicket) {
+    return <TicketDetailSkeleton />;
+  }
+
+  // Check main loading
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-body-color dark:text-body-color-dark">Loading support...</p>
-        </div>
-      </div>
-    );
+    return <SupportSkeleton tab={activeTab} count={cachedTicketCount} />;
   }
 
   // Ticket Detail View
-  if (selectedTicket || isLoadingTicket) {
-    if (isLoadingTicket) {
-      return (
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-            <p className="text-body-color dark:text-body-color-dark">Loading ticket...</p>
-          </div>
-        </div>
-      );
-    }
-
+  if (selectedTicket) {
     return (
       <div className="mx-auto max-w-4xl">
         {/* Notifications */}
@@ -631,7 +639,7 @@ function SupportContent() {
     <div className="mx-auto max-w-4xl">
       {/* Tab synchronization with URL */}
       <Suspense fallback={null}>
-        <TabWrapper onTabChange={setActiveTab} />
+        <TabWrapper onTabChange={handleTabChange} />
       </Suspense>
 
       {/* Notifications */}
@@ -961,14 +969,7 @@ function SupportContent() {
 
 export default function SupportPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-body-color dark:text-body-color-dark">Loading support...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<SupportSkeleton />}>
       <SupportContent />
     </Suspense>
   );

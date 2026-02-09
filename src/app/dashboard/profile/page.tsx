@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { UserProfile, ApiResponse } from "@/types/user";
 import EditProfileModal from "@/components/Dashboard/EditProfileModal";
+import ProfileSkeleton from "@/components/ProfileSkeleton";
 import { api } from "@/lib/api";
 
 const getImageUrl = (path: string | null | undefined) => {
@@ -54,14 +55,7 @@ export default function ProfilePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-body-color dark:text-body-color-dark">Loading profile...</p>
-        </div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!profile) {

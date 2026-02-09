@@ -223,21 +223,20 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Modal Container - with safe area padding for mobile */}
-      <div className="relative flex h-full w-full items-end justify-center pb-0 pt-12 sm:items-center sm:p-4 sm:pt-4">
+      <div className="relative flex h-full w-full items-end justify-center sm:items-center sm:p-4">
         <div
           ref={modalRef}
-          className="relative flex max-h-full w-full max-w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-gray-dark sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl"
-          style={{ maxWidth: '100vw' }}
+          className="relative flex max-h-full w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-gray-dark sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl"
         >
           {/* Header */}
-          <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-dark">
-            <h2 className="text-base font-bold text-black dark:text-white sm:text-lg">
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-dark sm:px-6">
+            <h2 className="text-lg font-bold text-black dark:text-white sm:text-xl">
               Edit Profile
             </h2>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -249,42 +248,42 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
           <div className="flex-1 overflow-y-auto overscroll-contain">
             {/* Error Message */}
             {errorMessage && (
-              <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
-                <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="mx-4 mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-4 dark:bg-red-900/20 sm:mx-6">
+                <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-xs font-medium text-red-800 dark:text-red-300">{errorMessage}</p>
+                <p className="text-sm font-medium text-red-800 dark:text-red-300">{errorMessage}</p>
               </div>
             )}
 
             {/* Form */}
-            <form id="edit-profile-form" onSubmit={handleSubmit} className="p-3 sm:p-4">
+            <form id="edit-profile-form" onSubmit={handleSubmit} className="p-4 sm:p-6">
               {/* Profile Photo */}
-              <div className="mb-4 flex flex-col items-center gap-3 sm:flex-row">
+              <div className="mb-6 flex flex-col items-center gap-4 sm:flex-row">
                 <div className="relative flex-shrink-0">
-                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 sm:h-24 sm:w-24">
                     {getImageUrl(formData.profilePhoto) ? (
                       <Image
                         src={getImageUrl(formData.profilePhoto)!}
                         alt="Profile"
-                        width={64}
-                        height={64}
+                        width={96}
+                        height={96}
                         className="h-full w-full object-cover"
                         unoptimized
                       />
                     ) : (
-                      <span className="text-xl font-bold text-primary">
+                      <span className="text-2xl font-bold text-primary sm:text-3xl">
                         {(formData.firstName?.charAt(0) || "").toUpperCase()}{(formData.lastName?.charAt(0) || "").toUpperCase()}
                       </span>
                     )}
                   </div>
                   {isUploadingPhoto && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                     </div>
                   )}
                 </div>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -296,7 +295,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="button"
                     onClick={handlePhotoClick}
                     disabled={isUploadingPhoto}
-                    className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                    className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
                   >
                     Change
                   </button>
@@ -304,7 +303,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
-                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="rounded-lg px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       Remove
                     </button>
@@ -313,16 +312,16 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
               </div>
 
               {/* Name Fields */}
-              <div className="mb-3 grid grid-cols-2 gap-4">
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     First Name *
                   </label>
                   <input
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className={`w-full rounded-lg border bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                    className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
                       fieldErrors.firstName ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                     }`}
                     placeholder="John"
@@ -332,14 +331,14 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   )}
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     Last Name *
                   </label>
                   <input
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className={`w-full rounded-lg border bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                    className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
                       fieldErrors.lastName ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                     }`}
                     placeholder="Doe"
@@ -351,15 +350,15 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
               </div>
 
               {/* Phone */}
-              <div className="mb-3">
-                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                   Phone Number *
                 </label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className={`w-full rounded-lg border bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                  className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
                     fieldErrors.phone ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                   }`}
                   placeholder="+1 (555) 123-4567"
@@ -370,111 +369,111 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
               </div>
 
               {/* DOB & Nationality */}
-              <div className="mb-3 grid grid-cols-2 gap-4">
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     Date of Birth
                   </label>
                   <input
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     Nationality
                   </label>
                   <input
                     type="text"
                     value={formData.nationality}
                     onChange={(e) => handleInputChange("nationality", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="USA"
                   />
                 </div>
               </div>
 
               {/* Occupation */}
-              <div className="mb-3">
-                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                   Occupation
                 </label>
                 <input
                   type="text"
                   value={formData.occupation}
                   onChange={(e) => handleInputChange("occupation", e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Investment Manager"
                 />
               </div>
 
               {/* Address */}
-              <div className="mb-3">
-                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                   Street Address
                 </label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="123 Main Street"
                 />
               </div>
 
               {/* City & State */}
-              <div className="mb-3 grid grid-cols-2 gap-4">
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     City
                   </label>
                   <input
                     type="text"
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="New York"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     State
                   </label>
                   <input
                     type="text"
                     value={formData.state}
                     onChange={(e) => handleInputChange("state", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="NY"
                   />
                 </div>
               </div>
 
               {/* Postal & Country */}
-              <div className="mb-3 grid grid-cols-2 gap-4">
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     Postal Code
                   </label>
                   <input
                     type="text"
                     value={formData.postalCode}
                     onChange={(e) => handleInputChange("postalCode", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="10001"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     Country
                   </label>
                   <input
                     type="text"
                     value={formData.country}
                     onChange={(e) => handleInputChange("country", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="USA"
                   />
                 </div>
@@ -482,14 +481,14 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
 
               {/* Bio */}
               <div className="mb-2">
-                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                   Bio
                 </label>
                 <textarea
                   value={formData.bio}
                   onChange={(e) => handleInputChange("bio", e.target.value)}
-                  rows={2}
-                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  rows={3}
+                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Tell us about yourself..."
                 />
               </div>
@@ -497,11 +496,11 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
           </div>
 
           {/* Fixed Footer Actions */}
-          <div className="flex flex-shrink-0 gap-2 border-t border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark">
+          <div className="flex flex-shrink-0 gap-3 border-t border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark sm:px-6">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+              className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
             >
               Cancel
             </button>
@@ -509,7 +508,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
               type="submit"
               form="edit-profile-form"
               disabled={isSaving}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? (
                 <>

@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { InvestmentProperty } from "@/types/investment";
 import PropertyCard from "@/components/PropertyCard";
+import PropertyCardSkeleton from "@/components/PropertyCardSkeleton";
+import StatCardSkeleton from "@/components/StatCardSkeleton";
 import { api } from "@/lib/api";
 
 export default function PropertiesPage() {
@@ -74,22 +76,33 @@ export default function PropertiesPage() {
       </div>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
-          <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Total Properties</p>
-          <p className="text-3xl font-bold text-black dark:text-white">{stats.totalProperties}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
-          <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Average ROI</p>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.avgROI}%</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
-          <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Total Invested</p>
-          <p className="text-3xl font-bold text-black dark:text-white">${stats.totalInvested.toLocaleString()}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
-          <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Active Investments</p>
-          <p className="text-3xl font-bold text-black dark:text-white">{stats.activeInvestments}</p>
-        </div>
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
+              <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Total Properties</p>
+              <p className="text-3xl font-bold text-black dark:text-white">{stats.totalProperties}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
+              <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Average ROI</p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.avgROI}%</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
+              <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Total Invested</p>
+              <p className="text-3xl font-bold text-black dark:text-white">${stats.totalInvested.toLocaleString()}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
+              <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">Active Investments</p>
+              <p className="text-3xl font-bold text-black dark:text-white">{stats.activeInvestments}</p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark">
@@ -167,11 +180,13 @@ export default function PropertiesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-            <p className="mt-4 text-body-color dark:text-body-color-dark">Loading properties...</p>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+          <PropertyCardSkeleton />
+          <PropertyCardSkeleton />
+          <PropertyCardSkeleton />
+          <PropertyCardSkeleton />
+          <PropertyCardSkeleton />
+          <PropertyCardSkeleton />
         </div>
       ) : properties.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
