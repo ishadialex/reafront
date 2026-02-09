@@ -368,31 +368,31 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                 )}
               </div>
 
-              {/* DOB & Nationality */}
-              <div className="mb-6 grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-                    Nationality
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.nationality}
-                    onChange={(e) => handleInputChange("nationality", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                    placeholder="USA"
-                  />
-                </div>
+              {/* Date of Birth */}
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+
+              {/* Nationality */}
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+                  Nationality
+                </label>
+                <input
+                  type="text"
+                  value={formData.nationality}
+                  onChange={(e) => handleInputChange("nationality", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="USA"
+                />
               </div>
 
               {/* Occupation */}
