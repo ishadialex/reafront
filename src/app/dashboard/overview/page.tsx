@@ -327,32 +327,32 @@ export default function DashboardOverviewPage() {
     switch (type) {
       case "deposit":
         return (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-            <svg className="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 md:h-10 md:w-10">
+            <svg className="h-4 w-4 text-green-600 dark:text-green-400 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </div>
         );
       case "withdrawal":
         return (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-            <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 md:h-10 md:w-10">
+            <svg className="h-4 w-4 text-red-600 dark:text-red-400 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
         );
       case "investment":
         return (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-            <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 md:h-10 md:w-10">
+            <svg className="h-4 w-4 text-blue-600 dark:text-blue-400 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
         );
       case "referral":
         return (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-            <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30 md:h-10 md:w-10">
+            <svg className="h-4 w-4 text-purple-600 dark:text-purple-400 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
@@ -360,8 +360,8 @@ export default function DashboardOverviewPage() {
       case "profit":
       case "admin_bonus":
         return (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-            <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30 md:h-10 md:w-10">
+            <svg className="h-4 w-4 text-yellow-600 dark:text-yellow-400 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -369,16 +369,16 @@ export default function DashboardOverviewPage() {
       case "transfer_sent":
       case "transfer_received":
         return (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30">
-            <svg className="h-5 w-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 md:h-10 md:w-10">
+            <svg className="h-4 w-4 text-indigo-600 dark:text-indigo-400 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
           </div>
         );
       default:
         return (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-            <svg className="h-5 w-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 md:h-10 md:w-10">
+            <svg className="h-4 w-4 text-gray-600 dark:text-gray-400 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
@@ -682,15 +682,17 @@ export default function DashboardOverviewPage() {
                 data.transactions.slice(0, 5).map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex items-center justify-between p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className="flex items-start justify-between gap-3 p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 sm:gap-4 sm:p-4"
                   >
-                    <div className="flex items-center gap-3">
-                      {getTransactionIcon(transaction.type)}
-                      <div>
-                        <p className="font-medium text-black dark:text-white">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="flex-shrink-0 pt-0.5">
+                        {getTransactionIcon(transaction.type)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-medium leading-tight text-black dark:text-white">
                           {transaction.description}
                         </p>
-                        <p className="text-xs text-body-color dark:text-body-color-dark">
+                        <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                           {new Date(transaction.date).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -699,9 +701,9 @@ export default function DashboardOverviewPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex-shrink-0 text-right">
                       <p
-                        className={`font-semibold ${
+                        className={`whitespace-nowrap text-sm font-semibold ${
                           ["deposit", "referral", "profit", "admin_bonus", "transfer_received"].includes(transaction.type)
                             ? "text-green-600 dark:text-green-400"
                             : "text-red-600 dark:text-red-400"
@@ -711,7 +713,7 @@ export default function DashboardOverviewPage() {
                         {transaction.amount.toLocaleString()}
                       </p>
                       <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                           transaction.status === "completed"
                             ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                             : transaction.status === "pending"
