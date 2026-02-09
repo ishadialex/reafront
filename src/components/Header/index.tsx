@@ -116,7 +116,7 @@ const Header = () => {
                 />
                 {/* Dark mode logo (with white text) */}
                 <Image
-                  src="/images/logo/A-Logo.jpg"
+                  src="/images/logo/A-Logo.png"
                   alt="logo"
                   width={140}
                   height={30}
