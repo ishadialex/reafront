@@ -474,9 +474,10 @@ export default function DashboardOverviewPage() {
       </div>
 
       {/* Main Stats Cards */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:mb-8">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 md:mb-8">
         {loading.user || loading.balance || loading.investments ? (
           <>
+            <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -507,6 +508,32 @@ export default function DashboardOverviewPage() {
               {(data.balanceSummary?.pendingDeposits ?? 0) === 0 && (
                 <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                   Available for investment
+                </p>
+              )}
+            </div>
+
+            {/* Total Withdrawn */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-red-50 to-red-100/50 p-4 shadow dark:border-gray-800 dark:from-red-900/20 dark:to-red-900/10 md:p-6">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-medium text-body-color dark:text-body-color-dark">
+                  Total Withdrawn
+                </p>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+                  <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400 md:text-3xl">
+                ${(data.balanceSummary?.withdrawals ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+              {(data.balanceSummary?.pendingWithdrawals ?? 0) > 0 ? (
+                <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                  ${(data.balanceSummary!.pendingWithdrawals).toLocaleString(undefined, { minimumFractionDigits: 2 })} pending
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                  No pending withdrawals
                 </p>
               )}
             </div>
