@@ -130,18 +130,23 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
               <span className="text-body-color dark:text-body-color-dark">
                 Funded: ${property.currentFunded.toLocaleString()}
               </span>
-              <span className="font-semibold text-primary">
-                {fundingPercentage.toFixed(1)}%
+              <span className="font-semibold text-black dark:text-white">
+                Target: ${property.targetAmount.toLocaleString()}
               </span>
             </div>
             <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
               <div
                 className="h-2 rounded-full bg-primary transition-all"
-                style={{ width: `${fundingPercentage}%` }}
+                style={{ width: `${Math.min(fundingPercentage, 100)}%` }}
               />
             </div>
-            <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-              ${remainingAmount.toLocaleString()} remaining of ${property.targetAmount.toLocaleString()}
+            <p className="mt-1 flex justify-between text-xs">
+              <span className="text-body-color dark:text-body-color-dark">
+                ${remainingAmount.toLocaleString()} remaining
+              </span>
+              <span className="font-semibold text-primary">
+                {fundingPercentage.toFixed(1)}%
+              </span>
             </p>
           </div>
         )}
