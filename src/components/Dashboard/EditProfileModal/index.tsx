@@ -5,6 +5,7 @@ import Image from "next/image";
 import axios from "axios";
 import { UserProfile, UpdateProfileRequest, ApiResponse } from "@/types/user";
 import { api } from "@/lib/api";
+import DatePicker from "@/components/DatePicker";
 
 const getImageUrl = (path: string | null | undefined) => {
   if (!path) return null;
@@ -373,11 +374,9 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                 <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                   Date of Birth
                 </label>
-                <input
-                  type="date"
+                <DatePicker
                   value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                  className="w-full max-w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:text-sm"
+                  onChange={(value) => handleInputChange("dateOfBirth", value)}
                 />
               </div>
 
