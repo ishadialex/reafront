@@ -369,7 +369,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
               </div>
 
               {/* DOB & Nationality */}
-              <div className="mb-4 grid grid-cols-2 gap-4">
+              <div className="mb-6 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                     Date of Birth
