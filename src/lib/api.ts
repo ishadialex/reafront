@@ -163,7 +163,10 @@ export class ApiClient {
   }
 
   async logout() {
-    const response = await this.axiosInstance.post<ApiResponse<void>>("/api/auth/logout");
+    const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
+    const response = await this.axiosInstance.post<ApiResponse<void>>("/api/auth/logout", {
+      refreshToken,
+    });
     this.clearToken();
     return response.data;
   }
