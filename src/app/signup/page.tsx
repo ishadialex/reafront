@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import SignupForm from "@/components/SignupForm";
 
 export const metadata: Metadata = {
-  title: "Sign Up Page | Free Next.js Template for Startup and SaaS",
-  description: "This is Sign Up Page for Startup Nextjs Template",
+  title: "Sign Up | Alvarado Associates - Start Investing Today",
+  description: "Create your Alvarado Associates account and start investing in premium real estate opportunities. Join thousands of investors building wealth through property investment.",
   // other metadata
 };
 

@@ -7,8 +7,8 @@ import Image from "next/image";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog Details Page | Free Next.js Template for Startup and SaaS",
-  description: "This is Blog Details Page for Startup Nextjs Template",
+  title: "Blog | Alvarado Associates - Investment News & Updates",
+  description: "Explore real estate investment articles, property market analysis, and investment tips from Alvarado Associates. Build your wealth with informed decisions.",
   // other metadata
 };
 

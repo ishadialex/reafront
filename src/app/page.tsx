@@ -15,8 +15,8 @@ import { Metadata } from "next";
 import { getTeamMembers, getTestimonials, getInvestmentOptions } from "@/lib/data";
 
 export const metadata: Metadata = {
-  title: "Free Next.js Template for Startup and SaaS",
-  description: "This is Home for Startup Nextjs Template",
+  title: "Alvarado Associates - Real Estate Investment Platform",
+  description: "Invest in premium real estate opportunities with Alvarado Associates. Access fractional property ownership, mortgage-backed investments, and expert-managed portfolios.",
 };
 
 async function InvestmentsSection() {
