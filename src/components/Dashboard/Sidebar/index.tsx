@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 interface SubMenuItem {
@@ -33,6 +33,13 @@ const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
       [name]: !prev[name],
     }));
   };
+
+  // Collapse all dropdowns when sidebar closes
+  useEffect(() => {
+    if (!isOpen) {
+      setOpenDropdowns({});
+    }
+  }, [isOpen]);
 
   const menuItems: MenuItem[] = [
     {
