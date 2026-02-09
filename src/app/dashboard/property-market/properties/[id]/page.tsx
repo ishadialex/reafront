@@ -21,10 +21,9 @@ export default function PropertyDetailPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const [propResult, balResult, checkResult] = await Promise.all([
+        const [propResult, balResult] = await Promise.all([
           api.getProperty(params.id as string),
           api.getBalanceSummary(),
-          api.checkPropertyInvestment(params.id as string),
         ]);
         if (propResult.success && propResult.data) {
           setProperty(propResult.data as InvestmentProperty);
@@ -32,11 +31,17 @@ export default function PropertyDetailPage() {
         if (balResult.success && balResult.data) {
           setWalletBalance(balResult.data.balance ?? 0);
         }
+      } catch {
+        // ignore
+      }
+      // Fetch existing investment separately so it doesn't break property loading
+      try {
+        const checkResult = await api.checkPropertyInvestment(params.id as string);
         if (checkResult.success && checkResult.data?.exists && checkResult.data.investment) {
           setExistingInvestment(checkResult.data.investment);
         }
       } catch {
-        // ignore
+        // ignore - endpoint may not be deployed yet
       } finally {
         setLoading(false);
       }
