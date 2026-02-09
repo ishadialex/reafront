@@ -108,8 +108,38 @@ function SigninContent() {
 
   return (
     <>
-      {/* Loading Spinner */}
-      {isLoading && <LoadingSpinner />}
+      {/* Loading Screen */}
+      {isLoading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-black dark:via-gray-900 dark:to-black">
+          <div className="relative flex flex-col items-center justify-center px-4">
+            {/* Animated gradient spinner */}
+            <div className="relative">
+              {/* Outer ring with gradient */}
+              <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full bg-gradient-to-tr from-primary via-blue-500 to-primary opacity-75 blur-sm sm:h-24 sm:w-24"></div>
+
+              {/* Middle ring */}
+              <div className="absolute inset-2 h-16 w-16 animate-spin rounded-full bg-gradient-to-br from-primary/50 to-transparent sm:h-20 sm:w-20" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+
+              {/* Inner ring with logo */}
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-xl dark:bg-gray-900 sm:h-24 sm:w-24">
+                <div className="text-2xl font-bold text-primary sm:text-3xl">A</div>
+              </div>
+            </div>
+
+            {/* Loading text with animation */}
+            <div className="mt-8 text-center">
+              <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-white sm:text-xl">
+                Signing In
+              </h3>
+              <div className="flex items-center justify-center gap-1">
+                <div className="h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: '0ms' }}></div>
+                <div className="h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: '150ms' }}></div>
+                <div className="h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Existing Session Warning Modal */}
       {showExistingSessionModal && existingSessionData && (
