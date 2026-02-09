@@ -15,20 +15,25 @@ export default function PropertyDetailPage() {
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [investmentAmount, setInvestmentAmount] = useState("");
   const [walletBalance, setWalletBalance] = useState(0);
+  const [existingInvestment, setExistingInvestment] = useState<{ id: string; amount: number; expectedROI: number; monthlyReturn: number } | null>(null);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [propResult, balResult] = await Promise.all([
+        const [propResult, balResult, checkResult] = await Promise.all([
           api.getProperty(params.id as string),
           api.getBalanceSummary(),
+          api.checkPropertyInvestment(params.id as string),
         ]);
         if (propResult.success && propResult.data) {
           setProperty(propResult.data as InvestmentProperty);
         }
         if (balResult.success && balResult.data) {
           setWalletBalance(balResult.data.balance ?? 0);
+        }
+        if (checkResult.success && checkResult.data?.exists && checkResult.data.investment) {
+          setExistingInvestment(checkResult.data.investment);
         }
       } catch {
         // ignore
@@ -85,11 +90,11 @@ export default function PropertyDetailPage() {
 
   const getCategoryBadge = () => {
     const colors: Record<string, string> = {
-      arbitrage: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      mortgage: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-      airbnb: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
+      arbitrage: "bg-blue-600 text-white dark:bg-blue-700 dark:text-white",
+      mortgage: "bg-purple-600 text-white dark:bg-purple-700 dark:text-white",
+      airbnb: "bg-pink-600 text-white dark:bg-pink-700 dark:text-white",
     };
-    return colors[property.category] || "bg-gray-100 text-gray-800";
+    return colors[property.category] || "bg-gray-600 text-white";
   };
 
   const getRiskBadge = () => {
@@ -265,8 +270,23 @@ export default function PropertyDetailPage() {
               </div>
             )}
 
+            {existingInvestment && (
+              <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm font-semibold text-green-800 dark:text-green-300">You have an active investment</span>
+                </div>
+                <p className="text-lg font-bold text-green-700 dark:text-green-400">
+                  ${existingInvestment.amount.toLocaleString()}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-500 mt-1">Add more funds to increase your position</p>
+              </div>
+            )}
+
             <div className="mb-6">
-              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Investment Amount</label>
+              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">{existingInvestment ? "Top-Up Amount" : "Investment Amount"}</label>
               <input
                 type="number"
                 value={investmentAmount}
@@ -296,7 +316,7 @@ export default function PropertyDetailPage() {
               disabled={property.status !== "available" || amount < property.minInvestment}
               className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {property.status === "available" ? "Invest Now" : property.status === "fully-funded" ? "Fully Funded" : "Coming Soon"}
+              {property.status === "available" ? (existingInvestment ? "Top Up Investment" : "Invest Now") : property.status === "fully-funded" ? "Fully Funded" : "Coming Soon"}
             </button>
 
             {property.status === "available" && amount < property.minInvestment && amount > 0 && (
@@ -315,6 +335,7 @@ export default function PropertyDetailPage() {
           property={property}
           walletBalance={walletBalance}
           initialAmount={amount}
+          existingInvestment={existingInvestment}
         />
       )}
     </div>

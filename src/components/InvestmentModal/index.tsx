@@ -12,6 +12,7 @@ interface InvestmentModalProps {
   property: InvestmentProperty;
   walletBalance: number;
   initialAmount?: number;
+  existingInvestment?: { id: string; amount: number; expectedROI: number; monthlyReturn: number } | null;
 }
 
 const InvestmentModal = ({
@@ -20,6 +21,7 @@ const InvestmentModal = ({
   property,
   walletBalance,
   initialAmount = 0,
+  existingInvestment = null,
 }: InvestmentModalProps) => {
   const router = useRouter();
   const [investmentAmount, setInvestmentAmount] = useState(initialAmount.toString());
@@ -32,6 +34,7 @@ const InvestmentModal = ({
   if (!isOpen) return null;
 
   const amount = parseFloat(investmentAmount) || 0;
+  const isTopUp = !!existingInvestment;
   const remainingAmount =
     property.investmentType === "pooled"
       ? property.targetAmount - property.currentFunded
@@ -43,17 +46,20 @@ const InvestmentModal = ({
       return { valid: false, error: "Please enter a valid amount" };
     }
 
-    if (amount < property.minInvestment) {
+    // Skip minInvestment check for top-ups
+    if (!isTopUp && amount < property.minInvestment) {
       return {
         valid: false,
         error: `Minimum investment is $${property.minInvestment.toLocaleString()}`,
       };
     }
 
-    if (amount > property.maxInvestment) {
+    // For top-ups, check max against new total
+    const newTotal = isTopUp ? existingInvestment.amount + amount : amount;
+    if (newTotal > property.maxInvestment) {
       return {
         valid: false,
-        error: `Maximum investment is $${property.maxInvestment.toLocaleString()}`,
+        error: `Maximum investment is $${property.maxInvestment.toLocaleString()}${isTopUp ? ` (current: $${existingInvestment.amount.toLocaleString()})` : ""}`,
       };
     }
 
@@ -105,7 +111,9 @@ const InvestmentModal = ({
 
       if (result.success) {
         setPopupMessage(
-          `Successfully invested $${amount.toLocaleString()} in ${property.title}.`
+          isTopUp
+            ? `Successfully topped up $${amount.toLocaleString()} in ${property.title}. New total: $${(existingInvestment.amount + amount).toLocaleString()}.`
+            : `Successfully invested $${amount.toLocaleString()} in ${property.title}.`
         );
         setPopupType("success");
         setShowPopup(true);
@@ -161,7 +169,7 @@ const InvestmentModal = ({
           <div className="mb-6 flex items-start justify-between">
             <div>
               <h2 className="text-2xl font-bold text-black dark:text-white">
-                Invest in Property
+                {isTopUp ? "Top Up Investment" : "Invest in Property"}
               </h2>
               <p className="mt-1 text-sm text-body-color dark:text-body-color-dark line-clamp-1">
                 {property.title}
@@ -187,10 +195,22 @@ const InvestmentModal = ({
             </p>
           </div>
 
+          {/* Existing Investment Info */}
+          {isTopUp && (
+            <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-green-800 dark:text-green-300">Current Investment</span>
+                <span className="text-lg font-bold text-green-700 dark:text-green-400">
+                  ${existingInvestment.amount.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Investment Amount */}
           <div className="mb-6">
             <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
-              Investment Amount <span className="text-red-500">*</span>
+              {isTopUp ? "Top-Up Amount" : "Investment Amount"} <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -202,9 +222,13 @@ const InvestmentModal = ({
               className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-lg font-semibold text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
             />
             <div className="mt-2 flex justify-between text-xs text-body-color dark:text-body-color-dark">
-              <span>Min: ${property.minInvestment.toLocaleString()}</span>
+              <span>{isTopUp ? "Any amount" : `Min: $${property.minInvestment.toLocaleString()}`}</span>
               <span>
-                Max: ${property.investmentType === "pooled" ? Math.min(property.maxInvestment, remainingAmount).toLocaleString() : property.maxInvestment.toLocaleString()}
+                Max: ${isTopUp
+                  ? (property.maxInvestment - existingInvestment.amount > 0
+                    ? (property.investmentType === "pooled" ? Math.min(property.maxInvestment - existingInvestment.amount, remainingAmount) : property.maxInvestment - existingInvestment.amount).toLocaleString()
+                    : "0")
+                  : (property.investmentType === "pooled" ? Math.min(property.maxInvestment, remainingAmount).toLocaleString() : property.maxInvestment.toLocaleString())}
               </span>
             </div>
           </div>
@@ -344,13 +368,13 @@ const InvestmentModal = ({
             </button>
             <button
               onClick={paymentMethod === "wallet" ? handleWalletPayment : handleNewDeposit}
-              disabled={isProcessing || !paymentMethod || amount < property.minInvestment}
+              disabled={isProcessing || !paymentMethod || (!isTopUp && amount < property.minInvestment) || amount <= 0}
               className="flex-1 rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isProcessing
                 ? "Processing..."
                 : paymentMethod === "wallet"
-                ? "Confirm Investment"
+                ? (isTopUp ? "Confirm Top Up" : "Confirm Investment")
                 : "Continue to Deposit"}
             </button>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { InvestmentProperty } from "@/types/investment";
 import Link from "next/link";
 
@@ -18,19 +19,20 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
       ? property.targetAmount - property.currentFunded
       : 0;
 
-  const getCategoryBadge = () => {
-    const colors = {
-      arbitrage: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      mortgage: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-      airbnb: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
+  const getCategoryStyle = (): React.CSSProperties => {
+    const colors: Record<string, string> = {
+      arbitrage: "#2563eb",
+      mortgage: "#9333ea",
+      airbnb: "#db2777",
     };
-    return colors[property.category];
+    return { backgroundColor: colors[property.category] || "#6b7280", color: "#fff" };
   };
 
-  const getTypeBadge = () => {
-    return property.investmentType === "individual"
-      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-      : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+  const getTypeStyle = (): React.CSSProperties => {
+    return {
+      backgroundColor: property.investmentType === "individual" ? "#16a34a" : "#ea580c",
+      color: "#fff",
+    };
   };
 
   const getStatusBadge = () => {
@@ -65,13 +67,13 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
         )}
         {/* Category Badge */}
         <div className="absolute left-3 top-3">
-          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getCategoryBadge()}`}>
+          <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold shadow-md" style={getCategoryStyle()}>
             {property.category.charAt(0).toUpperCase() + property.category.slice(1)}
           </span>
         </div>
         {/* Type Badge */}
         <div className="absolute right-3 top-3">
-          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getTypeBadge()}`}>
+          <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold shadow-md" style={getTypeStyle()}>
             {property.investmentType === "individual" ? "Individual" : "Pooled"}
           </span>
         </div>

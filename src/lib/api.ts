@@ -309,6 +309,11 @@ export class ApiClient {
     return response.data;
   }
 
+  async checkPropertyInvestment(propertyId: string) {
+    const response = await this.axiosInstance.get<ApiResponse<{ exists: boolean; investment: any }>>(`/api/investments/property/${propertyId}/check`);
+    return response.data;
+  }
+
   async createPropertyInvestment(propertyId: string, amount: number) {
     const response = await this.axiosInstance.post<ApiResponse<{ id: string }>>("/api/investments/property", { propertyId, amount });
     return response.data;
