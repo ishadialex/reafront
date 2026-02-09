@@ -17,8 +17,29 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      const accessToken = localStorage.getItem("accessToken");
+      const isLoggedIn = localStorage.getItem("isLoggedIn");
+
+      if (!accessToken || isLoggedIn !== "true") {
+        // Not authenticated - redirect to signin
+        router.push("/signin");
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setIsChecking(false);
+    };
+
+    checkAuth();
+  }, [router]);
 
   // Poll every 10 seconds to detect if session was revoked from another device
   useEffect(() => {
@@ -52,6 +73,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Enable automatic session timeout based on user preference
   const { showWarning, remainingSeconds, continueSession } = useSessionTimeout();
+
+  // Show loading while checking authentication
+  if (isChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-1 dark:bg-black">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="mt-4 text-sm text-body-color dark:text-body-color-dark">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-1 dark:bg-black">
