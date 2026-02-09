@@ -308,7 +308,9 @@ export default function DashboardOverviewPage() {
       (data.balanceSummary?.referralBonuses ?? 0) +
       (data.balanceSummary?.adminBonuses ?? 0);
     const activeInvestments = data.investments.filter((inv) => inv.status === "active");
-    const activeCount = activeInvestments.length;
+    // Count unique properties (not individual investment transactions)
+    const uniquePropertyTitles = new Set(activeInvestments.map(inv => inv.propertyTitle));
+    const activeCount = uniquePropertyTitles.size;
     const totalROI = activeInvestments.reduce((sum, inv) => sum + inv.expectedROI, 0);
 
     return {
@@ -537,7 +539,7 @@ export default function DashboardOverviewPage() {
                 ${stats.totalInvested.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-                Across {stats.activeCount} active investment{stats.activeCount !== 1 ? "s" : ""}
+                Across {stats.activeCount} active propert{stats.activeCount !== 1 ? "ies" : "y"}
               </p>
             </div>
 
@@ -577,7 +579,7 @@ export default function DashboardOverviewPage() {
                 {stats.totalROI}%
               </p>
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-                Total across {stats.activeCount} active investment{stats.activeCount !== 1 ? "s" : ""}
+                Total across {stats.activeCount} active propert{stats.activeCount !== 1 ? "ies" : "y"}
               </p>
             </div>
           </>
