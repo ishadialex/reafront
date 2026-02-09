@@ -129,13 +129,21 @@ function PropertyCard({ property }: { property: Property }) {
     <div className="group overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-500 ease-in-out hover:-translate-y-2 hover:shadow-2xl dark:bg-gray-dark">
       {/* Property Image with Carousel */}
       <div className="relative h-64 w-full overflow-hidden">
-        <Image
-          src={property.images[currentImageIndex]}
-          alt={property.title}
-          fill
-          className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
+        {property.images[currentImageIndex] ? (
+          <Image
+            src={property.images[currentImageIndex]}
+            alt={property.title}
+            fill
+            className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-primary/10 dark:bg-primary/20">
+            <span className="text-6xl font-bold text-primary">
+              {property.title?.charAt(0)?.toUpperCase() || "P"}
+            </span>
+          </div>
+        )}
 
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-10" />

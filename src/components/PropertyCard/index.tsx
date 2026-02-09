@@ -50,11 +50,19 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden rounded-t-xl">
-        <img
-          src={property.images[0] || "/images/placeholder.jpg"}
-          alt={property.title}
-          className="h-full w-full object-cover transition-transform group-hover:scale-110"
-        />
+        {property.images[0] ? (
+          <img
+            src={property.images[0]}
+            alt={property.title}
+            className="h-full w-full object-cover transition-transform group-hover:scale-110"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-primary/10 dark:bg-primary/20">
+            <span className="text-5xl font-bold text-primary">
+              {property.title?.charAt(0)?.toUpperCase() || "P"}
+            </span>
+          </div>
+        )}
         {/* Category Badge */}
         <div className="absolute left-3 top-3">
           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getCategoryBadge()}`}>

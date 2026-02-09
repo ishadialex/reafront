@@ -323,14 +323,22 @@ export default function PropertyDetailsPage({
         <div className="mb-8 overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-dark">
           {/* Large Image */}
           <div className="relative h-[400px] w-full overflow-hidden md:h-[500px] lg:h-[600px]">
-            <Image
-              src={property.images[currentImageIndex]}
-              alt={`${property.title} - Image ${currentImageIndex + 1}`}
-              fill
-              className="object-cover"
-              sizes="100vw"
-              priority
-            />
+            {property.images[currentImageIndex] ? (
+              <Image
+                src={property.images[currentImageIndex]}
+                alt={`${property.title} - Image ${currentImageIndex + 1}`}
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-primary/10 dark:bg-primary/20">
+                <span className="text-8xl font-bold text-primary md:text-9xl">
+                  {property.title?.charAt(0)?.toUpperCase() || "P"}
+                </span>
+              </div>
+            )}
 
             {/* Navigation Arrows */}
             {property.images.length > 1 && (
