@@ -1,0 +1,533 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import axios from "axios";
+import { UserProfile, UpdateProfileRequest, ApiResponse } from "@/types/user";
+import { api } from "@/lib/api";
+
+const getImageUrl = (path: string | null | undefined) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  return `${baseUrl}${path}`;
+};
+
+interface EditProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: UserProfile;
+  onSuccess: (updatedProfile: UserProfile) => void;
+}
+
+const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileModalProps) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const [formData, setFormData] = useState<UpdateProfileRequest>({
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    phone: profile.phone,
+    dateOfBirth: profile.dateOfBirth,
+    nationality: profile.nationality,
+    address: profile.address,
+    city: profile.city,
+    state: profile.state,
+    postalCode: profile.postalCode,
+    country: profile.country,
+    profilePhoto: profile.profilePhoto,
+    bio: profile.bio,
+    occupation: profile.occupation,
+  });
+
+  // Reset form when profile changes
+  useEffect(() => {
+    setFormData({
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      phone: profile.phone,
+      dateOfBirth: profile.dateOfBirth,
+      nationality: profile.nationality,
+      address: profile.address,
+      city: profile.city,
+      state: profile.state,
+      postalCode: profile.postalCode,
+      country: profile.country,
+      profilePhoto: profile.profilePhoto,
+      bio: profile.bio,
+      occupation: profile.occupation,
+    });
+    setErrorMessage("");
+    setFieldErrors({});
+  }, [profile, isOpen]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
+  // Close when clicking outside
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+      onClose();
+    }
+  };
+
+  const handleInputChange = (field: keyof UpdateProfileRequest, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingPhoto(true);
+      setErrorMessage("");
+
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.post<ApiResponse<{ url: string }>>(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/profile/upload`,
+        uploadFormData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+
+      const result = response.data;
+
+      if (result.success && result.data) {
+        setFormData((prev) => ({ ...prev, profilePhoto: result.data!.url }));
+        // Emit event to notify other components
+        window.dispatchEvent(new CustomEvent('profilePhotoUpdated', {
+          detail: { profilePhoto: result.data!.url }
+        }));
+      } else {
+        setErrorMessage(result.message || "Failed to upload photo");
+      }
+    } catch (error) {
+      setErrorMessage("Failed to upload photo");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setFormData((prev) => ({ ...prev, profilePhoto: null }));
+    // Emit event to notify other components
+    window.dispatchEvent(new CustomEvent('profilePhotoUpdated', {
+      detail: { profilePhoto: null }
+    }));
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.firstName?.trim()) {
+      errors.firstName = "First name is required";
+    }
+    if (!formData.lastName?.trim()) {
+      errors.lastName = "Last name is required";
+    }
+    if (!formData.phone?.trim()) {
+      errors.phone = "Phone number is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    try {
+      setIsSaving(true);
+      setErrorMessage("");
+
+      const result = await api.updateProfile(formData);
+
+      if (result.success && result.data) {
+        // Update localStorage for ProfileDropdown
+        if (formData.firstName) {
+          localStorage.setItem("userName", `${formData.firstName} ${formData.lastName}`);
+        }
+        // Emit event to notify ProfileDropdown
+        window.dispatchEvent(new CustomEvent('profileUpdated', {
+          detail: { profile: result.data }
+        }));
+        onSuccess(result.data);
+      } else {
+        if (result.errors) {
+          setFieldErrors(result.errors);
+        }
+        setErrorMessage(result.message || "Failed to update profile");
+      }
+    } catch (error) {
+      setErrorMessage("Failed to connect to server");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] overflow-hidden"
+      onClick={handleBackdropClick}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      {/* Modal Container - with safe area padding for mobile */}
+      <div className="relative flex h-full w-full items-end justify-center pb-0 pt-12 sm:items-center sm:p-4 sm:pt-4">
+        <div
+          ref={modalRef}
+          className="relative flex max-h-full w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-gray-dark sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl"
+        >
+          {/* Header */}
+          <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-dark">
+            <h2 className="text-base font-bold text-black dark:text-white sm:text-lg">
+              Edit Profile
+            </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
+                <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-xs font-medium text-red-800 dark:text-red-300">{errorMessage}</p>
+              </div>
+            )}
+
+            {/* Form */}
+            <form id="edit-profile-form" onSubmit={handleSubmit} className="p-4">
+              {/* Profile Photo */}
+              <div className="mb-4 flex flex-col items-center gap-3 sm:flex-row">
+                <div className="relative flex-shrink-0">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                    {getImageUrl(formData.profilePhoto) ? (
+                      <Image
+                        src={getImageUrl(formData.profilePhoto)!}
+                        alt="Profile"
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <span className="text-xl font-bold text-primary">
+                        {formData.firstName?.charAt(0)?.toUpperCase() || "U"}
+                      </span>
+                    )}
+                  </div>
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePhotoClick}
+                    disabled={isUploadingPhoto}
+                    className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                  >
+                    Change
+                  </button>
+                  {formData.profilePhoto && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Name Fields */}
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                      fieldErrors.firstName ? "border-red-500" : "border-gray-200 dark:border-gray-700"
+                    }`}
+                    placeholder="John"
+                  />
+                  {fieldErrors.firstName && (
+                    <p className="mt-0.5 text-[10px] text-red-500">{fieldErrors.firstName}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                      fieldErrors.lastName ? "border-red-500" : "border-gray-200 dark:border-gray-700"
+                    }`}
+                    placeholder="Doe"
+                  />
+                  {fieldErrors.lastName && (
+                    <p className="mt-0.5 text-[10px] text-red-500">{fieldErrors.lastName}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                    fieldErrors.phone ? "border-red-500" : "border-gray-200 dark:border-gray-700"
+                  }`}
+                  placeholder="+1 (555) 123-4567"
+                />
+                {fieldErrors.phone && (
+                  <p className="mt-0.5 text-[10px] text-red-500">{fieldErrors.phone}</p>
+                )}
+              </div>
+
+              {/* DOB & Nationality */}
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    Nationality
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nationality}
+                    onChange={(e) => handleInputChange("nationality", e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    placeholder="USA"
+                  />
+                </div>
+              </div>
+
+              {/* Occupation */}
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  Occupation
+                </label>
+                <input
+                  type="text"
+                  value={formData.occupation}
+                  onChange={(e) => handleInputChange("occupation", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Investment Manager"
+                />
+              </div>
+
+              {/* Address */}
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="123 Main Street"
+                />
+              </div>
+
+              {/* City & State */}
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    placeholder="New York"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => handleInputChange("state", e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    placeholder="NY"
+                  />
+                </div>
+              </div>
+
+              {/* Postal & Country */}
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.postalCode}
+                    onChange={(e) => handleInputChange("postalCode", e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    placeholder="10001"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.country}
+                    onChange={(e) => handleInputChange("country", e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    placeholder="USA"
+                  />
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className="mb-2">
+                <label className="mb-1 block text-xs font-medium text-black dark:text-white">
+                  Bio
+                </label>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => handleInputChange("bio", e.target.value)}
+                  rows={2}
+                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+            </form>
+          </div>
+
+          {/* Fixed Footer Actions */}
+          <div className="flex flex-shrink-0 gap-2 border-t border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="edit-profile-form"
+              disabled={isSaving}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Saving
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditProfileModal;
