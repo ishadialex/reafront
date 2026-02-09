@@ -313,7 +313,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
               </div>
 
               {/* Name Fields */}
-              <div className="mb-3 grid grid-cols-2 gap-3">
+              <div className="mb-3 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-black dark:text-white">
                     First Name *
@@ -322,7 +322,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className={`w-full rounded-lg border bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                    className={`w-full rounded-lg border bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
                       fieldErrors.firstName ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                     }`}
                     placeholder="John"
@@ -339,7 +339,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className={`w-full rounded-lg border bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                    className={`w-full rounded-lg border bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
                       fieldErrors.lastName ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                     }`}
                     placeholder="Doe"
@@ -359,7 +359,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className={`w-full rounded-lg border bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
+                  className={`w-full rounded-lg border bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
                     fieldErrors.phone ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                   }`}
                   placeholder="+1 (555) 123-4567"
@@ -370,7 +370,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
               </div>
 
               {/* DOB & Nationality */}
-              <div className="mb-3 grid grid-cols-2 gap-3">
+              <div className="mb-3 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-black dark:text-white">
                     Date of Birth
@@ -379,7 +379,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   />
                 </div>
                 <div>
@@ -390,7 +390,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="text"
                     value={formData.nationality}
                     onChange={(e) => handleInputChange("nationality", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="USA"
                   />
                 </div>
@@ -405,7 +405,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   type="text"
                   value={formData.occupation}
                   onChange={(e) => handleInputChange("occupation", e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Investment Manager"
                 />
               </div>
@@ -419,13 +419,13 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   type="text"
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="123 Main Street"
                 />
               </div>
 
               {/* City & State */}
-              <div className="mb-3 grid grid-cols-2 gap-3">
+              <div className="mb-3 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-black dark:text-white">
                     City
@@ -434,7 +434,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="text"
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="New York"
                   />
                 </div>
@@ -446,14 +446,14 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="text"
                     value={formData.state}
                     onChange={(e) => handleInputChange("state", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="NY"
                   />
                 </div>
               </div>
 
               {/* Postal & Country */}
-              <div className="mb-3 grid grid-cols-2 gap-3">
+              <div className="mb-3 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-black dark:text-white">
                     Postal Code
@@ -462,7 +462,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="text"
                     value={formData.postalCode}
                     onChange={(e) => handleInputChange("postalCode", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="10001"
                   />
                 </div>
@@ -474,7 +474,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                     type="text"
                     value={formData.country}
                     onChange={(e) => handleInputChange("country", e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                     placeholder="USA"
                   />
                 </div>
@@ -489,7 +489,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   value={formData.bio}
                   onChange={(e) => handleInputChange("bio", e.target.value)}
                   rows={2}
-                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-2 py-2 text-base sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full resize-none rounded-lg border border-gray-200 bg-white px-1.5 py-2 text-base xs:px-2 sm:px-3 text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   placeholder="Tell us about yourself..."
                 />
               </div>
