@@ -25,7 +25,7 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
       mortgage: "#9333ea",
       airbnb: "#db2777",
     };
-    return { backgroundColor: colors[property.category] || "#6b7280", color: "#fff" };
+    return { backgroundColor: colors[property.category.toLowerCase()] || "#6b7280", color: "#fff" };
   };
 
   const getTypeStyle = (): React.CSSProperties => {
