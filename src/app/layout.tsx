@@ -41,6 +41,7 @@ export default function RootLayout({
     const timer = setTimeout(() => {
       setShowNewsletterPopup(true);
       hasShownPopupRef.current = true;
+      markNewsletterPopupShown(); // Save timestamp immediately on display
     }, 2000);
 
     return () => clearTimeout(timer);

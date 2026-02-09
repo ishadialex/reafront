@@ -79,7 +79,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <div className="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-black dark:via-gray-900 dark:to-black">
         <div className="relative flex flex-col items-center justify-center px-4">
-          {/* Animated gradient spinner */}
+          {/* Animated gradient spinner with flowing particle spiral */}
           <div className="relative">
             {/* Outer ring with gradient */}
             <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full bg-gradient-to-tr from-primary via-blue-500 to-primary opacity-75 blur-sm sm:h-24 sm:w-24"></div>
@@ -87,11 +87,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Middle ring */}
             <div className="absolute inset-2 h-16 w-16 animate-spin rounded-full bg-gradient-to-br from-primary/50 to-transparent sm:h-20 sm:w-20" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
 
-            {/* Comet animation - traveling around the A */}
+            {/* Flowing particle spiral - neon colors */}
             <div className="absolute inset-0 h-20 w-20 sm:h-24 sm:w-24">
-              <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-spin sm:h-24 sm:w-24" style={{ animationDuration: '2s' }}>
-                <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-primary to-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] blur-[1px]"></div>
-                <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
+              {/* Pink particle */}
+              <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite] sm:h-24 sm:w-24">
+                <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-pink-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(236, 72, 153, 0.9)' }}></div>
+              </div>
+
+              {/* Blue particle */}
+              <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_0.6s] sm:h-24 sm:w-24">
+                <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-blue-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(59, 130, 246, 0.9)' }}></div>
+              </div>
+
+              {/* Green particle */}
+              <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_1.2s] sm:h-24 sm:w-24">
+                <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-green-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.9)' }}></div>
+              </div>
+
+              {/* Yellow particle */}
+              <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_1.8s] sm:h-24 sm:w-24">
+                <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-yellow-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(234, 179, 8, 0.9)' }}></div>
+              </div>
+
+              {/* Red particle */}
+              <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_2.4s] sm:h-24 sm:w-24">
+                <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-red-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(239, 68, 68, 0.9)' }}></div>
               </div>
             </div>
 
@@ -100,6 +120,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="text-2xl font-bold text-primary sm:text-3xl">A</div>
             </div>
           </div>
+
+          <style jsx>{`
+            @keyframes particle-spiral {
+              0% {
+                transform: rotate(0deg) scale(0.8);
+                opacity: 0;
+              }
+              15% {
+                opacity: 1;
+              }
+              50% {
+                transform: rotate(180deg) scale(1.1);
+                opacity: 1;
+              }
+              85% {
+                opacity: 1;
+              }
+              100% {
+                transform: rotate(360deg) scale(0.8);
+                opacity: 0;
+              }
+            }
+          `}</style>
 
           {/* Loading text with animation */}
           <div className="mt-8 text-center">
