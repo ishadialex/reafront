@@ -87,6 +87,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Middle ring */}
             <div className="absolute inset-2 h-16 w-16 animate-spin rounded-full bg-gradient-to-br from-primary/50 to-transparent sm:h-20 sm:w-20" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
 
+            {/* Comet animation - traveling around the A */}
+            <div className="absolute inset-0 h-20 w-20 sm:h-24 sm:w-24">
+              <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-spin sm:h-24 sm:w-24" style={{ animationDuration: '2s' }}>
+                <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-primary to-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] blur-[1px]"></div>
+                <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
+              </div>
+            </div>
+
             {/* Inner ring with logo */}
             <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-xl dark:bg-gray-900 sm:h-24 sm:w-24">
               <div className="text-2xl font-bold text-primary sm:text-3xl">A</div>
