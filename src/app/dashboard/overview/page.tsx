@@ -302,7 +302,7 @@ export default function DashboardOverviewPage() {
 
   // Calculate stats from investments
   const stats = useMemo(() => {
-    const totalInvested = data.balanceSummary?.investedFunds ?? data.investments.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalInvested = data.investments.reduce((sum, inv) => sum + inv.amount, 0);
     const generatedIncome =
       (data.balanceSummary?.profits ?? 0) +
       (data.balanceSummary?.referralBonuses ?? 0) +
