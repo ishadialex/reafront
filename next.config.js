@@ -7,6 +7,14 @@ const nextConfig = {
         hostname: "cdn.sanity.io",
         port: "",
       },
+      {
+        protocol: "https",
+        hostname: "reaback.onrender.com",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
     ],
   },
 };
