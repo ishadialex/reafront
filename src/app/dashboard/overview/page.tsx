@@ -113,29 +113,23 @@ const fetchUserData = async (): Promise<UserData> => {
 };
 
 const fetchInvestments = async (): Promise<Investment[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  // In production, replace with: const response = await fetch('/api/investments'); return response.json();
-  return [
-    {
-      id: "INV-001",
-      propertyTitle: "Beachfront Villa - Miami",
-      amount: 10000,
-      expectedReturn: 2200,
-      monthlyReturn: 183,
-      status: "active",
-      type: "pooled",
-    },
-    {
-      id: "INV-002",
-      propertyTitle: "Luxury Downtown Apartment",
-      amount: 5000,
-      expectedReturn: 900,
-      monthlyReturn: 75,
-      status: "active",
-      type: "individual",
-    },
-  ];
+  try {
+    const result = await api.getInvestments();
+    if (result.success && result.data) {
+      return result.data.map((inv: any) => ({
+        id: inv.id,
+        propertyTitle: inv.propertyTitle || "Investment",
+        amount: inv.amount,
+        expectedReturn: inv.expectedReturn || 0,
+        monthlyReturn: inv.monthlyReturn || 0,
+        status: inv.status,
+        type: inv.investmentType === "individual" ? "individual" : "pooled",
+      }));
+    }
+  } catch {
+    // ignore
+  }
+  return [];
 };
 
 const fetchTransactions = async (): Promise<Transaction[]> => {
@@ -190,38 +184,23 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
 };
 
 const fetchFeaturedProperties = async (): Promise<FeaturedProperty[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 1100));
-
-  // In production, replace with: const response = await fetch('/api/properties/featured'); return response.json();
-  return [
-    {
-      id: "prop-001",
-      title: "Desert Oasis - Luxury Airbnb",
-      location: "Scottsdale, Arizona",
-      expectedROI: 24,
-      minInvestment: 5000,
-      status: "available",
-      image: "/images/how-it-works/property-1.jpg",
-    },
-    {
-      id: "prop-002",
-      title: "Mountain Cabin Retreat",
-      location: "Aspen, Colorado",
-      expectedROI: 20,
-      minInvestment: 8000,
-      status: "available",
-      image: "/images/how-it-works/property-2.jpg",
-    },
-    {
-      id: "prop-003",
-      title: "Beachfront Villa",
-      location: "Miami Beach, Florida",
-      expectedROI: 22,
-      minInvestment: 5000,
-      status: "available",
-      image: "/images/how-it-works/property-3.jpg",
-    },
-  ];
+  try {
+    const result = await api.getProperties({ status: "available" });
+    if (result.success && result.data) {
+      return (result.data as any[]).slice(0, 3).map((p) => ({
+        id: p.id,
+        title: p.title,
+        location: p.location,
+        expectedROI: p.expectedROI,
+        minInvestment: p.minInvestment,
+        status: p.status || "available",
+        image: p.images?.[0] || "",
+      }));
+    }
+  } catch {
+    // ignore
+  }
+  return [];
 };
 
 // Loading Skeleton Components
@@ -321,7 +300,7 @@ export default function DashboardOverviewPage() {
 
   // Calculate stats from investments
   const stats = useMemo(() => {
-    const totalInvested = data.investments.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalInvested = data.balanceSummary?.investedFunds ?? data.investments.reduce((sum, inv) => sum + inv.amount, 0);
     const totalExpectedReturns = data.investments.reduce((sum, inv) => sum + inv.expectedReturn, 0);
     const monthlyIncome = data.investments.reduce((sum, inv) => sum + inv.monthlyReturn, 0);
     const activeCount = data.investments.filter((inv) => inv.status === "active").length;
@@ -551,7 +530,7 @@ export default function DashboardOverviewPage() {
                 </div>
               </div>
               <p className="text-2xl font-bold text-black dark:text-white md:text-3xl">
-                ${stats.totalInvested.toLocaleString()}
+                ${stats.totalInvested.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                 Across {stats.activeCount} active investment{stats.activeCount !== 1 ? "s" : ""}
@@ -956,11 +935,19 @@ export default function DashboardOverviewPage() {
                 className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow transition-all hover:border-primary hover:shadow-lg dark:border-gray-800 dark:bg-gray-dark dark:hover:border-primary"
               >
                 <div className="relative h-40 overflow-hidden">
-                  <img
-                    src={property.image}
-                    alt={property.title}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                  />
+                  {property.image ? (
+                    <img
+                      src={property.image}
+                      alt={property.title}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-primary/10 dark:bg-primary/20">
+                      <span className="text-4xl font-bold text-primary">
+                        {property.title?.charAt(0)?.toUpperCase() || "P"}
+                      </span>
+                    </div>
+                  )}
                   <div className="absolute right-2 top-2 rounded-full bg-green-500 px-2 py-1 text-xs font-semibold text-white">
                     {property.expectedROI}% ROI
                   </div>
