@@ -377,7 +377,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full max-w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-xs text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:text-sm"
                 />
               </div>
 
