@@ -146,7 +146,7 @@ const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
         {/* Logo - absolutely centered */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
-            src="/images/logo/A-logo.png"
+            src="/images/logo/A-Logo.png"
             alt="Golden Units Logo"
             width={120}
             height={48}

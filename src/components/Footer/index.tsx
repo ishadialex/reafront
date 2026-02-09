@@ -52,7 +52,7 @@ const Footer = () => {
           <div className="mb-8 flex justify-center">
             <Link href="/" className="inline-block">
               <Image
-                src="/images/logo/A-logo.png"
+                src="/images/logo/A-Logo.png"
                 alt="Alvarado Associates Logo"
                 width={200}
                 height={60}
