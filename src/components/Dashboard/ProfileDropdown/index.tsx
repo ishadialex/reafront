@@ -23,6 +23,21 @@ const ProfileDropdown = () => {
 
   // Fetch user data on mount
   useEffect(() => {
+    // Load cached data from localStorage first for immediate display
+    const storedEmail = localStorage.getItem("userEmail");
+    const storedName = localStorage.getItem("userName");
+    const storedPhoto = localStorage.getItem("userProfilePicture");
+
+    console.log("📸 ProfileDropdown - Cached data:", {
+      email: storedEmail,
+      name: storedName,
+      photo: storedPhoto
+    });
+
+    if (storedEmail) setUserEmail(storedEmail);
+    if (storedName) setUserName(storedName);
+    if (storedPhoto) setProfilePhoto(storedPhoto);
+
     const fetchUserData = async () => {
       try {
         const result = await api.getProfile();
@@ -30,13 +45,15 @@ const ProfileDropdown = () => {
           const fullName = `${result.data.firstName} ${result.data.lastName}`;
           setUserName(fullName);
           setUserEmail(result.data.email);
-          setProfilePhoto(result.data.profilePhoto);
+
+          // Use API profile photo if available, otherwise keep the cached one (from Google OAuth)
+          if (result.data.profilePhoto) {
+            setProfilePhoto(result.data.profilePhoto);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch user profile:", error);
-        // Fallback to localStorage if API fails
-        const storedEmail = localStorage.getItem("userEmail");
-        if (storedEmail) setUserEmail(storedEmail);
+        // Keep using localStorage data that was already set above
       } finally {
         setLoadingProfile(false);
       }
@@ -106,7 +123,10 @@ const ProfileDropdown = () => {
               width={40}
               height={40}
               className="h-full w-full object-cover"
-              unoptimized
+              onError={() => {
+                console.error("❌ Failed to load profile image:", getImageUrl(profilePhoto));
+                setProfilePhoto(null); // Fallback to initials on error
+              }}
             />
           ) : (
             <span className="text-sm font-semibold">

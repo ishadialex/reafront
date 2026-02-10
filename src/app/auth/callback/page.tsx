@@ -36,9 +36,36 @@ export default function AuthCallbackPage() {
     }
 
     if (accessToken && refreshToken) {
-      // Store tokens
+      // Store tokens and set logged in state
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem("isLoggedIn", "true");
+
+      // Decode the access token to get user data (JWT format)
+      try {
+        const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+
+        // Store user email
+        if (tokenPayload.email) {
+          localStorage.setItem("userEmail", tokenPayload.email);
+        }
+
+        // Store user name (if available)
+        if (tokenPayload.name) {
+          localStorage.setItem("userName", tokenPayload.name);
+        }
+
+        // Store profile picture (if available)
+        if (tokenPayload.picture || tokenPayload.profilePicture || tokenPayload.avatar) {
+          const profilePic = tokenPayload.picture || tokenPayload.profilePicture || tokenPayload.avatar;
+          localStorage.setItem("userProfilePicture", profilePic);
+        }
+
+        // Log the token payload to see what data is available
+        console.log("User data from token:", tokenPayload);
+      } catch (e) {
+        console.error("Failed to decode token:", e);
+      }
 
       // Redirect to dashboard
       router.push("/dashboard");
