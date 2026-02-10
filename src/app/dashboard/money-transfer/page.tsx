@@ -1,12 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Popup from "@/components/Popup";
+import { api } from "@/lib/api";
 
 interface TransferDetails {
   email: string;
   amount: string;
   note: string;
+  twoFactorCode: string;
+}
+
+interface AuthorizationStatus {
+  canTransfer: boolean;
+  twoFactorEnabled: boolean;
+  kycVerified: boolean;
+  kycStatus: string;
+  reasons: string[];
 }
 
 interface Transfer {
@@ -21,6 +32,7 @@ interface Transfer {
 }
 
 const MoneyTransferPage = () => {
+  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
@@ -28,33 +40,43 @@ const MoneyTransferPage = () => {
   const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
   const [availableBalance, setAvailableBalance] = useState(0);
   const [recentTransfers, setRecentTransfers] = useState<Transfer[]>([]);
+  const [authStatus, setAuthStatus] = useState<AuthorizationStatus | null>(null);
   const [transferDetails, setTransferDetails] = useState<TransferDetails>({
     email: "",
     amount: "",
     note: "",
+    twoFactorCode: "",
   });
 
-  // Fetch balance and transfer history on mount
+  // Fetch authorization status, balance, and transfer history on mount
   useEffect(() => {
-    fetchTransferData();
+    fetchData();
   }, []);
 
-  const fetchTransferData = async () => {
+  const fetchData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/transfer");
-      const data = await response.json();
 
-      if (data.success) {
-        setAvailableBalance(data.data.balance);
-        setRecentTransfers(data.data.transfers);
-      } else {
-        setToastMessage(data.message || "Failed to load transfer data");
-        setToastType("error");
-        setShowToast(true);
+      // Check authorization status (2FA + KYC)
+      const authResult = await api.getTransferAuthorizationStatus();
+      if (authResult.success && authResult.data) {
+        setAuthStatus(authResult.data);
       }
-    } catch (error) {
-      setToastMessage("Failed to connect to server");
+
+      // Fetch balance from the balance summary endpoint
+      const balanceResult = await api.getBalanceSummary();
+      if (balanceResult.success && balanceResult.data) {
+        setAvailableBalance(balanceResult.data.balance);
+      }
+
+      // Fetch transfer data
+      const transferDataResult = await api.getTransferData();
+      if (transferDataResult.success && transferDataResult.data) {
+        setRecentTransfers(transferDataResult.data.transfers || []);
+      }
+    } catch (error: any) {
+      console.error("Data fetch error:", error);
+      setToastMessage(error.response?.data?.message || "Failed to load data");
       setToastType("error");
       setShowToast(true);
     } finally {
@@ -65,9 +87,17 @@ const MoneyTransferPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Check authorization first
+    if (!authStatus?.canTransfer) {
+      setToastMessage("You must enable 2FA and complete KYC verification to transfer money");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+
     // Validation
-    if (!transferDetails.email || !transferDetails.amount) {
-      setToastMessage("Please fill in all required fields");
+    if (!transferDetails.email || !transferDetails.amount || !transferDetails.twoFactorCode) {
+      setToastMessage("Please fill in all required fields including 2FA code");
       setToastType("error");
       setShowToast(true);
       return;
@@ -91,27 +121,26 @@ const MoneyTransferPage = () => {
     setIsProcessing(true);
 
     try {
-      const response = await fetch("/api/transfer", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          recipientEmail: transferDetails.email,
-          amount: amount,
-          note: transferDetails.note,
-        }),
+      const result = await api.createTransfer({
+        recipientEmail: transferDetails.email,
+        amount: amount,
+        note: transferDetails.note,
+        twoFactorCode: transferDetails.twoFactorCode,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (result.success && result.data) {
         // Update balance and transfers
-        setAvailableBalance(data.data.newBalance);
-        setRecentTransfers((prev) => [data.data.transfer, ...prev]);
+        setAvailableBalance(result.data.balance);
+
+        // Refresh transfer list
+        await fetchData();
 
         // Show success toast
-        setToastMessage(data.message);
+        setToastMessage(
+          result.data.recipientExists
+            ? "Transfer completed successfully! Recipient has been notified."
+            : "Transfer initiated. Recipient will receive funds when they create an account."
+        );
         setToastType("success");
         setShowToast(true);
 
@@ -120,14 +149,27 @@ const MoneyTransferPage = () => {
           email: "",
           amount: "",
           note: "",
+          twoFactorCode: "",
         });
       } else {
-        setToastMessage(data.message || "Transfer failed");
+        setToastMessage(result.message || "Transfer failed");
         setToastType("error");
         setShowToast(true);
       }
-    } catch (error) {
-      setToastMessage("Failed to process transfer");
+    } catch (error: any) {
+      console.error("Transfer error:", error);
+
+      let errorMessage = "Failed to process transfer. Please try again later.";
+
+      if (error.response?.status === 401) {
+        errorMessage = "Invalid 2FA code. Please try again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = error.response.data.message || "You are not authorized to make transfers. Please enable 2FA and complete KYC verification.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      setToastMessage(errorMessage);
       setToastType("error");
       setShowToast(true);
     } finally {
@@ -182,14 +224,106 @@ const MoneyTransferPage = () => {
         </p>
       </div>
 
-      {/* Available Balance */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-gradient-to-br from-primary/5 to-primary/10 p-4 dark:border-gray-800 dark:from-primary/10 dark:to-primary/20 md:mb-8 md:p-6">
-        <p className="mb-1 text-sm text-body-color dark:text-body-color-dark">
-          Available Balance
-        </p>
-        <p className="text-3xl font-bold text-black dark:text-white md:text-4xl">
-          ${availableBalance.toLocaleString()}
-        </p>
+      {/* Grid Container for Warning and Balance/Statistics Column */}
+      <div className="mb-6 flex flex-col gap-6 md:mb-8 lg:flex-row lg:items-stretch">
+        {/* Authorization Warning */}
+        {authStatus && !authStatus.canTransfer && (
+          <div className="flex flex-col rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20 md:p-6">
+            <div className="flex items-start gap-3">
+              <svg
+                className="h-6 w-6 flex-shrink-0 text-red-600 dark:text-red-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div className="flex-1">
+                <h3 className="mb-2 font-semibold text-red-900 dark:text-red-300">
+                  Transfer Access Restricted
+                </h3>
+                <p className="mb-3 text-sm text-red-800 dark:text-red-400">
+                  You need to complete the following requirements before you can transfer money:
+                </p>
+                <ul className="mb-4 space-y-1 text-sm text-red-800 dark:text-red-400">
+                  {authStatus.reasons.map((reason, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      {reason}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => router.push("/dashboard/security")}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                >
+                  Go to Security Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Balance and Statistics Column */}
+        <div className="flex flex-1 flex-col gap-6 lg:justify-between">
+          {/* Available Balance */}
+          <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-primary/5 to-primary/10 p-4 dark:border-gray-800 dark:from-primary/10 dark:to-primary/20 md:p-5">
+            <p className="mb-1 text-xs text-body-color dark:text-body-color-dark">
+              Available Balance
+            </p>
+            <p className="text-2xl font-bold text-black dark:text-white md:text-3xl">
+              ${availableBalance.toLocaleString()}
+            </p>
+          </div>
+
+          {/* Transfer Statistics */}
+          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark md:p-4">
+            <p className="mb-2 text-xs font-medium text-body-color dark:text-body-color-dark">
+              Transfer Statistics
+            </p>
+            <div className="space-y-1.5">
+              {/* Total Sent */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <svg className="h-3 w-3 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                  <span className="text-[11px] text-body-color dark:text-body-color-dark">Sent</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                    ${recentTransfers.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+              {/* Total Received */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <svg className="h-3 w-3 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                  </svg>
+                  <span className="text-[11px] text-body-color dark:text-body-color-dark">Received</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-green-600 dark:text-green-400">
+                    $0
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Transfer Form */}
@@ -207,7 +341,8 @@ const MoneyTransferPage = () => {
                 value={transferDetails.email}
                 onChange={(e) => setTransferDetails({ ...transferDetails, email: e.target.value })}
                 placeholder="recipient@example.com"
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                disabled={!authStatus?.canTransfer}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
               />
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                 Enter the email address of the recipient
@@ -228,7 +363,8 @@ const MoneyTransferPage = () => {
                 value={transferDetails.amount}
                 onChange={(e) => setTransferDetails({ ...transferDetails, amount: e.target.value })}
                 placeholder="0.00"
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                disabled={!authStatus?.canTransfer}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
               />
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                 Available: ${availableBalance.toLocaleString()}
@@ -245,36 +381,64 @@ const MoneyTransferPage = () => {
                 onChange={(e) => setTransferDetails({ ...transferDetails, note: e.target.value })}
                 placeholder="Add a note for the recipient..."
                 rows={3}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                disabled={!authStatus?.canTransfer}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
               />
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                 Add an optional message for the recipient
               </p>
             </div>
 
-            {/* Info Box */}
+            {/* 2FA Code */}
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                Two-Factor Authentication Code <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                maxLength={6}
+                pattern="\d{6}"
+                value={transferDetails.twoFactorCode}
+                onChange={(e) => setTransferDetails({ ...transferDetails, twoFactorCode: e.target.value.replace(/\D/g, "") })}
+                placeholder="000000"
+                disabled={!authStatus?.canTransfer}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-mono tracking-widest text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+              />
+              <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                Enter the 6-digit code from your authenticator app
+              </p>
+            </div>
+
+            {/* Security Info Box */}
             <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
               <h3 className="mb-2 text-sm font-semibold text-blue-900 dark:text-blue-300">
-                Transfer Information:
+                🔒 Secure Transfer
               </h3>
               <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-400">
                 <li className="flex items-center gap-2">
                   <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Instant transfer - funds available immediately
+                  2FA verification required for every transfer
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  No transfer fees
+                  KYC verification ensures compliance
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Recipient will be notified via email
+                  Instant transfer - no fees
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Email notifications to both parties
                 </li>
               </ul>
             </div>
@@ -283,7 +447,7 @@ const MoneyTransferPage = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isProcessing}
+            disabled={isProcessing || !authStatus?.canTransfer}
             className="mt-6 w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isProcessing ? "Processing Transfer..." : "Transfer Money"}
@@ -298,7 +462,7 @@ const MoneyTransferPage = () => {
             Recent Transfers
           </h2>
           <button
-            onClick={fetchTransferData}
+            onClick={fetchData}
             className="text-sm text-primary hover:underline"
           >
             Refresh
@@ -329,10 +493,10 @@ const MoneyTransferPage = () => {
               {recentTransfers.slice(0, 5).map((transfer) => (
                 <div
                   key={transfer.id}
-                  className="flex items-center justify-between p-4"
+                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <svg
                         className="h-5 w-5"
                         fill="none"
@@ -347,11 +511,8 @@ const MoneyTransferPage = () => {
                         />
                       </svg>
                     </div>
-                    <div>
-                      <p className="font-semibold text-black dark:text-white">
-                        {transfer.recipientName}
-                      </p>
-                      <p className="text-xs text-body-color dark:text-body-color-dark">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-black dark:text-white">
                         {transfer.recipientEmail}
                       </p>
                       <p className="text-xs text-body-color dark:text-body-color-dark">
@@ -359,20 +520,22 @@ const MoneyTransferPage = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-red-600 dark:text-red-400">
-                      -${transfer.amount.toLocaleString()}
-                    </p>
+                  <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end sm:justify-start">
+                    <div className="text-left sm:text-right">
+                      <p className="font-semibold text-red-600 dark:text-red-400">
+                        -${transfer.amount.toLocaleString()}
+                      </p>
+                      {transfer.note && (
+                        <p className="mt-1 max-w-[200px] truncate text-xs text-body-color dark:text-body-color-dark sm:max-w-[150px]">
+                          {transfer.note}
+                        </p>
+                      )}
+                    </div>
                     <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${getStatusColor(transfer.status)}`}
+                      className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium capitalize ${getStatusColor(transfer.status)}`}
                     >
                       {transfer.status}
                     </span>
-                    {transfer.note && (
-                      <p className="mt-1 max-w-[150px] truncate text-xs text-body-color dark:text-body-color-dark">
-                        {transfer.note}
-                      </p>
-                    )}
                   </div>
                 </div>
               ))}

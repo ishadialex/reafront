@@ -7,6 +7,14 @@ import Toast from "@/components/Toast";
 
 type WithdrawalMethod = "bank" | "crypto" | null;
 
+interface AuthorizationStatus {
+  canWithdraw: boolean;
+  twoFactorEnabled: boolean;
+  kycVerified: boolean;
+  kycStatus: string;
+  reasons: string[];
+}
+
 interface BankForm {
   accountName: string;
   accountNumber: string;
@@ -14,6 +22,7 @@ interface BankForm {
   routingNumber: string;
   swiftCode: string;
   amount: string;
+  twoFactorCode: string;
 }
 
 interface CryptoForm {
@@ -21,6 +30,7 @@ interface CryptoForm {
   walletAddress: string;
   network: string;
   amount: string;
+  twoFactorCode: string;
 }
 
 const cryptoOptions = [
@@ -38,32 +48,63 @@ const WithdrawFundPage = () => {
   const [completedMethod, setCompletedMethod] = useState<WithdrawalMethod>(null);
   const [balance, setBalance] = useState<number>(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
+  const [authStatus, setAuthStatus] = useState<AuthorizationStatus | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   const [bankForm, setBankForm] = useState<BankForm>({
     accountName: "", accountNumber: "", bankName: "",
-    routingNumber: "", swiftCode: "", amount: "",
+    routingNumber: "", swiftCode: "", amount: "", twoFactorCode: "",
   });
 
   const [cryptoForm, setCryptoForm] = useState<CryptoForm>({
-    cryptoType: "BTC", walletAddress: "", network: "Bitcoin", amount: "",
+    cryptoType: "BTC", walletAddress: "", network: "Bitcoin", amount: "", twoFactorCode: "",
   });
 
   const selectedCrypto = cryptoOptions.find((opt) => opt.value === cryptoForm.cryptoType);
 
   useEffect(() => {
-    api.getBalanceSummary().then((res) => {
-      if (res.success && res.data) setBalance(res.data.balance ?? 0);
-    }).catch(() => {}).finally(() => setLoadingBalance(false));
+    // Fetch authorization status
+    api.getWithdrawalAuthorizationStatus()
+      .then((res) => {
+        if (res.success && res.data) {
+          setAuthStatus(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch authorization status:", err);
+      })
+      .finally(() => setLoadingAuth(false));
+
+    // Fetch balance
+    api.getBalanceSummary()
+      .then((res) => {
+        if (res.success && res.data) setBalance(res.data.balance ?? 0);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingBalance(false));
   }, []);
 
   const handleBankSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check authorization first
+    if (!authStatus?.canWithdraw) {
+      setToast({ message: "You must enable 2FA and complete KYC verification to make withdrawals", type: "error" });
+      return;
+    }
+
     const numAmount = parseFloat(bankForm.amount);
     if (numAmount > balance) {
       setToast({ message: "Insufficient balance for this withdrawal.", type: "error" });
       return;
     }
+
+    if (!bankForm.twoFactorCode || bankForm.twoFactorCode.length !== 6) {
+      setToast({ message: "Please enter a valid 6-digit 2FA code", type: "error" });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await api.createWithdrawal({
@@ -76,6 +117,7 @@ const WithdrawFundPage = () => {
           routingNumber: bankForm.routingNumber,
           swiftCode: bankForm.swiftCode,
         },
+        twoFactorCode: bankForm.twoFactorCode,
       });
       if (response.success && response.data) {
         setSuccessRef(response.data.reference);
@@ -83,20 +125,43 @@ const WithdrawFundPage = () => {
       } else {
         setToast({ message: response.message || "Failed to submit withdrawal. Please try again.", type: "error" });
       }
-    } catch {
-      setToast({ message: "An error occurred. Please check your connection and try again.", type: "error" });
+    } catch (error: any) {
+      let errorMessage = "An error occurred. Please check your connection and try again.";
+
+      if (error.response?.status === 401) {
+        errorMessage = "Invalid 2FA code. Please try again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = error.response.data.message || "You are not authorized to make withdrawals. Please enable 2FA and complete KYC verification.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      setToast({ message: errorMessage, type: "error" });
     } finally {
       setIsSubmitting(false);
     }
-  }, [bankForm, balance]);
+  }, [bankForm, balance, authStatus]);
 
   const handleCryptoSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check authorization first
+    if (!authStatus?.canWithdraw) {
+      setToast({ message: "You must enable 2FA and complete KYC verification to make withdrawals", type: "error" });
+      return;
+    }
+
     const numAmount = parseFloat(cryptoForm.amount);
     if (numAmount > balance) {
       setToast({ message: "Insufficient balance for this withdrawal.", type: "error" });
       return;
     }
+
+    if (!cryptoForm.twoFactorCode || cryptoForm.twoFactorCode.length !== 6) {
+      setToast({ message: "Please enter a valid 6-digit 2FA code", type: "error" });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await api.createWithdrawal({
@@ -107,6 +172,7 @@ const WithdrawFundPage = () => {
           walletAddress: cryptoForm.walletAddress,
           network: cryptoForm.network,
         },
+        twoFactorCode: cryptoForm.twoFactorCode,
       });
       if (response.success && response.data) {
         setSuccessRef(response.data.reference);
@@ -114,19 +180,29 @@ const WithdrawFundPage = () => {
       } else {
         setToast({ message: response.message || "Failed to submit withdrawal. Please try again.", type: "error" });
       }
-    } catch {
-      setToast({ message: "An error occurred. Please check your connection and try again.", type: "error" });
+    } catch (error: any) {
+      let errorMessage = "An error occurred. Please check your connection and try again.";
+
+      if (error.response?.status === 401) {
+        errorMessage = "Invalid 2FA code. Please try again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = error.response.data.message || "You are not authorized to make withdrawals. Please enable 2FA and complete KYC verification.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      setToast({ message: errorMessage, type: "error" });
     } finally {
       setIsSubmitting(false);
     }
-  }, [cryptoForm, balance]);
+  }, [cryptoForm, balance, authStatus]);
 
   const resetForm = () => {
     setSelectedMethod(null);
     setSuccessRef(null);
     setCompletedMethod(null);
-    setBankForm({ accountName: "", accountNumber: "", bankName: "", routingNumber: "", swiftCode: "", amount: "" });
-    setCryptoForm({ cryptoType: "BTC", walletAddress: "", network: "Bitcoin", amount: "" });
+    setBankForm({ accountName: "", accountNumber: "", bankName: "", routingNumber: "", swiftCode: "", amount: "", twoFactorCode: "" });
+    setCryptoForm({ cryptoType: "BTC", walletAddress: "", network: "Bitcoin", amount: "", twoFactorCode: "" });
   };
 
   // --- Success Screen ---
@@ -190,6 +266,51 @@ const WithdrawFundPage = () => {
           </p>
         </div>
 
+        {/* Authorization Warning */}
+        {authStatus && !authStatus.canWithdraw && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20 md:p-6">
+            <div className="flex items-start gap-3">
+              <svg
+                className="h-6 w-6 flex-shrink-0 text-red-600 dark:text-red-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div className="flex-1">
+                <h3 className="mb-2 font-semibold text-red-900 dark:text-red-300">
+                  Withdrawal Access Restricted
+                </h3>
+                <p className="mb-3 text-sm text-red-800 dark:text-red-400">
+                  You need to complete the following requirements before you can withdraw funds:
+                </p>
+                <ul className="mb-4 space-y-1 text-sm text-red-800 dark:text-red-400">
+                  {authStatus.reasons.map((reason, index) => (
+                    <li key={index} className="flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      {reason}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => router.push("/dashboard/security")}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                >
+                  Go to Security Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-6 rounded-xl border border-gray-200 bg-gradient-to-br from-primary/5 to-primary/10 p-4 dark:border-gray-800 dark:from-primary/10 dark:to-primary/20 md:mb-8 md:p-6">
           <p className="mb-1 text-sm text-body-color dark:text-body-color-dark">Available Balance</p>
           {loadingBalance ? (
@@ -202,8 +323,12 @@ const WithdrawFundPage = () => {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 md:gap-6">
-          <button type="button" onClick={() => setSelectedMethod("bank")}
-            className="group rounded-xl border border-gray-200 bg-white p-6 text-left shadow-lg transition-all hover:border-primary hover:shadow-xl dark:border-gray-800 dark:bg-gray-dark">
+          <button
+            type="button"
+            onClick={() => authStatus?.canWithdraw && setSelectedMethod("bank")}
+            disabled={!authStatus?.canWithdraw}
+            className="group rounded-xl border border-gray-200 bg-white p-6 text-left shadow-lg transition-all enabled:hover:border-primary enabled:hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-dark"
+          >
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/20 transition-colors group-hover:from-primary/10 group-hover:to-primary/20">
               <svg className="h-7 w-7 text-blue-500 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
@@ -213,8 +338,12 @@ const WithdrawFundPage = () => {
             <p className="text-sm text-body-color dark:text-body-color-dark">Withdraw directly to your bank account. Processing time: 3–5 business days.</p>
           </button>
 
-          <button type="button" onClick={() => setSelectedMethod("crypto")}
-            className="group rounded-xl border border-gray-200 bg-white p-6 text-left shadow-lg transition-all hover:border-primary hover:shadow-xl dark:border-gray-800 dark:bg-gray-dark">
+          <button
+            type="button"
+            onClick={() => authStatus?.canWithdraw && setSelectedMethod("crypto")}
+            disabled={!authStatus?.canWithdraw}
+            className="group rounded-xl border border-gray-200 bg-white p-6 text-left shadow-lg transition-all enabled:hover:border-primary enabled:hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-dark"
+          >
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-500/20 transition-colors group-hover:from-primary/10 group-hover:to-primary/20">
               <svg className="h-7 w-7 text-orange-500 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -257,26 +386,94 @@ const WithdrawFundPage = () => {
                 { label: "SWIFT/BIC Code (Optional)", key: "swiftCode", placeholder: "CHASUS33", required: false },
               ].map(({ label, key, placeholder, required }) => (
                 <div key={key}>
-                  <label className="mb-2 block text-sm font-semibold text-black dark:text-white">{label}</label>
-                  <input type="text" required={required} value={bankForm[key as keyof BankForm]}
+                  <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                    {label} {required && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required={required}
+                    value={bankForm[key as keyof BankForm]}
                     onChange={(e) => setBankForm({ ...bankForm, [key]: e.target.value })}
                     placeholder={placeholder}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white" />
+                    disabled={!authStatus?.canWithdraw}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                  />
                 </div>
               ))}
               <div>
-                <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Withdrawal Amount ($)</label>
-                <input type="number" required min="1" max={balance} step="0.01" value={bankForm.amount}
+                <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                  Withdrawal Amount ($) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max={balance}
+                  step="0.01"
+                  value={bankForm.amount}
                   onChange={(e) => setBankForm({ ...bankForm, amount: e.target.value })}
                   placeholder="0.00"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white" />
+                  disabled={!authStatus?.canWithdraw}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                />
                 <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                   Available: ${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
+
+              {/* 2FA Code */}
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                  Two-Factor Authentication Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  pattern="\d{6}"
+                  value={bankForm.twoFactorCode}
+                  onChange={(e) => setBankForm({ ...bankForm, twoFactorCode: e.target.value.replace(/\D/g, "") })}
+                  placeholder="000000"
+                  disabled={!authStatus?.canWithdraw}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-mono tracking-widest text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                />
+                <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                  Enter the 6-digit code from your authenticator app
+                </p>
+              </div>
+
+              {/* Security Info */}
+              <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <h3 className="mb-2 text-sm font-semibold text-blue-900 dark:text-blue-300">
+                  🔒 Secure Withdrawal
+                </h3>
+                <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-400">
+                  <li className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    2FA verification required for security
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    KYC verification ensures compliance
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Processing time: 3-5 business days
+                  </li>
+                </ul>
+              </div>
             </div>
-            <button type="submit" disabled={isSubmitting}
-              className="mt-6 w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={isSubmitting || !authStatus?.canWithdraw}
+              className="mt-6 w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -316,12 +513,15 @@ const WithdrawFundPage = () => {
             <div>
               <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Cryptocurrency</label>
               <div className="relative">
-                <select value={cryptoForm.cryptoType}
+                <select
+                  value={cryptoForm.cryptoType}
                   onChange={(e) => {
                     const opt = cryptoOptions.find((o) => o.value === e.target.value);
                     setCryptoForm({ ...cryptoForm, cryptoType: e.target.value, network: opt?.networks[0] || "" });
                   }}
-                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-3 pr-10 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white">
+                  disabled={!authStatus?.canWithdraw}
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-3 pr-10 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                >
                   {cryptoOptions.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-white text-black dark:bg-gray-800 dark:text-white">{opt.label}</option>
                   ))}
@@ -337,9 +537,12 @@ const WithdrawFundPage = () => {
             <div>
               <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Network</label>
               <div className="relative">
-                <select value={cryptoForm.network}
+                <select
+                  value={cryptoForm.network}
                   onChange={(e) => setCryptoForm({ ...cryptoForm, network: e.target.value })}
-                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-3 pr-10 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white">
+                  disabled={!authStatus?.canWithdraw}
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-3 pr-10 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                >
                   {selectedCrypto?.networks.map((n) => (
                     <option key={n} value={n} className="bg-white text-black dark:bg-gray-800 dark:text-white">{n}</option>
                   ))}
@@ -353,24 +556,62 @@ const WithdrawFundPage = () => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Wallet Address</label>
-              <input type="text" required value={cryptoForm.walletAddress}
+              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                Wallet Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={cryptoForm.walletAddress}
                 onChange={(e) => setCryptoForm({ ...cryptoForm, walletAddress: e.target.value })}
                 placeholder="Enter your wallet address"
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 font-mono text-sm text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white" />
+                disabled={!authStatus?.canWithdraw}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 font-mono text-sm text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+              />
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                 Double-check your wallet address — transactions cannot be reversed.
               </p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Withdrawal Amount ($)</label>
-              <input type="number" required min="1" max={balance} step="0.01" value={cryptoForm.amount}
+              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                Withdrawal Amount ($) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                required
+                min="1"
+                max={balance}
+                step="0.01"
+                value={cryptoForm.amount}
                 onChange={(e) => setCryptoForm({ ...cryptoForm, amount: e.target.value })}
                 placeholder="0.00"
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white" />
+                disabled={!authStatus?.canWithdraw}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+              />
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
                 Available: ${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+
+            {/* 2FA Code */}
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">
+                Two-Factor Authentication Code <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                maxLength={6}
+                pattern="\d{6}"
+                value={cryptoForm.twoFactorCode}
+                onChange={(e) => setCryptoForm({ ...cryptoForm, twoFactorCode: e.target.value.replace(/\D/g, "") })}
+                placeholder="000000"
+                disabled={!authStatus?.canWithdraw}
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-center text-2xl font-mono tracking-widest text-black outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+              />
+              <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                Enter the 6-digit code from your authenticator app
               </p>
             </div>
 
@@ -385,10 +626,40 @@ const WithdrawFundPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Security Info */}
+            <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+              <h3 className="mb-2 text-sm font-semibold text-blue-900 dark:text-blue-300">
+                🔒 Secure Withdrawal
+              </h3>
+              <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-400">
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  2FA verification required for security
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  KYC verification ensures compliance
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Processing time: Usually within 24 hours
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <button type="submit" disabled={isSubmitting}
-            className="mt-6 w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
+          <button
+            type="submit"
+            disabled={isSubmitting || !authStatus?.canWithdraw}
+            className="mt-6 w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">

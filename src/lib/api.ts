@@ -51,6 +51,8 @@ export class ApiClient {
           "/api/2fa/enable",                    // Wrong 2FA code during setup
           "/api/2fa/disable",                   // Wrong password when disabling
           "/api/2fa/backup-codes/regenerate",   // Wrong 2FA code when regenerating
+          "/api/transfers",                     // Wrong 2FA code during transfer
+          "/api/fund-operations/withdrawal",    // Wrong 2FA code during withdrawal
         ];
 
         const requestUrl = error.config?.url || "";
@@ -79,6 +81,12 @@ export class ApiClient {
               if (typeof window !== "undefined") {
                 window.location.href = "/signin";
               }
+            }
+          } else {
+            // No refresh token available, clear everything and redirect
+            this.clearToken();
+            if (typeof window !== "undefined") {
+              window.location.href = "/signin";
             }
           }
         }
@@ -399,12 +407,28 @@ export class ApiClient {
   }
 
   // Fund Operations endpoints
+  async getWithdrawalAuthorizationStatus() {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      canWithdraw: boolean;
+      twoFactorEnabled: boolean;
+      kycVerified: boolean;
+      kycStatus: string;
+      reasons: string[];
+    }>>("/api/fund-operations/withdrawal-authorization");
+    return response.data;
+  }
+
   async createDeposit(data: { method: string; amount: number; details?: any }) {
     const response = await this.axiosInstance.post<ApiResponse<any>>("/api/fund-operations/deposit", data);
     return response.data;
   }
 
-  async createWithdrawal(data: { method: string; amount: number; details?: any }) {
+  async createWithdrawal(data: {
+    method: string;
+    amount: number;
+    details?: any;
+    twoFactorCode: string;
+  }) {
     const response = await this.axiosInstance.post<ApiResponse<any>>("/api/fund-operations/withdrawal", data);
     return response.data;
   }
@@ -433,6 +457,40 @@ export class ApiClient {
 
   async getFundOperationById(id: string) {
     const response = await this.axiosInstance.get<ApiResponse<any>>(`/api/fund-operations/${id}`);
+    return response.data;
+  }
+
+  // Transfer endpoints
+  async getTransferData() {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      balance: number;
+      transfers: any[];
+    }>>("/api/transfers");
+    return response.data;
+  }
+
+  async getTransferAuthorizationStatus() {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      canTransfer: boolean;
+      twoFactorEnabled: boolean;
+      kycVerified: boolean;
+      kycStatus: string;
+      reasons: string[];
+    }>>("/api/transfers/authorization-status");
+    return response.data;
+  }
+
+  async createTransfer(data: {
+    recipientEmail: string;
+    amount: number;
+    note?: string;
+    twoFactorCode: string;
+  }) {
+    const response = await this.axiosInstance.post<ApiResponse<{
+      transfer: any;
+      balance: number;
+      recipientExists: boolean;
+    }>>("/api/transfers", data);
     return response.data;
   }
 }
