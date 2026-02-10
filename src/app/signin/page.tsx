@@ -41,9 +41,30 @@ function SigninContent() {
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
     localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userEmail", email);
     localStorage.setItem("user", JSON.stringify(data.user));
     api.setToken(data.accessToken);
+
+    // Decode JWT token to extract user profile data
+    try {
+      const tokenPayload = JSON.parse(atob(data.accessToken.split('.')[1]));
+
+      if (tokenPayload.email) {
+        localStorage.setItem("userEmail", tokenPayload.email);
+      }
+
+      if (tokenPayload.name) {
+        localStorage.setItem("userName", tokenPayload.name);
+      }
+
+      if (tokenPayload.picture) {
+        localStorage.setItem("userProfilePicture", tokenPayload.picture);
+      }
+    } catch (e) {
+      console.error("Failed to decode token:", e);
+      // Fallback to using data from response
+      localStorage.setItem("userEmail", email);
+    }
+
     router.push("/dashboard");
   };
 
