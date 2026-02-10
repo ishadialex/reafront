@@ -157,11 +157,16 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="text-sm text-body-color dark:text-body-color-dark">
-              {property.investmentType === "individual" ? "Total Price" : "Min Investment"}
+              {property.investmentType === "individual" ? "Property Worth" : "Min Investment"}
             </p>
             <p className="text-2xl font-bold text-black dark:text-white">
-              ${property.minInvestment.toLocaleString()}
+              ${(property.investmentType === "individual" ? property.price : property.minInvestment).toLocaleString()}
             </p>
+            {property.investmentType === "individual" && (
+              <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                Amount Required: <span className="font-semibold text-primary">${property.minInvestment.toLocaleString()}</span>
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-sm text-body-color dark:text-body-color-dark">
