@@ -18,6 +18,7 @@ const SignupForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [passwordStrengthError, setPasswordStrengthError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [tempPhoneError, setTempPhoneError] = useState(false);
@@ -70,7 +71,28 @@ const SignupForm = () => {
     }
   }, [phone]);
 
-  // Real-time password validation
+  // Real-time password strength validation
+  useEffect(() => {
+    if (password === "") {
+      setPasswordStrengthError("");
+      return;
+    }
+
+    const errors: string[] = [];
+    if (password.length < 8) errors.push("at least 8 characters");
+    if (!/[A-Z]/.test(password)) errors.push("one uppercase letter");
+    if (!/[a-z]/.test(password)) errors.push("one lowercase letter");
+    if (!/[0-9]/.test(password)) errors.push("one number");
+    if (!/[^A-Za-z0-9]/.test(password)) errors.push("one special character");
+
+    if (errors.length > 0) {
+      setPasswordStrengthError(`Password must contain ${errors.join(", ")}`);
+    } else {
+      setPasswordStrengthError("");
+    }
+  }, [password]);
+
+  // Real-time password match validation
   useEffect(() => {
     if (confirmPassword === "") {
       setPasswordError("");
@@ -137,8 +159,8 @@ const SignupForm = () => {
       return;
     }
 
-    if (!password) {
-      alert("Please enter a password");
+    if (!password || passwordStrengthError) {
+      alert("Please enter a valid password that meets all requirements");
       return;
     }
 
@@ -172,8 +194,22 @@ const SignupForm = () => {
       }
     } catch (error: any) {
       console.error("Registration error:", error);
-      const errorMessage =
-        error.response?.data?.message || "Registration failed. Please try again.";
+
+      // Extract detailed error message from backend
+      let errorMessage = "Registration failed. Please try again.";
+
+      if (error.response?.data) {
+        const data = error.response.data;
+        // Check if it's a validation error with detailed errors object
+        if (data.errors && typeof data.errors === 'object') {
+          // Get first error message from validation errors
+          const firstError = Object.values(data.errors)[0] as string;
+          errorMessage = firstError || data.message;
+        } else if (data.message) {
+          errorMessage = data.message;
+        }
+      }
+
       setToast({ message: errorMessage, type: "error" });
     } finally {
       setIsLoading(false);
@@ -353,8 +389,20 @@ const SignupForm = () => {
             placeholder="Enter your Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
+            className={`w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
+              passwordStrengthError
+                ? "border-red-500 focus:border-red-500 dark:border-red-500"
+                : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
+            }`}
           />
+          <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+            Min 8 characters, uppercase, lowercase, number, special character
+          </p>
+          {passwordStrengthError && (
+            <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+              {passwordStrengthError}
+            </p>
+          )}
         </div>
         <div className="mb-8">
           <label

@@ -88,7 +88,7 @@ const Toast = ({ message, type = "success", onClose, duration = 3000 }: ToastPro
 
   return (
     <div
-      className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg p-4 shadow-xl ${getBgColor()}`}
+      className={`fixed top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 rounded-lg p-4 shadow-xl ${getBgColor()}`}
     >
       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
         <div className={getIconColor()}>
