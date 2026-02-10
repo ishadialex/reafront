@@ -203,10 +203,72 @@ const MoneyTransferPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-body-color dark:text-body-color-dark">Loading transfer data...</p>
+      <div className="min-h-screen">
+        {/* Header Skeleton */}
+        <div className="mb-6 md:mb-8">
+          <div className="mb-2 h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700 md:h-9"></div>
+          <div className="h-4 w-72 animate-pulse rounded bg-gray-200 dark:bg-gray-700 md:h-5"></div>
+        </div>
+
+        {/* Balance and Statistics Skeleton */}
+        <div className="mb-6 flex flex-col gap-6 md:mb-8 lg:flex-row lg:items-stretch">
+          <div className="flex flex-1 flex-col gap-6">
+            {/* Available Balance Skeleton */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-primary/5 to-primary/10 p-4 dark:border-gray-800 dark:from-primary/10 dark:to-primary/20 md:p-5">
+              <div className="mb-2 h-3 w-32 animate-pulse rounded bg-gray-300 dark:bg-gray-600"></div>
+              <div className="h-8 w-40 animate-pulse rounded bg-gray-300 dark:bg-gray-600 md:h-9"></div>
+            </div>
+
+            {/* Transfer Statistics Skeleton */}
+            <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark md:p-4">
+              <div className="mb-3 h-3 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                <div className="flex items-center justify-between">
+                  <div className="h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Transfer Form Skeleton */}
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-800 dark:bg-gray-dark md:p-6">
+            <div className="space-y-4">
+              {/* Email Field Skeleton */}
+              <div>
+                <div className="mb-2 h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-12 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+
+              {/* Amount Field Skeleton */}
+              <div>
+                <div className="mb-2 h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-12 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+
+              {/* Note Field Skeleton */}
+              <div>
+                <div className="mb-2 h-4 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-24 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+
+              {/* 2FA Field Skeleton */}
+              <div>
+                <div className="mb-2 h-4 w-36 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
+                <div className="h-12 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+              </div>
+
+              {/* Button Skeleton */}
+              <div className="h-12 w-full animate-pulse rounded-lg bg-gray-300 dark:bg-gray-600"></div>
+            </div>
+          </div>
         </div>
       </div>
     );

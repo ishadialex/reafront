@@ -150,7 +150,7 @@ const ProfileDropdown = () => {
             <h3 className="mb-1 text-base font-semibold text-black dark:text-white">
               {userName}
             </h3>
-            <p className="text-sm text-body-color dark:text-body-color-dark">
+            <p className="break-all text-sm text-body-color dark:text-body-color-dark">
               {userEmail}
             </p>
           </div>

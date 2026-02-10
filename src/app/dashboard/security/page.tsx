@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 const SecuritySettingsPage = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [kycStatus, setKycStatus] = useState<"pending" | "verified" | "rejected" | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -18,6 +19,8 @@ const SecuritySettingsPage = () => {
         }
       } catch (error) {
         console.error("Failed to fetch user data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -121,11 +124,15 @@ const SecuritySettingsPage = () => {
                 <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 text-primary">
                   {feature.icon}
                 </div>
-                <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${feature.statusColor}`}
-                >
-                  {feature.statusText}
-                </span>
+                {loading ? (
+                  <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                ) : (
+                  <span
+                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${feature.statusColor}`}
+                  >
+                    {feature.statusText}
+                  </span>
+                )}
               </div>
 
               {/* Title and Description */}

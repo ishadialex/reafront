@@ -25,6 +25,12 @@ const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
+  // Handle Google OAuth sign up
+  const handleGoogleSignup = () => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    window.location.href = `${API_URL}/api/auth/google`;
+  };
+
   // Real-time email validation
   useEffect(() => {
     if (email === "") {
@@ -226,13 +232,16 @@ const SignupForm = () => {
         />
       )}
     <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-sm bg-white px-6 py-10 sm:p-[60px]">
-      <h3 className="mb-3 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
+      <h3 className="mb-2 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
         Create your account
       </h3>
-      <p className="text-body-color mb-11 text-center text-base font-medium">
+      <p className="text-body-color mb-6 text-center text-base font-medium">
         It's totally free and super easy
       </p>
-      <button className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-6 flex w-full items-center justify-center rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none">
+      <button
+        type="button"
+        onClick={handleGoogleSignup}
+        className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-4 flex w-full items-center justify-center rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none">
         <span className="mr-3">
           <svg
             width="20"
@@ -266,7 +275,7 @@ const SignupForm = () => {
             </defs>
           </svg>
         </span>
-        Sign in with Google
+        Sign up with Google
       </button>
 
       {/* <button className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-6 flex w-full items-center justify-center rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none">
@@ -283,7 +292,7 @@ const SignupForm = () => {
         </span>
         Sign in with Github
       </button> */}
-      <div className="mb-8 flex items-center justify-center">
+      <div className="mb-5 flex items-center justify-center">
         <span className="bg-body-color/50 hidden h-[1px] w-full max-w-[60px] sm:block"></span>
         <p className="text-body-color w-full px-5 text-center text-base font-medium">
           Or, register with your email
@@ -291,7 +300,7 @@ const SignupForm = () => {
         <span className="bg-body-color/50 hidden h-[1px] w-full max-w-[60px] sm:block"></span>
       </div>
       <form onSubmit={handleSubmit}>
-        <div className="mb-8">
+        <div className="mb-5">
           <label
             htmlFor="firstName"
             className="text-dark mb-3 block text-sm dark:text-white"
@@ -308,7 +317,7 @@ const SignupForm = () => {
             className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
           />
         </div>
-        <div className="mb-8">
+        <div className="mb-5">
           <label
             htmlFor="lastName"
             className="text-dark mb-3 block text-sm dark:text-white"
@@ -325,7 +334,7 @@ const SignupForm = () => {
             className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
           />
         </div>
-        <div className="mb-8">
+        <div className="mb-5">
           <label
             htmlFor="email"
             className="text-dark mb-3 block text-sm dark:text-white"
@@ -351,7 +360,7 @@ const SignupForm = () => {
             </p>
           )}
         </div>
-        <div className="mb-8">
+        <div className="mb-5">
           <label
             htmlFor="phone"
             className="text-dark mb-3 block text-sm dark:text-white"
@@ -375,7 +384,7 @@ const SignupForm = () => {
             </p>
           )}
         </div>
-        <div className="mb-8">
+        <div className="mb-5">
           <label
             htmlFor="password"
             className="text-dark mb-3 block text-sm dark:text-white"
@@ -404,7 +413,7 @@ const SignupForm = () => {
             </p>
           )}
         </div>
-        <div className="mb-8">
+        <div className="mb-5">
           <label
             htmlFor="confirmPassword"
             className="text-dark mb-3 block text-sm dark:text-white"

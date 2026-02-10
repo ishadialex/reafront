@@ -684,12 +684,12 @@ export default function DashboardOverviewPage() {
                     key={transaction.id}
                     className="flex items-start justify-between gap-3 p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 sm:gap-4 sm:p-4"
                   >
-                    <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-2 sm:gap-3">
                       <div className="flex-shrink-0 pt-0.5">
                         {getTransactionIcon(transaction.type)}
                       </div>
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-medium leading-tight text-black dark:text-white">
+                      <div className="min-w-0 flex-1">
+                        <p className="break-all text-sm font-medium leading-tight text-black dark:text-white">
                           {transaction.description}
                         </p>
                         <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">

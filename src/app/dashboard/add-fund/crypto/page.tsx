@@ -209,10 +209,10 @@ const CryptoPaymentPage = () => {
       </div>
 
       {/* Progress Steps */}
-      <div className="mx-auto mb-8 max-w-2xl">
-        <div className="flex items-center justify-between">
+      <div className="mb-8 flex justify-center">
+        <div className="flex items-center">
           {steps.map((step, index) => (
-            <div key={step.key} className="flex flex-1 items-center">
+            <div key={step.key} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold transition-colors ${
@@ -230,7 +230,7 @@ const CryptoPaymentPage = () => {
                   )}
                 </div>
                 <span
-                  className={`mt-2 text-xs font-medium ${
+                  className={`mt-2 text-center text-xs font-medium ${
                     index <= currentStepIndex
                       ? "text-primary"
                       : "text-gray-400 dark:text-gray-500"
@@ -241,7 +241,7 @@ const CryptoPaymentPage = () => {
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`mx-2 h-1 flex-1 rounded ${
+                  className={`mx-4 h-1 w-20 rounded ${
                     index < currentStepIndex
                       ? "bg-primary"
                       : "bg-gray-200 dark:bg-gray-700"

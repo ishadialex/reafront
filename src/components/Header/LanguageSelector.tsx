@@ -218,7 +218,7 @@ const LanguageSelector = ({ onMenuClose }: LanguageSelectorProps) => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="notranslate absolute right-0 top-full z-50 mt-2 w-48 max-h-96 overflow-y-auto rounded-lg border border-stroke bg-white shadow-lg dark:border-transparent dark:bg-gray-dark dark:shadow-two">
+        <div className="notranslate absolute left-0 xlg:right-0 xlg:left-auto top-full z-50 mt-2 w-48 max-h-96 overflow-y-auto rounded-lg border border-stroke bg-white shadow-lg dark:border-transparent dark:bg-gray-dark dark:shadow-two">
           <div className="p-2">
             {languages.map((language) => (
               <button

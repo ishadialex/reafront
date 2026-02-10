@@ -98,8 +98,42 @@ const Header = () => {
         }`}
       >
         <div className="container">
-          <div className="relative -mx-4 flex items-center justify-between">
-            <div className="w-60 max-w-full px-4 xl:mr-12">
+          <div className="relative -mx-4 flex items-center justify-between min-h-[70px] xlg:min-h-0">
+            {/* Mobile Layout: Language & Theme on Left */}
+            <div className="flex items-center gap-3 px-4 py-6 xlg:hidden xlg:py-0">
+              <LanguageSelector onMenuClose={() => setNavbarOpen(false)} />
+              <ThemeToggler />
+            </div>
+
+            {/* Mobile Layout: Centered Logo */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 xlg:hidden">
+              <Link
+                href="/"
+                className={`header-logo block ${
+                  sticky ? "py-5 lg:py-2" : "py-8"
+                } `}
+              >
+                {/* Light mode logo (with black text) */}
+                <Image
+                  src="/images/logo/A-logobbb.jpg"
+                  alt="logo"
+                  width={140}
+                  height={30}
+                  className="block dark:hidden"
+                />
+                {/* Dark mode logo (with white text) */}
+                <Image
+                  src="/images/logo/A-Logo.png"
+                  alt="logo"
+                  width={140}
+                  height={30}
+                  className="hidden dark:block"
+                />
+              </Link>
+            </div>
+
+            {/* Desktop Layout: Logo on Left */}
+            <div className="hidden w-60 max-w-full px-4 xlg:block xl:mr-12">
               <Link
                 href="/"
                 className={`header-logo block w-full ${
@@ -124,6 +158,7 @@ const Header = () => {
                 />
               </Link>
             </div>
+
             <div className="flex w-full items-center justify-between px-4">
               <div>
                 <button
@@ -269,8 +304,9 @@ const Header = () => {
                 >
                   Sign Up
                 </Link>
-                <LanguageSelector onMenuClose={() => setNavbarOpen(false)} />
-                <div>
+                {/* Desktop Layout: Language & Theme on Right */}
+                <div className="hidden items-center gap-3 xlg:flex">
+                  <LanguageSelector onMenuClose={() => setNavbarOpen(false)} />
                   <ThemeToggler />
                 </div>
               </div>
