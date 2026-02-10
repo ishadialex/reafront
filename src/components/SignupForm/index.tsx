@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import "./phoneInput.css";
-import axios from "axios";
+import { api } from "@/lib/api";
 import Toast from "@/components/Toast";
 
 const SignupForm = () => {
@@ -157,19 +157,16 @@ const SignupForm = () => {
     setIsLoading(true);
 
     try {
-      // Call backend register API using axios
-      const response = await axios.post(
-        "http://localhost:4000/api/auth/register",
-        {
-          email,
-          password,
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          phone,
-        }
-      );
+      // Call backend register API using the API client
+      const response = await api.register({
+        email,
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone,
+      });
 
-      if (response.data.success) {
+      if (response.success) {
         setToast({ message: "Registration successful! Please check your email for the OTP code.", type: "success" });
         setTimeout(() => router.push(`/verify-otp?email=${encodeURIComponent(email)}`), 1500);
       }
