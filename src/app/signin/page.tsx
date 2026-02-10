@@ -32,6 +32,11 @@ function SigninContent() {
     }
   }, [searchParams]);
 
+  const handleGoogleSignIn = () => {
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = `${API_URL}/api/auth/google`;
+  };
+
   const storeSessionAndRedirect = (data: { user: any; accessToken: string; refreshToken: string }) => {
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
@@ -259,10 +264,10 @@ function SigninContent() {
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
               <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-sm bg-white px-6 py-10 sm:p-[60px]">
-                <h3 className="mb-3 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
+                <h3 className="mb-2 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
                   Sign in to your account
                 </h3>
-                <p className="text-body-color mb-11 text-center text-base font-medium">
+                <p className="text-body-color mb-6 text-center text-base font-medium">
                   Login to your account for a faster checkout.
                 </p>
 
@@ -284,7 +289,11 @@ function SigninContent() {
                   </div>
                 )}
 
-                <button className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-6 flex w-full items-center justify-center rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-4 flex w-full items-center justify-center rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none"
+                >
                   <span className="mr-3">
                     <svg
                       width="20"
@@ -335,7 +344,7 @@ function SigninContent() {
                   </span>
                   Sign in with Github
                 </button> */}
-                <div className="mb-8 flex items-center justify-center">
+                <div className="mb-5 flex items-center justify-center">
                   <span className="bg-body-color/50 hidden h-[1px] w-full max-w-[70px] sm:block"></span>
                   <p className="text-body-color w-full px-5 text-center text-base font-medium">
                     Or, sign in with your email
@@ -357,7 +366,7 @@ function SigninContent() {
                       )}
                     </div>
                   )}
-                  <div className="mb-8">
+                  <div className="mb-5">
                     <label
                       htmlFor="email"
                       className="text-dark mb-3 block text-sm dark:text-white"
@@ -375,7 +384,7 @@ function SigninContent() {
                       className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
                     />
                   </div>
-                  <div className="mb-8">
+                  <div className="mb-5">
                     <label
                       htmlFor="password"
                       className="text-dark mb-3 block text-sm dark:text-white"
@@ -394,7 +403,7 @@ function SigninContent() {
                     />
                   </div>
 
-                  <div className="mb-8 flex flex-col justify-between sm:flex-row sm:items-center">
+                  <div className="mb-5 flex flex-col justify-between sm:flex-row sm:items-center">
                     <div className="mb-4 sm:mb-0">
                       <label
                         htmlFor="checkboxLabel"
