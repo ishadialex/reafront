@@ -138,6 +138,7 @@ export class ApiClient {
     password: string;
     firstName: string;
     lastName: string;
+    phone: string;
   }) {
     const response = await this.axiosInstance.post<ApiResponse<{ user: any }>>(
       "/api/auth/register",
