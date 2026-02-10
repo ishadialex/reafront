@@ -50,6 +50,7 @@ export interface Investment {
   investmentType: "individual" | "pooled";
   expectedReturn: number;
   monthlyReturn: number;
+  expectedTotal: number;
 }
 
 export interface InvestmentRequest {

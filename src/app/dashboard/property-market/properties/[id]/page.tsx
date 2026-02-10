@@ -105,6 +105,10 @@ export default function PropertyDetailPage() {
     return colors[property.riskLevel] || "bg-gray-100 text-gray-800";
   };
 
+  const formatInvestorCount = (count: number) => {
+    return count === 1 ? "1 investor" : `${count} investors`;
+  };
+
   return (
     <div className="min-h-screen">
       <button
@@ -241,15 +245,33 @@ export default function PropertyDetailPage() {
                 <span className="text-sm text-body-color dark:text-body-color-dark">Duration</span>
                 <span className="font-semibold text-black dark:text-white">{property.duration} months</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-body-color dark:text-body-color-dark">Min Investment</span>
-                <span className="font-semibold text-black dark:text-white">${property.minInvestment.toLocaleString()}</span>
-              </div>
+
+              {/* Individual/Mortgage Properties - Show Property Worth and Amount Required */}
               {property.investmentType === "individual" && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-body-color dark:text-body-color-dark">Total Price</span>
-                  <span className="text-xl font-bold text-black dark:text-white">${property.price.toLocaleString()}</span>
-                </div>
+                <>
+                  <div className="flex justify-between border-t border-gray-200 pt-3 dark:border-gray-700">
+                    <span className="text-sm text-body-color dark:text-body-color-dark">Property Worth</span>
+                    <span className="text-xl font-bold text-black dark:text-white">${property.price.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-body-color dark:text-body-color-dark">Amount Required</span>
+                    <span className="font-semibold text-primary">${property.minInvestment.toLocaleString()}</span>
+                  </div>
+                </>
+              )}
+
+              {/* Pooled/Airbnb Properties - Show Min/Max Investment */}
+              {property.investmentType === "pooled" && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-body-color dark:text-body-color-dark">Min Investment</span>
+                    <span className="font-semibold text-black dark:text-white">${property.minInvestment.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-body-color dark:text-body-color-dark">Max Investment</span>
+                    <span className="font-semibold text-black dark:text-white">${property.maxInvestment.toLocaleString()}</span>
+                  </div>
+                </>
               )}
             </div>
 
@@ -263,7 +285,7 @@ export default function PropertyDetailPage() {
                   <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${Math.min(fundingPercentage, 100)}%` }} />
                 </div>
                 <div className="flex justify-between text-xs text-body-color dark:text-body-color-dark">
-                  <span>{property.investorCount} investors</span>
+                  <span>{formatInvestorCount(property.investorCount)}</span>
                   <span>${remainingAmount.toLocaleString()} remaining</span>
                 </div>
               </div>

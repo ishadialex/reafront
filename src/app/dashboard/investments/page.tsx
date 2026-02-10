@@ -10,38 +10,43 @@ interface EnrichedInvestment extends Investment {
     title: string;
     images: string[];
     location: string;
+    investmentType?: "individual" | "pooled";
+    targetAmount?: number;
+    currentFunded?: number;
+    investorCount?: number;
   };
 }
 
 export default function InvestmentsPage() {
   const [investments, setInvestments] = useState<EnrichedInvestment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const fetchInvestmentsWithDetails = useCallback(async () => {
+  const fetchInvestmentsWithDetails = useCallback(async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       // Fetch investments
       const result = await api.getInvestments();
       if (!result.success || !result.data) {
         setError("Failed to load investments");
-        setLoading(false);
+        if (!isRefresh) setLoading(false);
         return;
       }
 
       const investmentData = result.data as Investment[];
 
-      // Enrich investments with property details if missing
+      // Enrich investments with property details to ensure correct investmentType
       const enrichedInvestments = await Promise.all(
         investmentData.map(async (investment) => {
-          // If property details are already present, use them
-          if (investment.propertyTitle && investment.propertyImage) {
-            return investment;
-          }
-
-          // Otherwise, fetch property details
+          // Always fetch property details to get the correct investmentType
           try {
             const propertyResult = await api.getProperty(investment.propertyId);
             if (propertyResult.success && propertyResult.data) {
@@ -50,10 +55,15 @@ export default function InvestmentsPage() {
                 ...investment,
                 propertyTitle: property.title || investment.propertyTitle || "Untitled Property",
                 propertyImage: property.images?.[0] || investment.propertyImage || "",
+                investmentType: property.investmentType || investment.investmentType, // Use property's type
                 propertyDetails: {
                   title: property.title,
                   images: property.images || [],
                   location: property.location || "",
+                  investmentType: property.investmentType,
+                  targetAmount: property.targetAmount,
+                  currentFunded: property.currentFunded,
+                  investorCount: property.investorCount,
                 },
               };
             }
@@ -71,17 +81,33 @@ export default function InvestmentsPage() {
       );
 
       setInvestments(enrichedInvestments);
+      setLastUpdate(new Date());
     } catch (err) {
       console.error("Failed to fetch investments:", err);
       setError("Failed to load investments. Please try again.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
+  // Initial fetch on mount
   useEffect(() => {
     fetchInvestmentsWithDetails();
   }, [fetchInvestmentsWithDetails]);
+
+  // Auto-refresh every 30 seconds for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchInvestmentsWithDetails(true);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [fetchInvestmentsWithDetails]);
+
+  const handleManualRefresh = () => {
+    fetchInvestmentsWithDetails(true);
+  };
 
   const stats = useMemo(() => {
     const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
@@ -115,6 +141,10 @@ export default function InvestmentsPage() {
     return text[status as keyof typeof text] || status;
   };
 
+  const formatInvestorCount = (count: number) => {
+    return count === 1 ? "1 investor" : `${count} investors`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -137,7 +167,7 @@ export default function InvestmentsPage() {
           </div>
           <p className="mb-4 text-lg font-semibold text-black dark:text-white">{error}</p>
           <button
-            onClick={fetchInvestmentsWithDetails}
+            onClick={() => fetchInvestmentsWithDetails()}
             className="rounded-lg bg-primary px-6 py-2 font-semibold text-white transition-colors hover:bg-primary/90"
           >
             Try Again
@@ -150,12 +180,42 @@ export default function InvestmentsPage() {
   return (
     <div className="min-h-screen">
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl font-bold text-black dark:text-white md:text-3xl">
-          My Investments
-        </h1>
-        <p className="mt-2 text-sm text-body-color dark:text-body-color-dark md:text-base">
-          Track and manage your property investments
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-black dark:text-white md:text-3xl">
+              My Investments
+            </h1>
+            <p className="mt-2 text-sm text-body-color dark:text-body-color-dark md:text-base">
+              Track and manage your property investments
+            </p>
+            {lastUpdate && (
+              <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                Last updated: {lastUpdate.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:bg-gray-dark dark:text-white dark:hover:bg-gray-800"
+            title="Refresh investments data"
+          >
+            <svg
+              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
       </div>
 
       {investments.length > 0 ? (
@@ -249,12 +309,32 @@ export default function InvestmentsPage() {
                                 {investment.propertyDetails.location}
                               </p>
                             )}
+                            {(investment.propertyDetails?.investmentType || investment.investmentType) === "pooled" &&
+                             investment.propertyDetails?.targetAmount &&
+                             investment.propertyDetails?.currentFunded !== undefined && (
+                              <div className="mt-2">
+                                <div className="flex items-center justify-between text-xs text-body-color dark:text-body-color-dark mb-1">
+                                  <span>Funded: ${investment.propertyDetails.currentFunded.toLocaleString()}</span>
+                                  <span>{((investment.propertyDetails.currentFunded / investment.propertyDetails.targetAmount) * 100).toFixed(1)}%</span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                                  <div
+                                    className="h-1.5 rounded-full bg-primary"
+                                    style={{ width: `${Math.min((investment.propertyDetails.currentFunded / investment.propertyDetails.targetAmount) * 100, 100)}%` }}
+                                  />
+                                </div>
+                                <div className="mt-1 flex items-center justify-between text-xs text-body-color dark:text-body-color-dark">
+                                  <span>{investment.propertyDetails.investorCount !== undefined && formatInvestorCount(investment.propertyDetails.investorCount)}</span>
+                                  <span>${(investment.propertyDetails.targetAmount - investment.propertyDetails.currentFunded).toLocaleString()} remaining</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${investment.investmentType === "individual" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"}`}>
-                          {investment.investmentType === "individual" ? "Individual" : "Pooled"}
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${(investment.propertyDetails?.investmentType || investment.investmentType) === "individual" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"}`}>
+                          {(investment.propertyDetails?.investmentType || investment.investmentType) === "individual" ? "Individual" : "Pooled"}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right font-semibold text-black dark:text-white">
@@ -264,7 +344,7 @@ export default function InvestmentsPage() {
                         ${investment.monthlyReturn.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 text-right font-semibold text-green-600 dark:text-green-400">
-                        ${investment.expectedReturn.toLocaleString()}
+                        ${investment.expectedTotal.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadge(investment.status)}`}>
@@ -320,11 +400,46 @@ export default function InvestmentsPage() {
                   </div>
                 </div>
 
+                {(investment.propertyDetails?.investmentType || investment.investmentType) === "pooled" &&
+                 investment.propertyDetails?.targetAmount &&
+                 investment.propertyDetails?.currentFunded !== undefined && (
+                  <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
+                    <div className="mb-2 flex items-center justify-between text-xs text-body-color dark:text-body-color-dark">
+                      <span className="font-medium">Pool Progress</span>
+                      <span className="font-semibold">{((investment.propertyDetails.currentFunded / investment.propertyDetails.targetAmount) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                      <div
+                        className="h-2 rounded-full bg-primary"
+                        style={{ width: `${Math.min((investment.propertyDetails.currentFunded / investment.propertyDetails.targetAmount) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-body-color dark:text-body-color-dark">Funded:</span>
+                        <span className="ml-1 font-semibold text-black dark:text-white">${investment.propertyDetails.currentFunded.toLocaleString()}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-body-color dark:text-body-color-dark">Target:</span>
+                        <span className="ml-1 font-semibold text-black dark:text-white">${investment.propertyDetails.targetAmount.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        {investment.propertyDetails.investorCount !== undefined && (
+                          <span className="text-body-color dark:text-body-color-dark">{formatInvestorCount(investment.propertyDetails.investorCount)}</span>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="text-body-color dark:text-body-color-dark">${(investment.propertyDetails.targetAmount - investment.propertyDetails.currentFunded).toLocaleString()} remaining</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-body-color dark:text-body-color-dark">Type</span>
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${investment.investmentType === "individual" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"}`}>
-                      {investment.investmentType === "individual" ? "Individual" : "Pooled"}
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${(investment.propertyDetails?.investmentType || investment.investmentType) === "individual" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"}`}>
+                      {(investment.propertyDetails?.investmentType || investment.investmentType) === "individual" ? "Individual" : "Pooled"}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -337,7 +452,7 @@ export default function InvestmentsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-body-color dark:text-body-color-dark">Expected Total</span>
-                    <span className="font-semibold text-green-600 dark:text-green-400">${investment.expectedReturn.toLocaleString()}</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">${investment.expectedTotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-body-color dark:text-body-color-dark">Status</span>
