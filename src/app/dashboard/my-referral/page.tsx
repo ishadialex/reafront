@@ -1,82 +1,31 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { api } from "@/lib/api";
 
 // Types
 interface Referral {
   id: string;
   name: string;
   email: string;
-  joinedDate: string;
-  status: "active" | "pending" | "inactive";
-  earnings: number;
+  joinedAt: string;
+  status: "completed" | "pending";
+  reward: number;
 }
 
 interface ReferralStats {
   totalReferrals: number;
-  activeReferrals: number;
+  completedReferrals: number;
   pendingReferrals: number;
   totalEarnings: number;
-  commissionRate: number;
+  completedEarnings: number;
+  pendingEarnings: number;
 }
 
 interface UserReferralInfo {
   referralCode: string;
   referralLink: string;
 }
-
-// Mock API functions - Replace these with actual API calls
-const fetchUserReferralInfo = async (): Promise<UserReferralInfo> => {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  // In real app: const response = await fetch('/api/referral/info');
-  return {
-    referralCode: "ADM12345",
-    referralLink: "https://alvaradoassociatepartners.com/signup?ref=ADM12345",
-  };
-};
-
-const fetchReferralStats = async (): Promise<ReferralStats> => {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  // In real app: const response = await fetch('/api/referral/stats');
-  return {
-    totalReferrals: 3,
-    activeReferrals: 2,
-    pendingReferrals: 1,
-    totalEarnings: 430,
-    commissionRate: 5,
-  };
-};
-
-const fetchReferrals = async (): Promise<Referral[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  // In real app: const response = await fetch('/api/referral/list');
-  return [
-    {
-      id: "ref-001",
-      name: "John Smith",
-      email: "john.smith@example.com",
-      joinedDate: "2026-01-15",
-      status: "active",
-      earnings: 250,
-    },
-    {
-      id: "ref-002",
-      name: "Sarah Johnson",
-      email: "sarah.j@example.com",
-      joinedDate: "2026-01-20",
-      status: "active",
-      earnings: 180,
-    },
-    {
-      id: "ref-003",
-      name: "Michael Brown",
-      email: "m.brown@example.com",
-      joinedDate: "2026-02-01",
-      status: "pending",
-      earnings: 0,
-    },
-  ];
-};
 
 // Skeleton Components
 const StatCardSkeleton = () => (
@@ -134,15 +83,21 @@ const MyReferralPage = () => {
     const loadData = async () => {
       try {
         // Fetch data in parallel for better performance
-        const [userInfoData, statsData, referralsData] = await Promise.all([
-          fetchUserReferralInfo().finally(() => setLoadingUserInfo(false)),
-          fetchReferralStats().finally(() => setLoadingStats(false)),
-          fetchReferrals().finally(() => setLoadingReferrals(false)),
+        const [userInfoRes, statsRes, referralsRes] = await Promise.all([
+          api.getReferralInfo().finally(() => setLoadingUserInfo(false)),
+          api.getReferralStats().finally(() => setLoadingStats(false)),
+          api.getReferralList().finally(() => setLoadingReferrals(false)),
         ]);
 
-        setUserInfo(userInfoData);
-        setStats(statsData);
-        setReferrals(referralsData);
+        if (userInfoRes.success && userInfoRes.data) {
+          setUserInfo(userInfoRes.data);
+        }
+        if (statsRes.success && statsRes.data) {
+          setStats(statsRes.data);
+        }
+        if (referralsRes.success && referralsRes.data) {
+          setReferrals(referralsRes.data as Referral[]);
+        }
       } catch (err) {
         setError("Failed to load referral data. Please try again.");
         setLoadingUserInfo(false);
@@ -159,15 +114,22 @@ const MyReferralPage = () => {
     setLoadingUserInfo(true);
     setLoadingStats(true);
     setLoadingReferrals(true);
+    setError(null);
     try {
-      const [userInfoData, statsData, referralsData] = await Promise.all([
-        fetchUserReferralInfo(),
-        fetchReferralStats(),
-        fetchReferrals(),
+      const [userInfoRes, statsRes, referralsRes] = await Promise.all([
+        api.getReferralInfo(),
+        api.getReferralStats(),
+        api.getReferralList(),
       ]);
-      setUserInfo(userInfoData);
-      setStats(statsData);
-      setReferrals(referralsData);
+      if (userInfoRes.success && userInfoRes.data) {
+        setUserInfo(userInfoRes.data);
+      }
+      if (statsRes.success && statsRes.data) {
+        setStats(statsRes.data);
+      }
+      if (referralsRes.success && referralsRes.data) {
+        setReferrals(referralsRes.data as Referral[]);
+      }
     } catch (err) {
       setError("Failed to refresh data.");
     } finally {
@@ -254,15 +216,17 @@ const MyReferralPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
+      case "completed":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "pending":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "inactive":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status === "completed" ? "active" : status;
   };
 
   if (error) {
@@ -379,10 +343,10 @@ const MyReferralPage = () => {
                 </svg>
               </div>
               <h3 className="mb-1 text-sm font-medium text-body-color dark:text-body-color-dark">
-                Active Referrals
+                Completed Referrals
               </h3>
               <p className="text-3xl font-bold text-black dark:text-white">
-                {stats.activeReferrals}
+                {stats.completedReferrals}
               </p>
             </div>
 
@@ -597,19 +561,19 @@ const MyReferralPage = () => {
                         referral.status
                       )}`}
                     >
-                      {referral.status}
+                      {getStatusLabel(referral.status)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-body-color dark:text-body-color-dark">
-                      {new Date(referral.joinedDate).toLocaleDateString("en-US", {
+                      {new Date(referral.joinedAt).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
                       })}
                     </span>
                     <span className="font-semibold text-black dark:text-white">
-                      ${referral.earnings}
+                      ${referral.reward.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -665,7 +629,7 @@ const MyReferralPage = () => {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-sm text-body-color dark:text-body-color-dark">
-                            {new Date(referral.joinedDate).toLocaleDateString("en-US", {
+                            {new Date(referral.joinedAt).toLocaleDateString("en-US", {
                               year: "numeric",
                               month: "short",
                               day: "numeric",
@@ -678,12 +642,12 @@ const MyReferralPage = () => {
                               referral.status
                             )}`}
                           >
-                            {referral.status}
+                            {getStatusLabel(referral.status)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <p className="font-semibold text-black dark:text-white">
-                            ${referral.earnings}
+                            ${referral.reward.toFixed(2)}
                           </p>
                         </td>
                       </tr>

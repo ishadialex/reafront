@@ -328,8 +328,37 @@ export class ApiClient {
     return response.data;
   }
 
+  // Referral endpoints
+  async getReferralInfo() {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      referralCode: string;
+      referralLink: string;
+    }>>("/api/referrals/info");
+    return response.data;
+  }
+
   async getReferralStats() {
-    const response = await this.axiosInstance.get<ApiResponse<any>>("/api/referral");
+    const response = await this.axiosInstance.get<ApiResponse<{
+      totalReferrals: number;
+      completedReferrals: number;
+      pendingReferrals: number;
+      totalEarnings: number;
+      completedEarnings: number;
+      pendingEarnings: number;
+      recentActivity: any[];
+    }>>("/api/referrals/stats");
+    return response.data;
+  }
+
+  async getReferralList() {
+    const response = await this.axiosInstance.get<ApiResponse<Array<{
+      id: string;
+      name: string;
+      email: string;
+      status: string;
+      reward: number;
+      joinedAt: string;
+    }>>>("/api/referrals/list");
     return response.data;
   }
 
