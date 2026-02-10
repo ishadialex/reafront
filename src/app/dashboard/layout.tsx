@@ -8,6 +8,7 @@ import NotificationPanel from "@/components/Dashboard/NotificationPanel";
 import ProfileDropdown from "@/components/Dashboard/ProfileDropdown";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import axios from "axios";
+import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -17,6 +18,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -126,33 +128,98 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content Area */}
       <main className="min-h-screen lg:ml-64">
         {/* Mobile Header with Hamburger */}
-        <div className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white px-2 shadow-[0_8px_16px_-8px_rgba(0,0,0,0.1)] dark:bg-gray-dark dark:shadow-[0_8px_16px_-8px_rgba(0,0,0,0.3)] lg:hidden">
-          {/* Left side - Hamburger */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex h-12 w-12 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-            aria-label="Open sidebar"
-          >
-            <svg
-              className="h-7 w-7 text-black dark:text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <div className="sticky top-0 z-30 bg-white shadow-[0_8px_16px_-8px_rgba(0,0,0,0.1)] dark:bg-gray-dark dark:shadow-[0_8px_16px_-8px_rgba(0,0,0,0.3)] lg:hidden">
+          {/* Top bar with hamburger, logo, and menu */}
+          <div className="relative flex h-16 items-center justify-between px-4">
+            {/* Left side - Hamburger */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="relative z-10 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Open sidebar"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
+              <svg
+                className="h-6 w-6 text-gray-600 dark:text-gray-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+
+            {/* Center - Logo/Brand */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2">
+              {/* Light mode logo */}
+              <Image
+                src="/images/logo/A-logobbb.jpg"
+                alt="Logo"
+                width={120}
+                height={40}
+                className="block dark:hidden"
               />
-            </svg>
-          </button>
-          {/* Right side - Icons */}
-          <div className="flex items-center gap-2">
-            <ThemeToggler />
-            <NotificationPanel />
-            <ProfileDropdown />
+              {/* Dark mode logo */}
+              <Image
+                src="/images/logo/A-Logo.png"
+                alt="Logo"
+                width={120}
+                height={40}
+                className="hidden dark:block"
+              />
+            </div>
+
+            {/* Right side - Menu Icon */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="relative z-10 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="More options"
+            >
+              <svg
+                className="h-6 w-6 text-gray-600 dark:text-gray-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                />
+              </svg>
+            </button>
           </div>
+
+          {/* Dropdown Menu - Expands below when three-dot is clicked */}
+          {mobileMenuOpen && (
+            <>
+              {/* Overlay to close menu when clicking outside */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+
+              {/* Dropdown content */}
+              <div className="relative z-50 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-dark">
+                <div className="flex items-center justify-between gap-4">
+                  {/* Left side - Theme Toggler and Notification */}
+                  <div className="flex items-center gap-2">
+                    <ThemeToggler />
+                    <NotificationPanel />
+                  </div>
+
+                  {/* Right side - Profile Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <ProfileDropdown />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Desktop Top Bar - Full Width */}

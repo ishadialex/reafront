@@ -115,18 +115,18 @@ const ProfileDropdown = () => {
           )}
         </div>
 
-        {/* Name - Hidden on mobile */}
+        {/* Name - Always visible */}
         {loadingProfile ? (
-          <div className="hidden h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700 lg:block" />
+          <div className="h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
         ) : (
-          <span className="hidden text-sm font-medium text-black dark:text-white lg:block">
+          <span className="text-sm font-medium text-black dark:text-white">
             {userName.split(" ")[0]}
           </span>
         )}
 
         {/* Dropdown Icon */}
         <svg
-          className={`hidden h-4 w-4 text-black transition-transform dark:text-white lg:block ${
+          className={`h-4 w-4 text-black transition-transform dark:text-white ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"

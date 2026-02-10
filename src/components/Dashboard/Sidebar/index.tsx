@@ -150,8 +150,8 @@ const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
             />
           </svg>
         </button>
-        {/* Logo - absolutely centered */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Logo - absolutely centered - hidden on mobile, shown on desktop */}
+        <div className="absolute inset-0 hidden items-center justify-center lg:flex">
           <Image
             src="/images/logo/A-Logo.png"
             alt="Golden Units Logo"
