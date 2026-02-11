@@ -29,8 +29,8 @@ function SigninContent() {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     const accessToken = localStorage.getItem("accessToken");
 
-    // Show warning for session timeout, revocation, or account deletion
-    if (reason === 'session_timeout' || reason === 'session_revoked' || reason === 'account_deleted') {
+    // Show warning for session timeout, expiration, revocation, or account deletion
+    if (reason === 'session_timeout' || reason === 'session_expired' || reason === 'session_revoked' || reason === 'account_deleted') {
       setSessionTimeoutWarning(true);
       setTimeout(() => setSessionTimeoutWarning(false), 10000);
       return;
@@ -314,6 +314,8 @@ function SigninContent() {
                           ? 'You were logged out because someone signed in from another device.'
                           : searchParams.get('reason') === 'account_deleted'
                           ? 'Your account has been deactivated. Contact support to restore access.'
+                          : searchParams.get('reason') === 'session_expired'
+                          ? 'Your session expired. Please sign in again.'
                           : 'Your session expired due to inactivity. Please sign in again.'}
                       </p>
                     </div>

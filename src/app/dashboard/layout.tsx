@@ -37,30 +37,47 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [router, accessToken, isLoggedIn]);
 
-  // Poll every 10 seconds to detect if session was revoked from another device
+  // Poll to detect if session was revoked from another device
   useEffect(() => {
+    let failureCount = 0;
+    const MAX_FAILURES = 3; // Allow 3 consecutive failures before logging out
+
     const checkSession = async () => {
       const refreshToken = localStorage.getItem("refreshToken");
       if (!refreshToken) return;
 
       try {
         await axios.post(`${API_URL}/api/auth/validate-session`, { refreshToken });
+        // Reset failure count on success
+        failureCount = 0;
       } catch (err: any) {
+        // Only logout if we get a 401 (unauthorized) response
+        // Network errors, 500 errors, etc. might be temporary (server restart)
         if (err.response?.status === 401) {
-          // Session revoked — clear tokens and redirect
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("isLoggedIn");
-          localStorage.removeItem("user");
-          localStorage.removeItem("userEmail");
-          router.push("/signin?reason=session_revoked");
+          failureCount++;
+
+          // Only logout after multiple consecutive failures
+          // This prevents logout during brief server restarts/deployments
+          if (failureCount >= MAX_FAILURES) {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("user");
+            localStorage.removeItem("userEmail");
+            // Use session_expired for polling timeout, not session_revoked
+            router.push("/signin?reason=session_expired");
+          }
+        } else {
+          // For network errors or server errors, don't increment failure count
+          // These are likely temporary issues (server restart, deployment)
+          console.log("Session validation failed (non-401), will retry...");
         }
       }
     };
 
-    // Check immediately on mount, then every 3 seconds
+    // Check immediately on mount, then every 30 seconds (less aggressive)
     checkSession();
-    pollingRef.current = setInterval(checkSession, 3000);
+    pollingRef.current = setInterval(checkSession, 30000);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
