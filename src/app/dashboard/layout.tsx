@@ -204,8 +204,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               />
 
               {/* Dropdown content */}
-              <div className="relative z-50 border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-dark">
-                <div className="flex items-center justify-between gap-4">
+              <div className="relative z-50 h-16 border-t border-gray-200 bg-white px-4 dark:border-gray-700 dark:bg-gray-dark">
+                <div className="flex h-full items-center justify-between gap-4">
                   {/* Left side - Theme Toggler and Notification */}
                   <div className="flex items-center gap-2">
                     <ThemeToggler />

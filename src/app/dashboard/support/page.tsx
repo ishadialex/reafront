@@ -494,7 +494,7 @@ function SupportContent() {
         <div className="mb-4 rounded-xl bg-white shadow-lg dark:bg-gray-dark">
           <div className="max-h-[400px] overflow-y-auto p-4 sm:p-6">
             {/* Original Message */}
-            <div className="mb-4 rounded-lg bg-gray-50 p-4 dark:bg-black/20">
+            <div className="mb-4 overflow-hidden rounded-lg bg-gray-50 p-4 dark:bg-black/20">
               <div className="mb-2 flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
                   U
@@ -506,7 +506,7 @@ function SupportContent() {
                   </p>
                 </div>
               </div>
-              <p className="whitespace-pre-wrap text-sm text-black dark:text-white">
+              <p className="whitespace-pre-wrap break-words text-sm text-black dark:text-white">
                 {selectedTicket!.message}
               </p>
               <AttachmentList attachments={selectedTicket!.attachments} />
@@ -516,7 +516,7 @@ function SupportContent() {
             {selectedTicket!.replies.map((reply) => (
               <div
                 key={reply.id}
-                className={`mb-4 rounded-lg p-4 ${
+                className={`mb-4 overflow-hidden rounded-lg p-4 ${
                   reply.isStaff ? "bg-primary/5 dark:bg-primary/10" : "bg-gray-50 dark:bg-black/20"
                 }`}
               >
@@ -542,7 +542,7 @@ function SupportContent() {
                     </p>
                   </div>
                 </div>
-                <p className="whitespace-pre-wrap text-sm text-black dark:text-white">{reply.message}</p>
+                <p className="whitespace-pre-wrap break-words text-sm text-black dark:text-white">{reply.message}</p>
                 <AttachmentList attachments={reply.attachments} />
               </div>
             ))}
@@ -755,7 +755,7 @@ function SupportContent() {
                         {ticket.status.replace("_", " ")}
                       </span>
                     </div>
-                    <p className="mb-2 line-clamp-1 text-xs text-body-color dark:text-body-color-dark sm:text-sm">
+                    <p className="mb-2 line-clamp-1 break-all text-xs text-body-color dark:text-body-color-dark sm:text-sm">
                       {ticket.message}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-body-color dark:text-body-color-dark">

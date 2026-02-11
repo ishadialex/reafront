@@ -98,12 +98,15 @@ const ProfileDropdown = () => {
     // Clear all auth data
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("userEmail");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userProfilePicture");
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     api.clearToken();
     router.push("/signin");
   };
+
 
   return (
     <div className="relative" ref={dropdownRef}>

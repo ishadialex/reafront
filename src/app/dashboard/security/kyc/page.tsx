@@ -90,45 +90,47 @@ export default function KYCPage() {
       </p>
 
       {/* Progress Steps */}
-      <div className="mb-8 flex items-center justify-between">
-        {[1, 2, 3, 4, 5].map((num) => (
-          <div key={num} className="flex flex-1 items-center">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                step >= num
-                  ? "bg-primary text-white"
-                  : "bg-gray-200 text-gray-500 dark:bg-gray-800"
-              }`}
-            >
-              {step > num ? (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                <span className="text-sm font-semibold">{num}</span>
+      <div className="mb-8 flex justify-center px-4">
+        <div className="flex items-center justify-center">
+          {[1, 2, 3, 4, 5].map((num) => (
+            <div key={num} className="flex items-center">
+              <div
+                className={`flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                  step >= num
+                    ? "bg-primary text-white"
+                    : "bg-gray-200 text-gray-500 dark:bg-gray-800"
+                }`}
+              >
+                {step > num ? (
+                  <svg
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                ) : (
+                  <span className="text-xs sm:text-sm font-semibold">{num}</span>
+                )}
+              </div>
+              {num < 5 && (
+                <div
+                  className={`mx-2 sm:mx-3 h-1 w-8 sm:w-12 ${
+                    step > num
+                      ? "bg-primary"
+                      : "bg-gray-200 dark:bg-gray-800"
+                  }`}
+                />
               )}
             </div>
-            {num < 5 && (
-              <div
-                className={`mx-2 h-1 flex-1 ${
-                  step > num
-                    ? "bg-primary"
-                    : "bg-gray-200 dark:bg-gray-800"
-                }`}
-              />
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Step 1: Personal Information */}

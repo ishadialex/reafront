@@ -97,8 +97,30 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
     }
   };
 
+  // Format text to title case (capitalize first letter of each word)
+  const toTitleCase = (text: string): string => {
+    return text
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Format input values based on field type
+  const formatValue = (field: keyof UpdateProfileRequest, value: string): string => {
+    // Fields that should be title case
+    const titleCaseFields = ['firstName', 'lastName', 'city', 'state', 'country', 'nationality', 'occupation'];
+
+    if (titleCaseFields.includes(field) && value) {
+      return toTitleCase(value);
+    }
+
+    return value;
+  };
+
   const handleInputChange = (field: keyof UpdateProfileRequest, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const formattedValue = formatValue(field, value);
+    setFormData((prev) => ({ ...prev, [field]: formattedValue }));
     if (fieldErrors[field]) {
       setFieldErrors((prev) => {
         const newErrors = { ...prev };
@@ -193,6 +215,20 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
         // Update localStorage for ProfileDropdown
         if (formData.firstName) {
           localStorage.setItem("userName", `${formData.firstName} ${formData.lastName}`);
+        }
+        // Update profile picture in localStorage
+        if (result.data.profilePhoto) {
+          localStorage.setItem("userProfilePicture", result.data.profilePhoto);
+        } else {
+          localStorage.removeItem("userProfilePicture");
+        }
+        // Store new tokens if provided by backend
+        if (result.data.accessToken) {
+          localStorage.setItem("accessToken", result.data.accessToken);
+          api.setToken(result.data.accessToken);
+        }
+        if (result.data.refreshToken) {
+          localStorage.setItem("refreshToken", result.data.refreshToken);
         }
         // Emit event to notify ProfileDropdown
         window.dispatchEvent(new CustomEvent('profileUpdated', {

@@ -125,45 +125,47 @@ export default function Setup2FAPage() {
       </p>
 
       {/* Progress Steps */}
-      <div className="mb-8 flex items-center justify-between">
-        {[1, 2, 3, 4].map((num) => (
-          <div key={num} className="flex flex-1 items-center">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                step >= num
-                  ? "bg-primary text-white"
-                  : "bg-gray-200 text-gray-500 dark:bg-gray-800"
-              }`}
-            >
-              {step > num ? (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              ) : (
-                <span className="text-sm font-semibold">{num}</span>
+      <div className="mb-8 flex justify-center overflow-x-auto px-4">
+        <div className="flex items-center justify-center">
+          {[1, 2, 3, 4].map((num) => (
+            <div key={num} className="flex items-center">
+              <div
+                className={`flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                  step >= num
+                    ? "bg-primary text-white"
+                    : "bg-gray-200 text-gray-500 dark:bg-gray-800"
+                }`}
+              >
+                {step > num ? (
+                  <svg
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                ) : (
+                  <span className="text-xs sm:text-sm font-semibold">{num}</span>
+                )}
+              </div>
+              {num < 4 && (
+                <div
+                  className={`mx-2 sm:mx-3 h-1 w-8 sm:w-12 ${
+                    step > num
+                      ? "bg-primary"
+                      : "bg-gray-200 dark:bg-gray-800"
+                  }`}
+                />
               )}
             </div>
-            {num < 4 && (
-              <div
-                className={`mx-2 h-1 flex-1 ${
-                  step > num
-                    ? "bg-primary"
-                    : "bg-gray-200 dark:bg-gray-800"
-                }`}
-              />
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Step 1: Introduction */}
@@ -331,13 +333,13 @@ export default function Setup2FAPage() {
                 <p className="mb-2 text-sm text-body-color dark:text-body-color-dark">
                   Enter this key manually in your authenticator app:
                 </p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 rounded bg-white px-3 py-2 text-sm font-mono text-black dark:bg-gray-800 dark:text-white">
+                <div className="flex items-start gap-2">
+                  <code className="flex-1 overflow-hidden break-all rounded bg-white px-3 py-2 text-xs sm:text-sm font-mono text-black dark:bg-gray-800 dark:text-white">
                     {secretKey}
                   </code>
                   <button
                     onClick={handleCopySecret}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
+                    className="flex-shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
                   >
                     {copied ? "Copied!" : "Copy"}
                   </button>
@@ -417,7 +419,7 @@ export default function Setup2FAPage() {
             </div>
           </div>
 
-          <div className="mb-6 grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-4 dark:bg-black/20">
+          <div className="mb-6 mx-auto max-w-md grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-4 dark:bg-black/20">
             {backupCodes.map((code, index) => (
               <div
                 key={index}

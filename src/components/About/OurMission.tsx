@@ -1,6 +1,43 @@
+"use client";
+
 import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
 
 const OurMission = () => {
+  const [isVisible, setIsVisible] = useState({
+    text: false,
+    image: false,
+  });
+
+  const textRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.2,
+      rootMargin: "-50px",
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.target === textRef.current) {
+          setIsVisible((prev) => ({ ...prev, text: entry.isIntersecting }));
+        }
+        if (entry.target === imageRef.current) {
+          setIsVisible((prev) => ({ ...prev, image: entry.isIntersecting }));
+        }
+      });
+    }, observerOptions);
+
+    if (textRef.current) observer.observe(textRef.current);
+    if (imageRef.current) observer.observe(imageRef.current);
+
+    return () => {
+      if (textRef.current) observer.unobserve(textRef.current);
+      if (imageRef.current) observer.unobserve(imageRef.current);
+    };
+  }, []);
+
   return (
     <section className="bg-white py-16 dark:bg-bg-color-dark md:py-20 lg:py-28">
       <div className="container">
@@ -8,7 +45,14 @@ const OurMission = () => {
         <div className="mx-auto max-w-[1200px] px-4">
           <div className="flex flex-wrap items-center gap-8 lg:gap-12">
           {/* Left Column - Text Content */}
-          <div className="w-full lg:w-[calc(50%-1.5rem)]">
+          <div
+            ref={textRef}
+            className={`w-full lg:w-[calc(50%-1.5rem)] transition-all duration-1000 delay-[500ms] ${
+              isVisible.text
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-8"
+            }`}
+          >
             <div className="mb-12 lg:mb-0">
               <p className="mb-4 text-sm uppercase tracking-wide text-body-color dark:text-body-color-dark">
                 Our Mission
@@ -28,7 +72,14 @@ const OurMission = () => {
           </div>
 
           {/* Right Column - Image */}
-          <div className="w-full lg:w-[calc(50%-1.5rem)] flex justify-center">
+          <div
+            ref={imageRef}
+            className={`w-full lg:w-[calc(50%-1.5rem)] flex justify-center transition-all duration-1000 delay-[500ms] ${
+              isVisible.image
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 translate-x-8"
+            }`}
+          >
             <div className="relative w-full max-w-[394px] overflow-hidden rounded-lg" style={{ aspectRatio: '394/525' }}>
               <Image
                 src="/images/about/about-mission.jpg"

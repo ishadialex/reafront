@@ -99,15 +99,21 @@ const Header = () => {
 
   const usePathName = usePathname();
 
+  // Check if current path matches any submenu item
+  const isSubmenuActive = (submenu: any[]) => {
+    if (!submenu) return false;
+    return submenu.some(item => usePathName === item.path || usePathName?.startsWith(item.path + '/'));
+  };
+
   return (
     <>
       <header
-        className="header fixed top-0 left-0 z-9999 flex w-full items-center bg-white dark:bg-gray-dark"
+        className="header fixed top-0 left-0 z-9999 flex w-full items-center bg-white/90 backdrop-blur-sm dark:bg-gray-dark/90"
       >
         <div className="container">
-          <div className="relative -mx-4 flex items-center justify-between min-h-[70px] xlg:min-h-0">
+          <div className="relative -mx-4 flex items-center justify-between min-h-[60px] xlg:min-h-0">
             {/* Mobile Layout: Language & Theme on Left */}
-            <div className="flex items-center gap-3 px-4 py-6 xlg:hidden xlg:py-0">
+            <div className="flex items-center gap-3 px-4 py-4 xlg:hidden xlg:py-0">
               <LanguageSelector onMenuClose={() => setNavbarOpen(false)} />
               <ThemeToggler />
             </div>
@@ -117,7 +123,7 @@ const Header = () => {
               <Link
                 href="/"
                 className={`header-logo block ${
-                  sticky ? "py-5 lg:py-2" : "py-8"
+                  sticky ? "py-4 lg:py-2" : "py-6"
                 } `}
               >
                 {/* Light mode logo (with black text) */}
@@ -144,7 +150,7 @@ const Header = () => {
               <Link
                 href="/"
                 className={`header-logo block w-full ${
-                  sticky ? "py-5 lg:py-2" : "py-8"
+                  sticky ? "py-4 lg:py-2" : "py-6"
                 } `}
               >
                 {/* Light mode logo (with black text) */}
@@ -217,7 +223,11 @@ const Header = () => {
                           <>
                             <p
                               onClick={() => handleSubmenu(index)}
-                              className="text-dark group-hover:text-primary flex cursor-pointer items-center justify-between py-2 text-base xlg:mr-0 xlg:inline-flex xlg:px-0 xlg:py-6 dark:text-white/70 dark:group-hover:text-white"
+                              className={`flex cursor-pointer items-center justify-between py-2 text-base xlg:mr-0 xlg:inline-flex xlg:px-0 xlg:py-6 ${
+                                isSubmenuActive(menuItem.submenu)
+                                  ? "text-primary dark:text-white"
+                                  : "text-dark group-hover:text-primary dark:text-white/70 dark:group-hover:text-white"
+                              }`}
                             >
                               {menuItem.title}
                               <span className="pl-3">
@@ -232,12 +242,13 @@ const Header = () => {
                               </span>
                             </p>
                             <div
-                              className={`submenu dark:bg-dark relative top-full left-0 rounded-sm bg-white transition-[top] duration-300 group-hover:opacity-100 xlg:invisible xlg:absolute xlg:top-[110%] xlg:block xlg:w-[250px] xlg:p-4 xlg:opacity-0 xlg:shadow-lg xlg:group-hover:visible xlg:group-hover:top-full ${
+                              className={`submenu dark:bg-dark relative top-full left-0 rounded-sm bg-white transition-[top] duration-300 group-hover:opacity-100 xlg:invisible xlg:absolute xlg:top-[110%] xlg:block xlg:w-max xlg:min-w-[150px] xlg:p-4 xlg:opacity-0 xlg:shadow-lg xlg:group-hover:visible xlg:group-hover:top-full ${
                                 openIndex === index ? "block" : "hidden"
                               }`}
                             >
-                              {menuItem.submenu.map((submenuItem, index) => (
-                                submenuItem.newTab ? (
+                              {menuItem.submenu.map((submenuItem, index) => {
+                                const isActive = usePathName === submenuItem.path || usePathName?.startsWith(submenuItem.path + '/');
+                                return submenuItem.newTab ? (
                                   <a
                                     href={submenuItem.path}
                                     key={index}
@@ -255,7 +266,11 @@ const Header = () => {
                                         setNavbarOpen(false);
                                       }
                                     }}
-                                    className="text-dark hover:text-primary block rounded-sm py-2.5 pl-4 pr-3 text-sm xlg:px-3 dark:text-white/70 dark:hover:text-white"
+                                    className={`block rounded-sm py-2.5 pl-4 pr-3 text-sm xlg:px-3 ${
+                                      isActive
+                                        ? "text-primary dark:text-white font-medium"
+                                        : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                                    }`}
                                   >
                                     {submenuItem.title}
                                   </a>
@@ -264,12 +279,16 @@ const Header = () => {
                                     href={submenuItem.path}
                                     key={index}
                                     onClick={() => setNavbarOpen(false)}
-                                    className="text-dark hover:text-primary block rounded-sm py-2.5 pl-4 pr-3 text-sm xlg:px-3 dark:text-white/70 dark:hover:text-white"
+                                    className={`block rounded-sm py-2.5 pl-4 pr-3 text-sm xlg:px-3 ${
+                                      isActive
+                                        ? "text-primary dark:text-white font-medium"
+                                        : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                                    }`}
                                   >
                                     {submenuItem.title}
                                   </Link>
-                                )
-                              ))}
+                                );
+                              })}
                             </div>
                           </>
                         )}

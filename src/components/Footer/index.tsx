@@ -12,9 +12,9 @@ const Footer = () => {
     <>
       {/* Call to Action Section - Hidden on specific pages */}
       {!shouldHideCta && (
-        <section className="bg-white py-10 dark:bg-gray-dark md:py-12 lg:py-16">
+        <section className="bg-white py-8 dark:bg-gray-dark md:py-10 lg:py-12">
           <div className="container px-4 md:px-8 lg:px-12">
-            <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-2xl bg-black px-8 py-16 text-center dark:bg-black md:px-12 md:py-20 lg:px-16 lg:py-24">
+            <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-2xl bg-black px-8 py-12 text-center dark:bg-black md:px-12 md:py-16 lg:px-16 lg:py-20">
               {/* Background Image with Low Opacity */}
               <div className="absolute inset-0 z-0">
                 <Image
@@ -46,10 +46,10 @@ const Footer = () => {
         </section>
       )}
 
-      <footer className="relative z-10 rounded-t-3xl border-t-2 border-gray-700 bg-black py-16 shadow-2xl md:py-20 lg:py-24 dark:border-gray-600">
+      <footer className="relative z-10 rounded-t-3xl border-t-2 border-gray-700 bg-black py-10 shadow-2xl md:py-12 lg:py-16 dark:border-gray-600">
         <div className="container">
           {/* Logo */}
-          <div className="mb-8 flex justify-center">
+          <div className="mb-6 flex justify-center">
             <Link href="/" className="inline-block">
               <Image
                 src="/images/logo/A-Logo.png"
@@ -62,7 +62,7 @@ const Footer = () => {
           </div>
 
           {/* Heading */}
-          <div className="mb-6 text-center">
+          <div className="mb-5 text-center">
             <h2 className="mb-2 text-4xl font-bold text-white md:text-5xl lg:text-6xl">
               Airbnb Arbitrage
             </h2>
@@ -72,7 +72,7 @@ const Footer = () => {
           </div>
 
           {/* Contact Info */}
-          <div className="mb-8 flex flex-wrap items-center justify-center gap-4 text-center md:gap-8">
+          <div className="mb-6 flex flex-wrap items-center justify-center gap-4 text-center md:gap-8">
             <a
               href="tel:4245195003"
               className="text-base text-white transition hover:text-primary md:text-lg"
@@ -94,7 +94,7 @@ const Footer = () => {
           </div>
 
           {/* Social Media Icons */}
-          <div className="mb-8 flex items-center justify-center gap-6">
+          <div className="mb-6 flex items-center justify-center gap-6">
             <a
               href="/"
               aria-label="Facebook"
@@ -146,7 +146,7 @@ const Footer = () => {
           </div>
 
           {/* Policy Link */}
-          <div className="mb-12 px-4 text-center">
+          <div className="mb-8 px-4 text-center">
             <Link
               href="/withdrawal-policy"
               className="inline-block border-b border-white text-xs text-white transition hover:border-primary hover:text-primary sm:text-sm"
@@ -156,7 +156,7 @@ const Footer = () => {
           </div>
 
           {/* Divider */}
-          <div className="mb-8 h-px w-full bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
+          <div className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
 
           {/* Bottom Footer */}
           <div className="flex flex-wrap items-center justify-center gap-2 text-center text-sm text-gray-400 md:gap-4 md:text-base">
