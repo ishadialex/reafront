@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { InvestmentOptionType } from "@/types/investmentOption";
 
 interface TwoWaysToInvestProps {
@@ -9,7 +10,38 @@ interface TwoWaysToInvestProps {
 }
 
 const TwoWaysToInvest = ({ options }: TwoWaysToInvestProps) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
   if (options.length === 0) return null;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          } else {
+            setIsVisible(false);
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '-50px'
+      }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
 
   return (
     <section className="relative bg-gray-2 py-8 dark:bg-bg-color-dark md:py-10 lg:py-12">
@@ -24,11 +56,16 @@ const TwoWaysToInvest = ({ options }: TwoWaysToInvestProps) => {
         </div>
 
         {/* Investment Cards */}
-        <div className="grid gap-8 sm:grid-cols-1 lg:grid-cols-2">
+        <div className="grid gap-8 sm:grid-cols-1 lg:grid-cols-2" ref={sectionRef}>
           {options.map((option, index) => (
             <div
               key={index}
-              className="rounded-lg bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 md:p-10"
+              className={`rounded-lg bg-white p-6 shadow-lg transition-all duration-[2000ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 md:p-10 ${
+                isVisible
+                  ? 'opacity-100 translate-x-0 translate-y-0'
+                  : 'opacity-0 translate-x-0 sm:translate-y-8'
+              }`}
+              style={{ transitionDelay: `${index * 500}ms` }}
             >
               {/* Image */}
               <div className="mb-8 overflow-hidden rounded-lg">

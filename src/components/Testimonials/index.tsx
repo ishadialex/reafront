@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Testimonial } from "@/types/testimonial";
 import SectionTitle from "../Common/SectionTitle";
 import SingleTestimonial from "./SingleTestimonial";
@@ -7,7 +10,48 @@ interface TestimonialsProps {
 }
 
 const Testimonials = ({ testimonials }: TestimonialsProps) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false);
+
+  // Auto-slide for mobile carousel
+  useEffect(() => {
+    if (testimonials.length > 1) {
+      const interval = setInterval(() => {
+        setIsFading(true);
+        setTimeout(() => {
+          setCurrentIndex((prev) =>
+            prev === testimonials.length - 1 ? 0 : prev + 1
+          );
+          setIsFading(false);
+        }, 500);
+      }, 5000); // 5 seconds between slides
+
+      return () => clearInterval(interval);
+    }
+  }, [testimonials.length]);
+
+  const nextTestimonial = () => {
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentIndex((prev) =>
+        prev === testimonials.length - 1 ? 0 : prev + 1
+      );
+      setIsFading(false);
+    }, 500);
+  };
+
+  const prevTestimonial = () => {
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentIndex((prev) =>
+        prev === 0 ? testimonials.length - 1 : prev - 1
+      );
+      setIsFading(false);
+    }, 500);
+  };
+
   if (testimonials.length === 0) return null;
+
   return (
     <section className="dark:bg-bg-color-dark bg-gray-light relative z-10 py-8 md:py-10 lg:py-12">
       <div className="container">
@@ -16,10 +60,89 @@ const Testimonials = ({ testimonials }: TestimonialsProps) => {
           paragraph="Testimonials"
           center
           mb="50px"
-          />
-          
+        />
 
-        <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+        {/* Mobile Carousel View */}
+        <div className="relative px-4 md:hidden">
+          <div
+            className={`transition-opacity duration-[2000ms] ${
+              isFading ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            <SingleTestimonial testimonial={testimonials[currentIndex]} />
+          </div>
+
+          {/* Navigation Arrows - Top Left & Bottom Right */}
+          {testimonials.length > 1 && (
+            <>
+              <button
+                onClick={prevTestimonial}
+                className="absolute left-0 top-0 z-10 -translate-y-10 rounded-full bg-white p-2.5 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"
+                aria-label="Previous testimonial"
+              >
+                <svg
+                  className="h-4 w-4 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={nextTestimonial}
+                className="absolute bottom-0 right-0 z-10 translate-y-2 rounded-full bg-white p-2.5 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"
+                aria-label="Next testimonial"
+              >
+                <svg
+                  className="h-4 w-4 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* Dots Indicator */}
+          {testimonials.length > 1 && (
+            <div className="mt-6 flex justify-center gap-2">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setIsFading(true);
+                    setTimeout(() => {
+                      setCurrentIndex(index);
+                      setIsFading(false);
+                    }, 500);
+                  }}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === currentIndex
+                      ? "w-8 bg-primary"
+                      : "w-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
+                  }`}
+                  aria-label={`Go to testimonial ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Grid View */}
+        <div className="hidden grid-cols-1 gap-x-8 gap-y-10 md:grid md:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((testimonial) => (
             <SingleTestimonial key={testimonial.id} testimonial={testimonial} />
           ))}
