@@ -11,6 +11,8 @@ interface TeamProps {
 const Team = ({ members }: TeamProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const [desktopIndex, setDesktopIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
 
   if (members.length === 0) return null;
 
@@ -30,6 +32,30 @@ const Team = ({ members }: TeamProps) => {
       return () => clearInterval(interval);
     }
   }, [members.length]);
+
+  // Auto-slide for desktop carousel
+  useEffect(() => {
+    if (members.length > 3) {
+      const interval = setInterval(() => {
+        setDesktopIndex((prev) => prev + 1);
+      }, 2500); // 2.5 seconds between slides
+
+      return () => clearInterval(interval);
+    }
+  }, [members.length]);
+
+  // Handle infinite loop reset
+  useEffect(() => {
+    if (desktopIndex === members.length) {
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setDesktopIndex(0);
+        setTimeout(() => {
+          setIsTransitioning(true);
+        }, 50);
+      }, 2000); // Wait for transition to complete
+    }
+  }, [desktopIndex, members.length]);
 
   const nextMember = () => {
     setIsFading(true);
@@ -51,8 +77,39 @@ const Team = ({ members }: TeamProps) => {
     }, 500);
   };
 
+  // Desktop carousel navigation
+  const nextDesktop = () => {
+    setDesktopIndex((prev) => prev + 1);
+  };
+
+  const prevDesktop = () => {
+    if (desktopIndex === 0) {
+      setIsTransitioning(false);
+      setDesktopIndex(members.length);
+      setTimeout(() => {
+        setIsTransitioning(true);
+        setDesktopIndex(members.length - 1);
+      }, 50);
+    } else {
+      setDesktopIndex((prev) => prev - 1);
+    }
+  };
+
+  // Get visible members for desktop (max 3)
+  const getVisibleDesktopMembers = () => {
+    const visible = [];
+    const maxVisible = Math.min(3, members.length);
+    for (let i = 0; i < maxVisible; i++) {
+      const index = (desktopIndex + i) % members.length;
+      visible.push(members[index]);
+    }
+    return visible;
+  };
+
+  const visibleDesktopMembers = getVisibleDesktopMembers();
+
   const TeamMemberCard = ({ member, priority }: { member: TeamMember; priority?: boolean }) => (
-    <div className="group w-full max-w-[330px] h-[489px] rounded-lg bg-black p-6 shadow-lg transition-transform duration-300 hover:scale-105 hover:shadow-2xl hover:border-2 hover:border-primary dark:bg-gray-900 cursor-pointer md:p-8">
+    <div className="group w-full max-w-[330px] h-[489px] rounded-lg bg-black p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,108,247,0.6)] dark:bg-gray-900 cursor-pointer md:p-8">
       {/* Profile Image */}
       <div className="mb-8 flex justify-center">
         <div className="relative h-48 w-48 overflow-hidden rounded-full bg-white transition-transform duration-300 group-hover:scale-110">
@@ -191,13 +248,67 @@ const Team = ({ members }: TeamProps) => {
           )}
         </div>
 
-        {/* Desktop Grid View */}
-        <div className="hidden grid-cols-1 gap-x-8 gap-y-10 md:grid md:grid-cols-2 lg:grid-cols-3">
-          {members.map((member) => (
-            <div key={member.name} className="flex justify-center">
-              <TeamMemberCard member={member} />
+        {/* Desktop Carousel View */}
+        <div className="relative hidden md:block">
+          <div className="mx-auto overflow-hidden py-8" style={{ maxWidth: 'calc(3 * 330px + 2 * 32px + 80px)' }}>
+            <div
+              className="flex gap-8 px-10"
+              style={{
+                transform: `translateX(-${desktopIndex * (330 + 32)}px)`,
+                transition: isTransitioning ? 'transform 2000ms ease-in-out' : 'none',
+              }}
+            >
+              {[...members, ...members.slice(0, 3)].map((member, index) => (
+                <div key={index} className="flex-shrink-0" style={{ width: '330px' }}>
+                  <TeamMemberCard member={member} />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Navigation Arrows for Desktop */}
+          {members.length > 3 && (
+            <>
+              <button
+                onClick={prevDesktop}
+                className="absolute left-0 top-1/2 z-10 -translate-x-4 -translate-y-1/2 rounded-full bg-white p-3 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"
+                aria-label="Previous members"
+              >
+                <svg
+                  className="h-6 w-6 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={nextDesktop}
+                className="absolute right-0 top-1/2 z-10 translate-x-4 -translate-y-1/2 rounded-full bg-white p-3 shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"
+                aria-label="Next members"
+              >
+                <svg
+                  className="h-6 w-6 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </section>
