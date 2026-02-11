@@ -2,8 +2,34 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 const HowItWorks = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Trigger animation when entering viewport, reset when leaving
+          setIsVisible(entry.isIntersecting);
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+
   return (
     <section className="relative bg-gray-dark py-10 md:py-12 lg:py-16">
       <div className="container">
@@ -56,11 +82,16 @@ const HowItWorks = () => {
           </div>
 
           {/* Right Images Grid */}
-          <div className="w-full px-4 lg:w-1/2">
+          <div className="w-full px-4 lg:w-1/2" ref={sectionRef}>
             <div className="flex flex-wrap gap-4">
               {/* Large image on left */}
               <div className="w-full sm:w-[calc(50%-8px)]">
-                <div className="relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-lg bg-gray-800">
+                <div
+                  className={`relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-1000 ease-out ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`}
+                  style={{ transitionDelay: '0ms' }}
+                >
                   <Image
                     src="/images/how-it-works/property-1.jpg"
                     alt="Modern kitchen and dining area"
@@ -73,7 +104,12 @@ const HowItWorks = () => {
 
               {/* Two stacked images on right */}
               <div className="flex w-full flex-col gap-4 sm:w-[calc(50%-8px)]">
-                <div className="relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800">
+                <div
+                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-1000 ease-out ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`}
+                  style={{ transitionDelay: '200ms' }}
+                >
                   <Image
                     src="/images/how-it-works/property-2.jpg"
                     alt="Luxury bedroom with city view"
@@ -82,7 +118,12 @@ const HowItWorks = () => {
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
                 </div>
-                <div className="relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800">
+                <div
+                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-1000 ease-out ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  }`}
+                  style={{ transitionDelay: '400ms' }}
+                >
                   <Image
                     src="/images/how-it-works/property-3.jpg"
                     alt="Modern living room"
