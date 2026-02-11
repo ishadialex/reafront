@@ -23,14 +23,24 @@ function SigninContent() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-  // Check for session timeout, revocation, or account deletion
+  // Redirect if already logged in (unless coming from logout/timeout)
   useEffect(() => {
     const reason = searchParams.get('reason');
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const accessToken = localStorage.getItem("accessToken");
+
+    // Show warning for session timeout, revocation, or account deletion
     if (reason === 'session_timeout' || reason === 'session_revoked' || reason === 'account_deleted') {
       setSessionTimeoutWarning(true);
       setTimeout(() => setSessionTimeoutWarning(false), 10000);
+      return;
     }
-  }, [searchParams]);
+
+    // Redirect to dashboard if already logged in
+    if (isLoggedIn === "true" && accessToken && !reason) {
+      router.replace("/dashboard");
+    }
+  }, [searchParams, router]);
 
   const handleGoogleSignIn = () => {
     // Redirect to backend Google OAuth endpoint

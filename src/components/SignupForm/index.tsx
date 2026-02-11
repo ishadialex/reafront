@@ -25,6 +25,16 @@ const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (isLoggedIn === "true" && accessToken) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
+
   // Handle Google OAuth sign up
   const handleGoogleSignup = () => {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
