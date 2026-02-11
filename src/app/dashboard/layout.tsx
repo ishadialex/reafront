@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import DashboardSidebar from "@/components/Dashboard/Sidebar";
 import ThemeToggler from "@/components/Header/ThemeToggler";
 import NotificationPanel from "@/components/Dashboard/NotificationPanel";
@@ -153,23 +154,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </button>
 
             {/* Center - Logo/Brand */}
-            <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2">
-              {/* Light mode logo */}
-              <Image
-                src="/images/logo/A-logobbb.jpg"
-                alt="Logo"
-                width={120}
-                height={40}
-                className="block dark:hidden"
-              />
-              {/* Dark mode logo */}
-              <Image
-                src="/images/logo/A-Logo.png"
-                alt="Logo"
-                width={120}
-                height={40}
-                className="hidden dark:block"
-              />
+            <div className="absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2">
+              <Link href="/" className="block">
+                {/* Light mode logo */}
+                <Image
+                  src="/images/logo/A-logobbb.jpg"
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  className="block dark:hidden"
+                />
+                {/* Dark mode logo */}
+                <Image
+                  src="/images/logo/A-Logo.png"
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  className="hidden dark:block"
+                />
+              </Link>
             </div>
 
             {/* Right side - Menu Icon */}
