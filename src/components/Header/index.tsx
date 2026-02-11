@@ -12,11 +12,13 @@ import { hasVerifiedAccess } from "@/utils/passcode";
 const Header = () => {
   // Check if user is logged in
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     const accessToken = localStorage.getItem("accessToken");
     setIsLoggedIn(loggedIn && !!accessToken);
+    setIsAuthChecked(true);
   }, []);
 
   // Navbar toggle
@@ -279,64 +281,68 @@ const Header = () => {
                     ))}
 
                     {/* Mobile Sign In and Sign Up Links / Dashboard */}
-                    {isLoggedIn ? (
-                      <li className="xlg:hidden">
-                        <Link
-                          href="/dashboard"
-                          onClick={() => setNavbarOpen(false)}
-                          className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 mt-2 block rounded-full px-8 py-3 text-center text-base font-medium text-white transition duration-300"
-                        >
-                          Dashboard
-                        </Link>
-                      </li>
-                    ) : (
-                      <>
+                    {isAuthChecked && (
+                      isLoggedIn ? (
                         <li className="xlg:hidden">
                           <Link
-                            href="/signin"
-                            onClick={() => setNavbarOpen(false)}
-                            className="text-dark hover:text-primary flex py-2 text-base dark:text-white/70 dark:hover:text-white"
-                          >
-                            Sign In
-                          </Link>
-                        </li>
-                        <li className="xlg:hidden">
-                          <Link
-                            href="/signup"
+                            href="/dashboard"
                             onClick={() => setNavbarOpen(false)}
                             className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 mt-2 block rounded-full px-8 py-3 text-center text-base font-medium text-white transition duration-300"
                           >
-                            Sign Up
+                            Dashboard
                           </Link>
                         </li>
-                      </>
+                      ) : (
+                        <>
+                          <li className="xlg:hidden">
+                            <Link
+                              href="/signin"
+                              onClick={() => setNavbarOpen(false)}
+                              className="text-dark hover:text-primary flex py-2 text-base dark:text-white/70 dark:hover:text-white"
+                            >
+                              Sign In
+                            </Link>
+                          </li>
+                          <li className="xlg:hidden">
+                            <Link
+                              href="/signup"
+                              onClick={() => setNavbarOpen(false)}
+                              className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 mt-2 block rounded-full px-8 py-3 text-center text-base font-medium text-white transition duration-300"
+                            >
+                              Sign Up
+                            </Link>
+                          </li>
+                        </>
+                      )
                     )}
                   </ul>
                 </nav>
               </div>
               <div className="flex items-center justify-end gap-3 pr-16 xlg:pr-0">
-                {isLoggedIn ? (
-                  <Link
-                    href="/dashboard"
-                    className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 hidden rounded-full px-8 py-3 text-base font-medium text-white transition duration-300 xlg:block xlg:px-9"
-                  >
-                    Dashboard
-                  </Link>
-                ) : (
-                  <>
+                {isAuthChecked && (
+                  isLoggedIn ? (
                     <Link
-                      href="/signin"
-                      className="text-dark hidden px-7 py-3 text-base font-medium hover:opacity-70 xlg:block dark:text-white"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href="/signup"
+                      href="/dashboard"
                       className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 hidden rounded-full px-8 py-3 text-base font-medium text-white transition duration-300 xlg:block xlg:px-9"
                     >
-                      Sign Up
+                      Dashboard
                     </Link>
-                  </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/signin"
+                        className="text-dark hidden px-7 py-3 text-base font-medium hover:opacity-70 xlg:block dark:text-white"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/signup"
+                        className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 hidden rounded-full px-8 py-3 text-base font-medium text-white transition duration-300 xlg:block xlg:px-9"
+                      >
+                        Sign Up
+                      </Link>
+                    </>
+                  )
                 )}
                 {/* Desktop Layout: Language & Theme on Right */}
                 <div className="hidden items-center gap-3 xlg:flex">
