@@ -97,7 +97,7 @@ const HowItWorks = () => {
                   className={`relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
                     isVisible
                       ? 'opacity-100 translate-x-0 translate-y-0'
-                      : 'opacity-0 -translate-x-8 sm:translate-x-0 sm:translate-y-8'
+                      : 'opacity-0 translate-x-0 sm:translate-y-8'
                   }`}
                   style={{ transitionDelay: '0ms' }}
                 >
@@ -117,7 +117,7 @@ const HowItWorks = () => {
                   className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
                     isVisible
                       ? 'opacity-100 translate-x-0 translate-y-0'
-                      : 'opacity-0 translate-x-8 sm:translate-x-0 sm:translate-y-8'
+                      : 'opacity-0 translate-x-0 sm:translate-y-8'
                   }`}
                   style={{ transitionDelay: '500ms' }}
                 >
@@ -133,7 +133,7 @@ const HowItWorks = () => {
                   className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
                     isVisible
                       ? 'opacity-100 translate-x-0 translate-y-0'
-                      : 'opacity-0 -translate-x-8 sm:translate-x-0 sm:translate-y-8'
+                      : 'opacity-0 translate-x-0 sm:translate-y-8'
                   }`}
                   style={{ transitionDelay: '1000ms' }}
                 >

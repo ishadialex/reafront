@@ -221,7 +221,7 @@ const WhyInvest = () => {
               className={`rounded-lg bg-white p-6 shadow-lg transition-all duration-[3000ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-2 ${
                 visibleCards.has(index)
                   ? 'opacity-100 translate-x-0 translate-y-0'
-                  : `opacity-0 ${index % 2 === 0 ? '-translate-x-8' : 'translate-x-8'} sm:translate-x-0 sm:translate-y-8`
+                  : 'opacity-0 translate-x-0 sm:translate-y-8'
               }`}
             >
               {/* Icon */}
@@ -249,7 +249,7 @@ const WhyInvest = () => {
               className={`rounded-lg bg-white p-6 shadow-lg transition-all duration-[3000ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-3 ${
                 visibleCards.has(index + 3)
                   ? 'opacity-100 translate-x-0 translate-y-0'
-                  : `opacity-0 ${index % 2 === 0 ? '-translate-x-8' : 'translate-x-8'} sm:translate-x-0 sm:translate-y-8`
+                  : 'opacity-0 translate-x-0 sm:translate-y-8'
               }`}
             >
               {/* Icon */}
