@@ -255,7 +255,7 @@ const Header = () => {
                                         setNavbarOpen(false);
                                       }
                                     }}
-                                    className="text-dark hover:text-primary block rounded-sm py-2.5 text-sm xlg:px-3 dark:text-white/70 dark:hover:text-white"
+                                    className="text-dark hover:text-primary block rounded-sm py-2.5 pl-4 pr-3 text-sm xlg:px-3 dark:text-white/70 dark:hover:text-white"
                                   >
                                     {submenuItem.title}
                                   </a>
@@ -264,7 +264,7 @@ const Header = () => {
                                     href={submenuItem.path}
                                     key={index}
                                     onClick={() => setNavbarOpen(false)}
-                                    className="text-dark hover:text-primary block rounded-sm py-2.5 text-sm xlg:px-3 dark:text-white/70 dark:hover:text-white"
+                                    className="text-dark hover:text-primary block rounded-sm py-2.5 pl-4 pr-3 text-sm xlg:px-3 dark:text-white/70 dark:hover:text-white"
                                   >
                                     {submenuItem.title}
                                   </Link>
