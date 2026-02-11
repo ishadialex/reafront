@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import Brands from "@/components/Brands";
+// import Brands from "@/components/Brands";
 import ScrollUp from "@/components/Common/ScrollUp";
 import Hero from "@/components/Hero";
 import HowItWorks from "@/components/HowItWorks";
@@ -48,7 +48,7 @@ export default function Home() {
         <TeamSection />
       </Suspense>
       <Video />
-      <Brands />
+      {/* <Brands /> */}
       <Suspense fallback={<TestimonialsSkeleton />}>
         <TestimonialsSection />
       </Suspense>

@@ -13,10 +13,17 @@ const HowItWorks = () => {
       (entries) => {
         entries.forEach((entry) => {
           // Trigger animation when entering viewport, reset when leaving
-          setIsVisible(entry.isIntersecting);
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          } else {
+            setIsVisible(false);
+          }
         });
       },
-      { threshold: 0.1 }
+      {
+        threshold: 0.2,
+        rootMargin: '-50px'
+      }
     );
 
     if (sectionRef.current) {
@@ -87,8 +94,10 @@ const HowItWorks = () => {
               {/* Large image on left */}
               <div className="w-full sm:w-[calc(50%-8px)]">
                 <div
-                  className={`relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-1000 ease-out ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  className={`relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
+                    isVisible
+                      ? 'opacity-100 translate-x-0 translate-y-0'
+                      : 'opacity-0 -translate-x-8 sm:translate-x-0 sm:translate-y-8'
                   }`}
                   style={{ transitionDelay: '0ms' }}
                 >
@@ -105,10 +114,12 @@ const HowItWorks = () => {
               {/* Two stacked images on right */}
               <div className="flex w-full flex-col gap-4 sm:w-[calc(50%-8px)]">
                 <div
-                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-1000 ease-out ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
+                    isVisible
+                      ? 'opacity-100 translate-x-0 translate-y-0'
+                      : 'opacity-0 translate-x-8 sm:translate-x-0 sm:translate-y-8'
                   }`}
-                  style={{ transitionDelay: '200ms' }}
+                  style={{ transitionDelay: '500ms' }}
                 >
                   <Image
                     src="/images/how-it-works/property-2.jpg"
@@ -119,10 +130,12 @@ const HowItWorks = () => {
                   />
                 </div>
                 <div
-                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-1000 ease-out ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
+                    isVisible
+                      ? 'opacity-100 translate-x-0 translate-y-0'
+                      : 'opacity-0 -translate-x-8 sm:translate-x-0 sm:translate-y-8'
                   }`}
-                  style={{ transitionDelay: '400ms' }}
+                  style={{ transitionDelay: '1000ms' }}
                 >
                   <Image
                     src="/images/how-it-works/property-3.jpg"
