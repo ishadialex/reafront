@@ -9,12 +9,13 @@ interface TestimonialsProps {
 const Testimonials = ({ testimonials }: TestimonialsProps) => {
   if (testimonials.length === 0) return null;
   return (
-    <section className="dark:bg-bg-color-dark bg-gray-light relative z-10 py-10 md:py-12 lg:py-16">
+    <section className="dark:bg-bg-color-dark bg-gray-light relative z-10 py-8 md:py-10 lg:py-12">
       <div className="container">
         <SectionTitle
           title="What Our Investors Say"
           paragraph="Testimonials"
           center
+          mb="50px"
           />
           
 

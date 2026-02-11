@@ -38,7 +38,7 @@ const HowItWorks = () => {
   }, []);
 
   return (
-    <section className="relative bg-gray-dark py-10 md:py-12 lg:py-16">
+    <section className="relative bg-gray-dark py-8 md:py-10 lg:py-12">
       <div className="container">
         <div className="-mx-4 flex flex-wrap items-center">
           {/* Left Content */}

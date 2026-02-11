@@ -18,7 +18,7 @@ const SectionTitle = ({
         style={{ maxWidth: width, marginBottom: mb }}
       >
         {paragraph && (
-          <p className="mb-4 text-base leading-relaxed! text-body-color md:text-lg">
+          <p className="mb-2 text-base leading-relaxed! text-body-color md:text-lg">
             {paragraph}
           </p>
         )}

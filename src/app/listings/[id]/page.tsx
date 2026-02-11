@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 // Dynamically import the map component with SSR disabled
@@ -220,6 +220,24 @@ export default function PropertyDetailsPage({
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [isFading, setIsFading] = useState(false);
+
+  // Auto-slide images every 3 seconds with fade effect
+  useEffect(() => {
+    if (property && property.images.length > 1) {
+      const interval = setInterval(() => {
+        setIsFading(true);
+        setTimeout(() => {
+          setCurrentImageIndex((prev) =>
+            prev === property.images.length - 1 ? 0 : prev + 1
+          );
+          setIsFading(false);
+        }, 500); // Wait for fade out before changing image
+      }, 3000); // 3 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [property]);
 
   if (!property) {
     return (
@@ -240,19 +258,31 @@ export default function PropertyDetailsPage({
   }
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === property.images.length - 1 ? 0 : prev + 1
-    );
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentImageIndex((prev) =>
+        prev === property.images.length - 1 ? 0 : prev + 1
+      );
+      setIsFading(false);
+    }, 500);
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? property.images.length - 1 : prev - 1
-    );
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? property.images.length - 1 : prev - 1
+      );
+      setIsFading(false);
+    }, 500);
   };
 
   const selectImage = (index: number) => {
-    setCurrentImageIndex(index);
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentImageIndex(index);
+      setIsFading(false);
+    }, 500);
   };
 
   return (
@@ -328,7 +358,9 @@ export default function PropertyDetailsPage({
                 src={property.images[currentImageIndex]}
                 alt={`${property.title} - Image ${currentImageIndex + 1}`}
                 fill
-                className="object-cover"
+                className={`object-cover transition-opacity duration-[2000ms] ${
+                  isFading ? 'opacity-0' : 'opacity-100'
+                }`}
                 sizes="100vw"
                 priority
               />
@@ -392,19 +424,24 @@ export default function PropertyDetailsPage({
             </div>
           </div>
 
-          {/* Thumbnail Strip */}
-          <div className="border-t border-gray-200 p-4 dark:border-gray-700 md:p-6">
-            <div className="flex gap-3 overflow-x-auto md:gap-4">
-              {property.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => selectImage(index)}
-                  className={`relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-lg transition-all duration-300 md:h-24 md:w-32 ${
-                    currentImageIndex === index
-                      ? "ring-4 ring-primary"
-                      : "opacity-60 hover:opacity-100"
-                  }`}
-                >
+          {/* Thumbnail Strip - Only show if multiple images */}
+          {property.images.length > 1 && (
+            <div className="border-t border-gray-200 p-4 dark:border-gray-700 md:p-6">
+              <div className={`flex gap-3 md:gap-4 ${
+                property.images.length <= 4
+                  ? 'justify-center'
+                  : 'overflow-x-auto'
+              }`}>
+                {property.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => selectImage(index)}
+                    className={`relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-lg transition-all duration-300 md:h-24 md:w-32 ${
+                      currentImageIndex === index
+                        ? "ring-4 ring-primary"
+                        : "opacity-60 hover:opacity-100"
+                    }`}
+                  >
                   <Image
                     src={image}
                     alt={`Thumbnail ${index + 1}`}
@@ -416,6 +453,7 @@ export default function PropertyDetailsPage({
               ))}
             </div>
           </div>
+          )}
         </div>
 
         {/* Overview and Contact Form Grid */}

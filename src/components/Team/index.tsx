@@ -96,7 +96,7 @@ const Team = ({ members }: TeamProps) => {
   };
 
   return (
-    <section className="relative bg-gray-2 py-10 dark:bg-bg-color-dark md:py-12 lg:py-16">
+    <section className="relative bg-gray-2 py-8 dark:bg-bg-color-dark md:py-10 lg:py-12">
       <style jsx>{`
         @keyframes slideIn {
           from {

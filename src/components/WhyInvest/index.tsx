@@ -192,7 +192,7 @@ const WhyInvest = () => {
   ];
 
   return (
-    <section className="relative bg-gray-dark py-10 md:py-12 lg:py-16">
+    <section className="relative bg-gray-dark py-8 md:py-10 lg:py-12">
       {/* Background overlay image */}
       <div className="absolute inset-0 z-0 opacity-30">
         <div className="h-full w-full bg-gradient-to-b from-black/50 to-black/50"></div>

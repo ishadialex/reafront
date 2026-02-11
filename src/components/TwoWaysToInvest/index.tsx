@@ -12,7 +12,7 @@ const TwoWaysToInvest = ({ options }: TwoWaysToInvestProps) => {
   if (options.length === 0) return null;
 
   return (
-    <section className="relative bg-gray-2 py-10 dark:bg-bg-color-dark md:py-12 lg:py-16">
+    <section className="relative bg-gray-2 py-8 dark:bg-bg-color-dark md:py-10 lg:py-12">
       <div className="container">
         {/* Header */}
         <div className="mx-auto mb-12 max-w-[600px] text-center md:mb-16 lg:mb-20">
