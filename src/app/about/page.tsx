@@ -20,8 +20,7 @@ const AboutPage = () => {
         pageName="We are Different by Design"
         description="We invest on behalf of institutions and individuals worldwide to deliver strong, stable returns."
       /> */}
-      <br />
-       <AboutHero />
+      <AboutHero />
       {/* <WhoWeAre /> */}
       <OurMission />
       {/* <AboutSectionOne />
