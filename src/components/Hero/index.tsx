@@ -1,6 +1,57 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const Hero = () => {
+  const [currentCaptionIndex, setCurrentCaptionIndex] = useState(0);
+  const [typedText, setTypedText] = useState("");
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  const captions = [
+    "Passive Income Through Strategic Real Estate Investment",
+    "Turn Property into Profit",
+    "Property Investment Made Simple"
+  ];
+
+  // Typing effect for current caption
+  useEffect(() => {
+    const fullText = captions[currentCaptionIndex];
+    let currentIndex = 0;
+    setTypedText("");
+    setIsTypingComplete(false);
+    setIsFadingOut(false);
+
+    const typingInterval = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setTypedText(fullText.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(typingInterval);
+        setIsTypingComplete(true);
+      }
+    }, 50); // Type one character every 50ms
+
+    return () => clearInterval(typingInterval);
+  }, [currentCaptionIndex]);
+
+  // Rotation effect - fade out, then move to next caption
+  useEffect(() => {
+    if (!isTypingComplete) return;
+
+    const timeout = setTimeout(() => {
+      setIsFadingOut(true);
+
+      // After fade out completes, switch to next caption
+      setTimeout(() => {
+        setCurrentCaptionIndex((prevIndex) => (prevIndex + 1) % captions.length);
+      }, 500); // Wait for fade out animation
+    }, 3000); // Wait 3 seconds after typing completes before fading out
+
+    return () => clearTimeout(timeout);
+  }, [isTypingComplete]);
+
   return (
     <>
       <section
@@ -12,7 +63,12 @@ const Hero = () => {
             <div className="w-full px-4">
               <div className="mx-auto max-w-[800px] text-center">
                 <h1 className="mb-5 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
-                Build Wealth Through Mortgage-Backed Airbnb Investments
+                  <span className={`inline-block transition-opacity duration-500 ${
+                    isFadingOut ? 'opacity-0' : 'opacity-100'
+                  }`}>
+                    {typedText}
+                    <span className="animate-pulse">|</span>
+                  </span>
                 </h1>
                 <p className="mb-12 text-base leading-relaxed! text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
                 Join the ranks of savvy entrepreneurs and seize the chance to turn vacant properties into thriving income streams.
