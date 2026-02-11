@@ -1,6 +1,33 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 const WhyInvest = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Trigger animation when entering viewport, reset when leaving
+          setIsVisible(entry.isIntersecting);
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+
   // Icon 1: Leverage/Growth
   const LeverageIcon = () => (
     <svg
@@ -167,12 +194,17 @@ const WhyInvest = () => {
         </div>
 
         {/* Benefits Cards Grid */}
-        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-6" ref={sectionRef}>
           {/* First 3 cards - each takes 2 columns (1/3 of width) */}
           {benefits.slice(0, 3).map((benefit, index) => (
             <div
               key={index}
-              className="rounded-lg bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-2"
+              className={`rounded-lg bg-white p-6 shadow-lg transition-all duration-[1500ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-2 ${
+                isVisible
+                  ? 'opacity-100 translate-x-0 translate-y-0'
+                  : `opacity-0 ${index % 2 === 0 ? '-translate-x-8' : 'translate-x-8'} sm:translate-x-0 sm:translate-y-8`
+              }`}
+              style={{ transitionDelay: `${index * 300}ms` }}
             >
               {/* Icon */}
               <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary text-primary">
@@ -195,7 +227,12 @@ const WhyInvest = () => {
           {benefits.slice(3).map((benefit, index) => (
             <div
               key={index + 3}
-              className="rounded-lg bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-3"
+              className={`rounded-lg bg-white p-6 shadow-lg transition-all duration-[1500ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-3 ${
+                isVisible
+                  ? 'opacity-100 translate-x-0 translate-y-0'
+                  : `opacity-0 ${index % 2 === 0 ? '-translate-x-8' : 'translate-x-8'} sm:translate-x-0 sm:translate-y-8`
+              }`}
+              style={{ transitionDelay: `${(index + 3) * 300}ms` }}
             >
               {/* Icon */}
               <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary text-primary">
