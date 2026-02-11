@@ -1,4 +1,3 @@
-import Breadcrumb from "@/components/Common/Breadcrumb";
 import Contact from "@/components/Contact";
 
 import { Metadata } from "next";
@@ -12,10 +11,23 @@ export const metadata: Metadata = {
 const ContactPage = () => {
   return (
     <>
-      <Breadcrumb
-        pageName="Contact Page"
-        description="Have questions ? We’re here to help. Reach out to us via phone, email."
-      />
+      {/* Contact Header Section */}
+      <section className="relative overflow-hidden bg-gray-2 dark:bg-bg-color-dark pt-[120px] pb-16 md:pt-[140px] md:pb-20 lg:pt-[160px] lg:pb-24">
+        <div className="container">
+          <div className="-mx-4 flex flex-wrap">
+            <div className="w-full px-4">
+              <div className="mx-auto max-w-[800px] text-center">
+                <h1 className="mb-5 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
+                  Contact Us
+                </h1>
+                <p className="text-base font-medium leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg sm:leading-relaxed">
+                  Have questions? We're here to help. Reach out to us via phone or email, and our team will get back to you as soon as possible.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <Contact />
     </>

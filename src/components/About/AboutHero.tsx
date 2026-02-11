@@ -2,7 +2,7 @@ import Image from "next/image";
 
 const AboutHero = () => {
   return (
-    <section className="bg-white py-16 dark:bg-gray-dark md:py-20 lg:py-28">
+    <section className="bg-white pt-[120px] pb-16 dark:bg-gray-dark md:pt-[140px] md:pb-20 lg:pt-[160px] lg:pb-28">
       <div className="container">
         {/* Top Section - Centered Heading and Description */}
         <div className="mx-auto mb-16 max-w-[900px] text-center">
