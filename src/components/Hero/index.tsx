@@ -31,7 +31,7 @@ const Hero = () => {
         clearInterval(typingInterval);
         setIsTypingComplete(true);
       }
-    }, 50); // Type one character every 50ms
+    }, 100); // Type one character every 100ms
 
     return () => clearInterval(typingInterval);
   }, [currentCaptionIndex]);
@@ -56,15 +56,15 @@ const Hero = () => {
     <>
       <section
         id="home"
-        className="relative z-10 overflow-hidden bg-white pb-8 pt-[120px] dark:bg-gray-dark md:pb-16 md:pt-[150px] xl:pb-20 xl:pt-[180px] 2xl:pb-24 2xl:pt-[210px]"
+        className="relative z-10 overflow-hidden bg-white pb-8 pt-[100px] dark:bg-gray-dark md:pb-16 md:pt-[120px] xl:pb-20 xl:pt-[140px] 2xl:pb-24 2xl:pt-[160px]"
       >
         <div className="container">
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
               <div className="mx-auto max-w-[800px] text-center">
-                <h1 className="mb-5 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
-                  <span className={`inline-block transition-opacity duration-500 ${
-                    isFadingOut ? 'opacity-0' : 'opacity-100'
+                <h1 className="mb-5 flex min-h-[120px] items-end justify-center text-3xl font-bold leading-tight text-black dark:text-white sm:min-h-[140px] sm:text-4xl sm:leading-tight md:min-h-[160px] md:text-5xl md:leading-tight">
+                  <span className={`inline-block ${
+                    isFadingOut ? 'opacity-0 transition-opacity duration-500' : ''
                   }`}>
                     {typedText}
                     <span className="animate-pulse">|</span>
