@@ -8,17 +8,64 @@ import LanguageSelector from "./LanguageSelector";
 import menuData from "./menuData";
 import PasscodeModal from "@/components/PasscodeModal";
 import { hasVerifiedAccess } from "@/utils/passcode";
+import axios from "axios";
+import { Menu } from "@/types/menu";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const Header = () => {
   // Check if user is logged in
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
+  // Dynamic menu data with PDFs from API
+  const [dynamicMenuData, setDynamicMenuData] = useState<Menu[]>(menuData);
+
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
     const accessToken = localStorage.getItem("accessToken");
     setIsLoggedIn(loggedIn && !!accessToken);
     setIsAuthChecked(true);
+  }, []);
+
+  // Fetch PDF documents from API
+  useEffect(() => {
+    const fetchPDFDocuments = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/pdf/documents`);
+
+        if (response.data.success && response.data.data) {
+          const pdfDocuments = response.data.data;
+
+          // Create submenu items from PDF documents
+          const pdfSubmenu = pdfDocuments.map((pdf: any, index: number) => ({
+            id: 40 + index + 1,
+            title: pdf.title,
+            path: `/pdf-viewer?file=${encodeURIComponent(pdf.file_url)}`,
+            newTab: true,
+          }));
+
+          // Update menu data with dynamic PDFs
+          const updatedMenuData = menuData.map(item => {
+            if (item.title === "Documents") {
+              return {
+                ...item,
+                submenu: pdfSubmenu
+              };
+            }
+            return item;
+          });
+
+          setDynamicMenuData(updatedMenuData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch PDF documents:", error);
+        // Keep static menu data on error
+        setDynamicMenuData(menuData);
+      }
+    };
+
+    fetchPDFDocuments();
   }, []);
 
   // Navbar toggle
@@ -205,7 +252,7 @@ const Header = () => {
                   }`}
                 >
                   <ul className="block xlg:flex xlg:space-x-12">
-                    {menuData.map((menuItem, index) => (
+                    {dynamicMenuData.map((menuItem, index) => (
                       <li key={index} className="group relative">
                         {menuItem.path ? (
                           <Link

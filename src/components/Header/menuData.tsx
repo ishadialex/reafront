@@ -55,26 +55,8 @@ const menuData: Menu[] = [
     id: 4,
     title: "Documents",
     newTab: false,
-    submenu: [
-      {
-        id: 41,
-        title: "PDF 1",
-        path: "/pdf-viewer?file=/pdfs/pdf-1.pdf",
-        newTab: true,
-      },
-      {
-        id: 42,
-        title: "PDF 2",
-        path: "/pdf-viewer?file=/pdfs/pdf-2.pdf",
-        newTab: true,
-      },
-      {
-        id: 43,
-        title: "PDF 3",
-        path: "/pdf-viewer?file=/pdfs/pdf-3.pdf",
-        newTab: true,
-      },
-    ],
+    submenu: [], // Will be populated dynamically from API
   },
 ];
+
 export default menuData;
