@@ -19,21 +19,31 @@ const Hero = () => {
   useEffect(() => {
     const fullText = captions[currentCaptionIndex];
     let currentIndex = 0;
+    let typingInterval: NodeJS.Timeout;
     setTypedText("");
     setIsTypingComplete(false);
     setIsFadingOut(false);
 
-    const typingInterval = setInterval(() => {
-      if (currentIndex <= fullText.length) {
-        setTypedText(fullText.slice(0, currentIndex));
-        currentIndex++;
-      } else {
-        clearInterval(typingInterval);
-        setIsTypingComplete(true);
-      }
-    }, 100); // Type one character every 100ms
+    // Add a small delay before starting the typing animation
+    // This prevents conflicts with Google Translate's initial page translation
+    const startDelay = setTimeout(() => {
+      typingInterval = setInterval(() => {
+        if (currentIndex <= fullText.length) {
+          setTypedText(fullText.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(typingInterval);
+          setIsTypingComplete(true);
+        }
+      }, 100); // Type one character every 100ms
+    }, 500); // Wait 500ms before starting animation
 
-    return () => clearInterval(typingInterval);
+    return () => {
+      clearTimeout(startDelay);
+      if (typingInterval) {
+        clearInterval(typingInterval);
+      }
+    };
   }, [currentCaptionIndex]);
 
   // Rotation effect - fade out, then move to next caption
@@ -76,7 +86,7 @@ const Hero = () => {
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
               <div className="mx-auto max-w-[800px] text-center">
-                <h1 className="mb-5 flex min-h-[120px] items-end justify-center text-3xl font-bold leading-tight text-black dark:text-white sm:min-h-[140px] sm:text-4xl sm:leading-tight md:min-h-[160px] md:text-5xl md:leading-tight">
+                <h1 className="notranslate mb-5 flex min-h-[120px] items-end justify-center text-3xl font-bold leading-tight text-black dark:text-white sm:min-h-[140px] sm:text-4xl sm:leading-tight md:min-h-[160px] md:text-5xl md:leading-tight">
                   <span className={`inline-block ${
                     isFadingOut ? 'opacity-0 transition-opacity duration-500' : ''
                   }`}>
