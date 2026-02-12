@@ -11,7 +11,7 @@ import { hasVerifiedAccess, getAccessToken } from "@/utils/passcode";
 import axios from "axios";
 import { Menu } from "@/types/menu";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 const Header = () => {
   // Check if user is logged in

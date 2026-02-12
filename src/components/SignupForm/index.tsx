@@ -28,16 +28,14 @@ const SignupForm = () => {
   // Redirect if already logged in
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const accessToken = localStorage.getItem("accessToken");
-
-    if (isLoggedIn === "true" && accessToken) {
+    if (isLoggedIn === "true") {
       router.replace("/dashboard");
     }
   }, [router]);
 
   // Handle Google OAuth sign up
   const handleGoogleSignup = () => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
     window.location.href = `${API_URL}/api/auth/google`;
   };
 

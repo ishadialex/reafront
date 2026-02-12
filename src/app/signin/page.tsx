@@ -21,7 +21,7 @@ function SigninContent() {
   const [showExistingSessionModal, setShowExistingSessionModal] = useState(false);
   const [existingSessionData, setExistingSessionData] = useState<any>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
   // Redirect if already logged in (unless coming from logout/timeout)
   useEffect(() => {

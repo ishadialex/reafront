@@ -10,7 +10,7 @@ import ProfileDropdown from "@/components/Dashboard/ProfileDropdown";
 import axios from "axios";
 import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface DashboardLayoutProps {
   children: ReactNode;

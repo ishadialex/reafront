@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { api } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface Notification {
   id: string;

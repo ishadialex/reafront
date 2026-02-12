@@ -10,7 +10,7 @@ import DatePicker from "@/components/DatePicker";
 const getImageUrl = (path: string | null | undefined) => {
   if (!path) return null;
   if (path.startsWith('http')) return path;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   return `${baseUrl}${path}`;
 };
 
@@ -147,7 +147,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
 
       const token = localStorage.getItem("accessToken");
       const response = await axios.post<ApiResponse<{ url: string }>>(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/profile/upload`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/profile/upload`,
         uploadFormData,
         {
           headers: {
