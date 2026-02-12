@@ -7,7 +7,7 @@ import { SUPPORT_INFO } from "@/config/document-passcodes";
 interface PasscodeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (passcode: string) => void;
   documentTitle: string;
 }
 
@@ -36,14 +36,14 @@ const PasscodeModal = ({
     setIsLoading(true);
 
     try {
-      // Verify the passcode (now async with SHA-256 hashing)
+      // Verify the passcode via backend API
       const isValid = await verifyPasscode(passcode);
 
       if (isValid) {
-        // Store verification in session
-        storeVerifiedAccess();
-        // Call success callback
-        onSuccess();
+        // Store verification and passcode in session
+        storeVerifiedAccess(passcode);
+        // Call success callback with the passcode
+        onSuccess(passcode);
         // Close modal
         onClose();
       } else {

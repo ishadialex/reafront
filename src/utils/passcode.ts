@@ -1,27 +1,8 @@
-import { DOCUMENT_PASSCODES } from "@/config/document-passcodes";
-
-/**
- * Hashes a string using SHA-256
- * @param text - The text to hash
- * @returns Promise<string> - The hex string hash
- */
-async function hashSHA256(text: string): Promise<string> {
-  // Convert string to Uint8Array
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-
-  // Hash the data
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-
-  // Convert hash to hex string
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-
-  return hashHex;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 /**
  * Verifies if the provided passcode matches any of the valid passcodes
+ * Uses backend API for verification
  * @param passcode - The passcode to verify
  * @returns Promise<boolean> - True if passcode is valid, false otherwise
  */
@@ -29,14 +10,16 @@ export async function verifyPasscode(passcode: string): Promise<boolean> {
   if (!passcode) return false;
 
   try {
-    // Convert to uppercase for case-insensitive comparison
-    const normalizedPasscode = passcode.trim().toUpperCase();
+    const response = await fetch(`${API_URL}/api/pdf/verify-passcode`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ passcode: passcode.trim() }),
+    });
 
-    // Hash the input passcode
-    const hashedInput = await hashSHA256(normalizedPasscode);
-
-    // Check if the hashed passcode matches any of the valid hashed passcodes
-    return DOCUMENT_PASSCODES.some((validHashedCode) => validHashedCode === hashedInput);
+    const data = await response.json();
+    return data.success === true;
   } catch (error) {
     console.error("Error verifying passcode:", error);
     return false;
@@ -44,51 +27,36 @@ export async function verifyPasscode(passcode: string): Promise<boolean> {
 }
 
 /**
- * Helper function to generate SHA-256 hash for a passcode
- * Use this to generate hashes for your passcodes
- * @param passcode - The plain text passcode
- * @returns Promise<string> - The hashed passcode
- */
-export async function generatePasscodeHash(passcode: string): Promise<string> {
-  const normalized = passcode.trim().toUpperCase();
-  return await hashSHA256(normalized);
-}
-
-/**
  * Stores the verified passcode in session storage
- * This allows access for 1 minute
+ * This allows access until browser session ends
  */
-export function storeVerifiedAccess(): void {
+export function storeVerifiedAccess(passcode: string): void {
   if (typeof window !== "undefined") {
     sessionStorage.setItem("document_access_verified", "true");
+    sessionStorage.setItem("document_access_passcode", passcode);
     sessionStorage.setItem("document_access_time", Date.now().toString());
   }
 }
 
 /**
  * Checks if the user has been verified in the current session
- * Verification expires after 1 minute
  */
 export function hasVerifiedAccess(): boolean {
   if (typeof window === "undefined") return false;
 
   const verified = sessionStorage.getItem("document_access_verified");
-  const verifiedTime = sessionStorage.getItem("document_access_time");
+  const passcode = sessionStorage.getItem("document_access_passcode");
 
-  if (!verified || !verifiedTime) return false;
+  return verified === "true" && !!passcode;
+}
 
-  // Check if verification is still valid (1 minute)
-  const timeElapsed = Date.now() - parseInt(verifiedTime);
-  const oneMinute = 60 * 1000;
+/**
+ * Gets the stored verified passcode
+ */
+export function getVerifiedPasscode(): string | null {
+  if (typeof window === "undefined") return null;
 
-  if (timeElapsed > oneMinute) {
-    // Clear expired verification
-    sessionStorage.removeItem("document_access_verified");
-    sessionStorage.removeItem("document_access_time");
-    return false;
-  }
-
-  return true;
+  return sessionStorage.getItem("document_access_passcode");
 }
 
 /**
@@ -97,6 +65,7 @@ export function hasVerifiedAccess(): boolean {
 export function clearVerifiedAccess(): void {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem("document_access_verified");
+    sessionStorage.removeItem("document_access_passcode");
     sessionStorage.removeItem("document_access_time");
   }
 }

@@ -7,7 +7,7 @@ import ThemeToggler from "./ThemeToggler";
 import LanguageSelector from "./LanguageSelector";
 import menuData from "./menuData";
 import PasscodeModal from "@/components/PasscodeModal";
-import { hasVerifiedAccess } from "@/utils/passcode";
+import { hasVerifiedAccess, getVerifiedPasscode } from "@/utils/passcode";
 import axios from "axios";
 import { Menu } from "@/types/menu";
 
@@ -32,18 +32,29 @@ const Header = () => {
   useEffect(() => {
     const fetchPDFDocuments = async () => {
       try {
+        console.log("Fetching PDFs from:", `${API_URL}/api/pdf/documents`);
         const response = await axios.get(`${API_URL}/api/pdf/documents`);
+
+        console.log("PDF API Response:", response.data);
 
         if (response.data.success && response.data.data) {
           const pdfDocuments = response.data.data;
 
-          // Create submenu items from PDF documents
-          const pdfSubmenu = pdfDocuments.map((pdf: any, index: number) => ({
-            id: 40 + index + 1,
-            title: pdf.title,
-            path: `/pdf-viewer?file=${encodeURIComponent(pdf.file_url)}`,
-            newTab: true,
-          }));
+          console.log("PDF Documents loaded:", pdfDocuments.length);
+
+          // Create submenu items from PDF documents WITHOUT passcode
+          // Passcode will be added after user enters it via modal
+          const pdfSubmenu = pdfDocuments.map((pdf: any, index: number) => {
+            console.log(`PDF ${index + 1}:`, pdf.title, "URL:", pdf.fileUrl);
+            return {
+              id: 40 + index + 1,
+              title: pdf.title,
+              path: `/pdf-viewer?file=${encodeURIComponent(pdf.fileUrl)}`,
+              newTab: true,
+            };
+          });
+
+          console.log("Generated PDF submenu:", pdfSubmenu);
 
           // Update menu data with dynamic PDFs
           const updatedMenuData = menuData.map(item => {
@@ -57,6 +68,8 @@ const Header = () => {
           });
 
           setDynamicMenuData(updatedMenuData);
+        } else {
+          console.warn("No PDF data received from API");
         }
       } catch (error) {
         console.error("Failed to fetch PDF documents:", error);
@@ -104,6 +117,14 @@ const Header = () => {
     }
   }, [navbarOpen]);
 
+  const usePathName = usePathname();
+
+  // Check if current path matches any submenu item
+  const isSubmenuActive = (submenu: any[]) => {
+    if (!submenu) return false;
+    return submenu.some(item => usePathName === item.path || usePathName?.startsWith(item.path + '/'));
+  };
+
   // Passcode modal for document access
   const [isPasscodeModalOpen, setIsPasscodeModalOpen] = useState(false);
   const [pendingDocument, setPendingDocument] = useState<{
@@ -119,10 +140,15 @@ const Header = () => {
   ) => {
     // Check if user already has verified access
     if (hasVerifiedAccess()) {
-      // Close mobile menu if open (important for iOS)
-      setNavbarOpen(false);
-      // Allow access - link will open in new tab
-      return;
+      // Get the stored passcode and add it to the URL
+      const storedPasscode = getVerifiedPasscode();
+      if (storedPasscode) {
+        e.preventDefault();
+        const urlWithPasscode = `${path}&passcode=${encodeURIComponent(storedPasscode)}`;
+        window.open(urlWithPasscode, "_blank");
+        setNavbarOpen(false);
+        return;
+      }
     }
 
     // Prevent default navigation
@@ -136,20 +162,13 @@ const Header = () => {
   };
 
   // Handle successful passcode verification
-  const handlePasscodeSuccess = () => {
+  const handlePasscodeSuccess = (passcode: string) => {
     if (pendingDocument) {
-      // Open the document in a new tab
-      window.open(pendingDocument.path, "_blank");
+      // Open the document in a new tab with the verified passcode
+      const urlWithPasscode = `${pendingDocument.path}&passcode=${encodeURIComponent(passcode)}`;
+      window.open(urlWithPasscode, "_blank");
       setPendingDocument(null);
     }
-  };
-
-  const usePathName = usePathname();
-
-  // Check if current path matches any submenu item
-  const isSubmenuActive = (submenu: any[]) => {
-    if (!submenu) return false;
-    return submenu.some(item => usePathName === item.path || usePathName?.startsWith(item.path + '/'));
   };
 
   return (

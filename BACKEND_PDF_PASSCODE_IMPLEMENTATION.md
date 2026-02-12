@@ -93,6 +93,82 @@ router.post('/verify-passcode', async (req, res) => {
   }
 });
 
+// Secure PDF Serving Endpoint
+// This endpoint serves PDF files only with valid passcode
+router.get('/serve/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { passcode } = req.query;
+
+    // Validate passcode is provided
+    if (!passcode) {
+      return res.status(401).json({
+        success: false,
+        message: 'Passcode required to access PDF'
+      });
+    }
+
+    // Get passcodes from environment variable (comma-separated)
+    const passcodesString = process.env.PDF_ACCESS_PASSCODES;
+
+    if (!passcodesString) {
+      console.error('PDF_ACCESS_PASSCODES not set in environment variables');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error'
+      });
+    }
+
+    // Split passcodes by comma and trim whitespace
+    let allowedPasscodes = passcodesString
+      .split(',')
+      .map(code => code.trim())
+      .filter(code => code.length > 0);
+
+    // Limit to 10 passcodes maximum
+    if (allowedPasscodes.length > 10) {
+      allowedPasscodes = allowedPasscodes.slice(0, 10);
+    }
+
+    // Verify passcode matches any of the allowed passcodes
+    if (!allowedPasscodes.includes(passcode)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid passcode'
+      });
+    }
+
+    // Construct the file path (adjust based on your server setup)
+    const path = require('path');
+    const fs = require('fs');
+
+    // Security: Only allow PDFs from the pdfs directory
+    const safePath = path.join(__dirname, '../../public/pdfs', path.basename(filename));
+
+    // Check if file exists
+    if (!fs.existsSync(safePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'PDF file not found'
+      });
+    }
+
+    // Set headers for PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+    // Stream the PDF file
+    const fileStream = fs.createReadStream(safePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Error serving PDF:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to serve PDF file'
+    });
+  }
+});
+
 module.exports = router;
 ```
 
@@ -181,10 +257,129 @@ router.post('/verify-passcode', async (req: Request<{}, {}, VerifyPasscodeReques
   }
 });
 
+// Secure PDF Serving Endpoint (TypeScript)
+// This endpoint serves PDF files only with valid passcode
+router.get('/serve/:filename', async (req: Request, res: Response) => {
+  try {
+    const { filename } = req.params;
+    const { passcode } = req.query;
+
+    // Validate passcode is provided
+    if (!passcode || typeof passcode !== 'string') {
+      return res.status(401).json({
+        success: false,
+        message: 'Passcode required to access PDF'
+      });
+    }
+
+    // Get passcodes from environment variable (comma-separated)
+    const passcodesString = process.env.PDF_ACCESS_PASSCODES;
+
+    if (!passcodesString) {
+      console.error('PDF_ACCESS_PASSCODES not set in environment variables');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error'
+      });
+    }
+
+    // Split passcodes by comma and trim whitespace
+    let allowedPasscodes = passcodesString
+      .split(',')
+      .map(code => code.trim())
+      .filter(code => code.length > 0);
+
+    // Limit to 10 passcodes maximum
+    if (allowedPasscodes.length > 10) {
+      allowedPasscodes = allowedPasscodes.slice(0, 10);
+    }
+
+    // Verify passcode matches any of the allowed passcodes
+    if (!allowedPasscodes.includes(passcode)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid passcode'
+      });
+    }
+
+    // Construct the file path (adjust based on your server setup)
+    const path = require('path');
+    const fs = require('fs');
+
+    // Security: Only allow PDFs from the pdfs directory
+    const safePath = path.join(__dirname, '../../public/pdfs', path.basename(filename));
+
+    // Check if file exists
+    if (!fs.existsSync(safePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'PDF file not found'
+      });
+    }
+
+    // Set headers for PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+    // Stream the PDF file
+    const fileStream = fs.createReadStream(safePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error('Error serving PDF:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to serve PDF file'
+    });
+  }
+});
+
 export default router;
 ```
 
-## 3. Optional: Store Passcodes in Database
+## 3. Block Direct PDF Access (Security)
+
+To prevent users from bypassing the passcode by accessing PDFs directly, you need to block direct access to the `/pdfs` folder.
+
+### Option A: Using Express (Recommended)
+
+Don't serve the `/pdfs` folder as static files. Instead, only serve PDFs through the secure endpoint:
+
+```javascript
+// ❌ DON'T DO THIS:
+app.use('/pdfs', express.static('public/pdfs'));
+
+// ✅ DO THIS:
+// Don't expose the pdfs directory at all
+// PDFs are only accessible via /api/pdf/serve/:filename with passcode
+```
+
+### Option B: Using Nginx (Production)
+
+If you're using Nginx, add this to your configuration:
+
+```nginx
+# Block direct access to PDFs
+location ~ ^/pdfs/ {
+    return 403;
+}
+
+# Allow API endpoint
+location /api/pdf/serve/ {
+    proxy_pass http://your_backend;
+}
+```
+
+### Option C: Using .htaccess (Apache)
+
+```apache
+# Block direct access to PDFs
+<FilesMatch "\.(pdf)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+```
+
+## 4. Optional: Store Passcodes in Database
 
 If you want to store passcodes in a database instead of `.env`:
 
@@ -743,12 +938,50 @@ router.delete('/documents/:id', authenticateAdmin, async (req, res) => {
 
 ## Notes
 
-- All passcodes are verified on the backend, so they're secure
+### Security Model
+
+- **Passcode Verification**: Passcodes are verified on the backend for security
+- **Secure PDF URLs**: PDFs are served through `/api/pdf/serve/:filename?passcode=CODE`
+- **Direct Access Blocked**: Direct access to `/pdfs/` folder should be blocked
+- **URL Format**: Frontend includes passcode in query parameter for each PDF request
+
+### Authentication Flow
+
+1. User enters passcode in modal
+2. Frontend verifies passcode via `/api/pdf/verify-passcode`
+3. If valid, passcode is stored in sessionStorage
+4. PDF URL is constructed: `/api/pdf/serve/filename.pdf?passcode=VerifiedCode`
+5. Backend verifies passcode again when serving the PDF file
+6. PDF is streamed to browser if passcode is valid
+
+### URL Examples
+
+❌ **Old (Insecure - Blocked)**:
+```
+/pdfs/prospectus.pdf
+```
+
+✅ **New (Secure - Required)**:
+```
+/api/pdf/serve/prospectus.pdf?passcode=SecureCode123!
+```
+
+### Key Features
+
 - You can have 1-10 different passcodes active at once
 - Authentication is stored in sessionStorage (per-tab, clears on browser close)
 - Users need to enter **one valid passcode** per browser session
+- Each PDF request includes the passcode for backend verification
 - You can add/remove passcodes in `.env` without code changes
 - Consider rotating passcodes periodically for better security
 - The system automatically limits to 10 passcodes even if more are configured
 - PDF documents are now managed dynamically from the database
 - Use the admin endpoints to add/edit/remove PDF documents without code changes
+
+### Important Security Notes
+
+- **Never expose PDFs directly**: Block `/pdfs/` folder from public access
+- **Verify every request**: Backend checks passcode on every PDF request
+- **Use HTTPS in production**: Passcodes are sent in URL query parameters
+- **Session-based**: Passcode is valid only for the current browser session
+- **File path validation**: Backend uses `path.basename()` to prevent directory traversal attacks
