@@ -138,6 +138,19 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage("File size must be less than 5MB");
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setErrorMessage("Please upload a valid image file (JPEG, PNG, GIF, or WebP)");
+      return;
+    }
+
     try {
       setIsUploadingPhoto(true);
       setErrorMessage("");
@@ -145,15 +158,16 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
       const uploadFormData = new FormData();
       uploadFormData.append("file", file);
 
-      const token = localStorage.getItem("accessToken");
-      const response = await axios.post<ApiResponse<{ url: string }>>(
+      // Use httpOnly cookies instead of localStorage token
+      const response = await axios.post<ApiResponse<{ url: string; accessToken?: string }>>(
         `${process.env.NEXT_PUBLIC_API_URL || ""}/api/profile/upload`,
         uploadFormData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
+          withCredentials: true, // Send httpOnly cookies
+          timeout: 30000, // 30 second timeout for file uploads
         }
       );
 
@@ -161,6 +175,18 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
 
       if (result.success && result.data) {
         setFormData((prev) => ({ ...prev, profilePhoto: result.data!.url }));
+
+        // Update localStorage immediately
+        if (result.data.url) {
+          localStorage.setItem("userProfilePicture", result.data.url);
+        }
+
+        // Store new access token if provided
+        if (result.data.accessToken) {
+          localStorage.setItem("accessToken", result.data.accessToken);
+          api.setToken(result.data.accessToken);
+        }
+
         // Emit event to notify other components
         window.dispatchEvent(new CustomEvent('profilePhotoUpdated', {
           detail: { profilePhoto: result.data!.url }
@@ -168,8 +194,17 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
       } else {
         setErrorMessage(result.message || "Failed to upload photo");
       }
-    } catch (error) {
-      setErrorMessage("Failed to upload photo");
+    } catch (error: any) {
+      console.error("Photo upload error:", error);
+      if (error.code === 'ECONNABORTED') {
+        setErrorMessage("Upload timeout. Please try again with a smaller image.");
+      } else if (error.response?.status === 401) {
+        setErrorMessage("Session expired. Please refresh and try again.");
+      } else if (error.response?.data?.message) {
+        setErrorMessage(error.response.data.message);
+      } else {
+        setErrorMessage("Failed to upload photo. Please try again.");
+      }
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -222,6 +257,9 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
         } else {
           localStorage.removeItem("userProfilePicture");
         }
+        // Store the full user object
+        localStorage.setItem("user", JSON.stringify(result.data));
+
         // Store new tokens if provided by backend
         if (result.data.accessToken) {
           localStorage.setItem("accessToken", result.data.accessToken);
@@ -234,7 +272,14 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
         window.dispatchEvent(new CustomEvent('profileUpdated', {
           detail: { profile: result.data }
         }));
+
+        // Call onSuccess first to update parent state
         onSuccess(result.data);
+
+        // Close modal after short delay to allow state updates
+        setTimeout(() => {
+          onClose();
+        }, 100);
       } else {
         if (result.errors) {
           setFieldErrors(result.errors);
