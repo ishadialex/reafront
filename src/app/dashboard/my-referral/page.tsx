@@ -96,7 +96,9 @@ const MyReferralPage = () => {
           setStats(statsRes.data);
         }
         if (referralsRes.success && referralsRes.data) {
-          setReferrals(referralsRes.data as Referral[]);
+          // Ensure data is an array before setting
+          const referralData = Array.isArray(referralsRes.data) ? referralsRes.data : [];
+          setReferrals(referralData as Referral[]);
         }
       } catch (err) {
         setError("Failed to load referral data. Please try again.");
@@ -322,7 +324,7 @@ const MyReferralPage = () => {
                 Total Referrals
               </h3>
               <p className="text-3xl font-bold text-black dark:text-white">
-                {stats.totalReferrals}
+                {stats.totalReferrals ?? 0}
               </p>
             </div>
 
@@ -346,7 +348,7 @@ const MyReferralPage = () => {
                 Completed Referrals
               </h3>
               <p className="text-3xl font-bold text-black dark:text-white">
-                {stats.completedReferrals}
+                {stats.completedReferrals ?? 0}
               </p>
             </div>
 
@@ -370,7 +372,7 @@ const MyReferralPage = () => {
                 Total Earnings
               </h3>
               <p className="text-3xl font-bold text-black dark:text-white">
-                ${stats.totalEarnings.toLocaleString()}
+                ${(stats.totalEarnings ?? 0).toLocaleString()}
               </p>
             </div>
           </>
@@ -566,14 +568,16 @@ const MyReferralPage = () => {
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-body-color dark:text-body-color-dark">
-                      {new Date(referral.joinedAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {referral.joinedAt
+                        ? new Date(referral.joinedAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "N/A"}
                     </span>
                     <span className="font-semibold text-black dark:text-white">
-                      ${referral.reward.toFixed(2)}
+                      ${(referral.reward ?? 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -629,11 +633,13 @@ const MyReferralPage = () => {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-sm text-body-color dark:text-body-color-dark">
-                            {new Date(referral.joinedAt).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {referral.joinedAt
+                              ? new Date(referral.joinedAt).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })
+                              : "N/A"}
                           </p>
                         </td>
                         <td className="px-6 py-4">
@@ -647,7 +653,7 @@ const MyReferralPage = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <p className="font-semibold text-black dark:text-white">
-                            ${referral.reward.toFixed(2)}
+                            ${(referral.reward ?? 0).toFixed(2)}
                           </p>
                         </td>
                       </tr>

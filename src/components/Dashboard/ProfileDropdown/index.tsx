@@ -39,10 +39,10 @@ const ProfileDropdown = () => {
     if (storedName) setUserName(storedName);
     if (storedPhoto) setProfilePhoto(storedPhoto);
 
-    // Only hide loading skeleton if we have complete cached data (including photo)
-    // This prevents flashing initials before photo loads
-    const hasCompleteCache = storedEmail && storedName && storedPhoto;
-    if (hasCompleteCache) {
+    // Hide loading skeleton if we have name/email cached (show immediately for fast UX)
+    // Photo will transition in smoothly when API returns if not cached
+    const hasCachedData = storedEmail || storedName;
+    if (hasCachedData) {
       setLoadingProfile(false);
     }
 
@@ -133,14 +133,14 @@ const ProfileDropdown = () => {
               alt={userName}
               width={40}
               height={40}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-opacity duration-300"
               onError={() => {
                 console.error("❌ Failed to load profile image:", getImageUrl(profilePhoto));
                 setProfilePhoto(null); // Fallback to initials on error
               }}
             />
           ) : (
-            <span className="text-sm font-semibold">
+            <span className="text-sm font-semibold transition-opacity duration-300">
               {userName.split(" ").map(n => n.charAt(0).toUpperCase()).join("")}
             </span>
           )}

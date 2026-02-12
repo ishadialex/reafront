@@ -129,15 +129,15 @@ const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
       } lg:translate-x-0`}
     >
       {/* Logo and Close button */}
-      <div className="relative flex h-16 items-center border-b border-gray-800 px-3">
+      <div className="relative flex h-16 items-center border-b border-gray-800 px-4">
         {/* Close button for mobile */}
         <button
           onClick={onClose}
-          className="relative z-10 flex h-12 w-12 items-center justify-center rounded-lg hover:bg-gray-800 lg:hidden"
+          className="relative z-10 ml-4 flex h-10 w-10 items-center justify-center rounded-lg border border-white hover:bg-gray-800 lg:hidden"
           aria-label="Close sidebar"
         >
           <svg
-            className="h-7 w-7 text-white"
+            className="h-6 w-6 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
