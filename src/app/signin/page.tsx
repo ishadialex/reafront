@@ -27,7 +27,6 @@ function SigninContent() {
   useEffect(() => {
     const reason = searchParams.get('reason');
     const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const accessToken = localStorage.getItem("accessToken");
 
     // Show warning for session timeout, expiration, revocation, or account deletion
     if (reason === 'session_timeout' || reason === 'session_expired' || reason === 'session_revoked' || reason === 'account_deleted') {
@@ -37,7 +36,8 @@ function SigninContent() {
     }
 
     // Redirect to dashboard if already logged in
-    if (isLoggedIn === "true" && accessToken && !reason) {
+    // Note: Actual auth is in httpOnly cookies, isLoggedIn is just a flag
+    if (isLoggedIn === "true" && !reason) {
       router.replace("/dashboard");
     }
   }, [searchParams, router]);
@@ -47,32 +47,23 @@ function SigninContent() {
     window.location.href = `${API_URL}/api/auth/google`;
   };
 
-  const storeSessionAndRedirect = (data: { user: any; accessToken: string; refreshToken: string }) => {
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
+  const storeSessionAndRedirect = (data: { user: any }) => {
+    // Tokens are now in httpOnly cookies - just set login flag
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("user", JSON.stringify(data.user));
-    api.setToken(data.accessToken);
 
-    // Decode JWT token to extract user profile data
-    try {
-      const tokenPayload = JSON.parse(atob(data.accessToken.split('.')[1]));
+    // Store user data from response
+    if (data.user.email) {
+      localStorage.setItem("userEmail", data.user.email);
+    }
 
-      if (tokenPayload.email) {
-        localStorage.setItem("userEmail", tokenPayload.email);
-      }
+    if (data.user.firstName || data.user.lastName) {
+      const userName = `${data.user.firstName || ''} ${data.user.lastName || ''}`.trim();
+      localStorage.setItem("userName", userName);
+    }
 
-      if (tokenPayload.name) {
-        localStorage.setItem("userName", tokenPayload.name);
-      }
-
-      if (tokenPayload.picture) {
-        localStorage.setItem("userProfilePicture", tokenPayload.picture);
-      }
-    } catch (e) {
-      console.error("Failed to decode token:", e);
-      // Fallback to using data from response
-      localStorage.setItem("userEmail", email);
+    if (data.user.profilePhoto) {
+      localStorage.setItem("userProfilePicture", data.user.profilePhoto);
     }
 
     router.push("/dashboard");
@@ -82,7 +73,11 @@ function SigninContent() {
     setIsLoading(true);
     setShowExistingSessionModal(false);
     try {
-      const response = await axios.post(`${API_URL}/api/auth/force-login`, { email, password });
+      const response = await axios.post(
+        `${API_URL}/api/auth/force-login`,
+        { email, password },
+        { withCredentials: true } // Send and receive httpOnly cookies
+      );
       if (response.data.success) {
         storeSessionAndRedirect(response.data.data);
       }
@@ -104,7 +99,8 @@ function SigninContent() {
       // Call backend login API using axios
       const response = await axios.post(
         `${API_URL}/api/auth/login`,
-        { email, password }
+        { email, password },
+        { withCredentials: true } // Send and receive httpOnly cookies
       );
 
       if (response.data.success) {

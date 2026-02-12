@@ -23,18 +23,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check authentication immediately (synchronously) to avoid flash
-  const accessToken = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
+  // Tokens are in httpOnly cookies, just check the login flag
   const isLoggedIn = typeof window !== 'undefined' ? localStorage.getItem("isLoggedIn") : null;
   const [isAuthenticated, setIsAuthenticated] = useState(
-    accessToken !== null && isLoggedIn === "true"
+    isLoggedIn === "true"
   );
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!accessToken || isLoggedIn !== "true") {
+    if (isLoggedIn !== "true") {
       router.push("/signin");
     }
-  }, [router, accessToken, isLoggedIn]);
+  }, [router, isLoggedIn]);
 
   // Poll to detect if session was revoked from another device
   useEffect(() => {
@@ -42,11 +42,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const MAX_FAILURES = 3; // Allow 3 consecutive failures before logging out
 
     const checkSession = async () => {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) return;
-
+      // Session validation now uses httpOnly cookies automatically
       try {
-        await axios.post(`${API_URL}/api/auth/validate-session`, { refreshToken });
+        await axios.post(
+          `${API_URL}/api/auth/validate-session`,
+          {},
+          { withCredentials: true }
+        );
         // Reset failure count on success
         failureCount = 0;
       } catch (err: any) {
@@ -58,11 +60,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           // Only logout after multiple consecutive failures
           // This prevents logout during brief server restarts/deployments
           if (failureCount >= MAX_FAILURES) {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
             localStorage.removeItem("isLoggedIn");
             localStorage.removeItem("user");
             localStorage.removeItem("userEmail");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userProfilePicture");
             // Use session_expired for polling timeout, not session_revoked
             router.push("/signin?reason=session_expired");
           }

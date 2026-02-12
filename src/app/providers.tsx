@@ -10,9 +10,9 @@ function GlobalSessionTimeout({ children }: { children: React.ReactNode }) {
   // Monitor authentication status continuously
   useEffect(() => {
     const checkAuth = () => {
-      const accessToken = localStorage.getItem("accessToken");
       const isLoggedIn = localStorage.getItem("isLoggedIn");
-      setIsAuthenticated(accessToken !== null && isLoggedIn === "true");
+      // Tokens are in httpOnly cookies, just check the login flag
+      setIsAuthenticated(isLoggedIn === "true");
     };
 
     // Check immediately

@@ -21,9 +21,9 @@ export function useSessionTimeout() {
   // Monitor authentication changes
   useEffect(() => {
     const checkAuth = () => {
-      const accessToken = localStorage.getItem('accessToken');
       const isLoggedIn = localStorage.getItem('isLoggedIn');
-      const authenticated = accessToken !== null && isLoggedIn === 'true';
+      // Tokens are in httpOnly cookies, just check the login flag
+      const authenticated = isLoggedIn === 'true';
       setIsAuthenticated(authenticated);
     };
 
@@ -42,10 +42,12 @@ export function useSessionTimeout() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear tokens and redirect
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // Clear local data and redirect (tokens are cleared by server via httpOnly cookies)
+      localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('userName');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userProfilePicture');
+      localStorage.removeItem('user');
       router.push('/signin?reason=session_timeout');
     }
   }, [router]);

@@ -18,24 +18,8 @@ export class ApiClient {
       headers: {
         "Content-Type": "application/json",
       },
-      withCredentials: true, // CRITICAL: Allow cross-origin requests with Authorization headers
+      withCredentials: true, // CRITICAL: Send httpOnly cookies with every request
     });
-
-    // Request interceptor to add auth token
-    this.axiosInstance.interceptors.request.use(
-      (config) => {
-        if (typeof window !== "undefined") {
-          const token = localStorage.getItem("accessToken");
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
 
     // Response interceptor for error handling
     this.axiosInstance.interceptors.response.use(
@@ -59,32 +43,20 @@ export class ApiClient {
         const shouldSkipRefresh = skipRefreshUrls.some(url => requestUrl.includes(url));
 
         if (error.response?.status === 401 && !shouldSkipRefresh) {
-          // Token expired, try to refresh
-          const refreshToken = localStorage.getItem("refreshToken");
-          if (refreshToken) {
-            try {
-              const response = await axios.post(`${baseURL}/api/auth/refresh-token`, {
-                refreshToken,
-              });
-              const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-              localStorage.setItem("accessToken", accessToken);
-              localStorage.setItem("refreshToken", newRefreshToken); // ← Save the NEW refresh token!
+          // Token expired, try to refresh (refresh token is in httpOnly cookie)
+          try {
+            await axios.post(
+              `${baseURL}/api/auth/refresh-token`,
+              {},
+              { withCredentials: true } // Send httpOnly cookies
+            );
 
-              // Retry the original request
-              if (error.config) {
-                error.config.headers.Authorization = `Bearer ${accessToken}`;
-                return axios.request(error.config);
-              }
-            } catch (refreshError) {
-              // Refresh failed, clear tokens and redirect to login
-              this.clearToken();
-              if (typeof window !== "undefined") {
-                window.location.href = "/signin";
-              }
+            // Refresh successful, retry the original request
+            if (error.config) {
+              return this.axiosInstance.request(error.config);
             }
-          } else {
-            // No refresh token available, clear everything and redirect
-            this.clearToken();
+          } catch (refreshError) {
+            // Refresh failed, redirect to login
             if (typeof window !== "undefined") {
               window.location.href = "/signin";
             }
@@ -95,17 +67,14 @@ export class ApiClient {
     );
   }
 
+  // Tokens are now stored in httpOnly cookies - no need for manual token management
+  // These methods are kept for backwards compatibility but do nothing
   setToken(token: string) {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("accessToken", token);
-    }
+    // No-op: Tokens are now in httpOnly cookies managed by the server
   }
 
   clearToken() {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-    }
+    // No-op: Cookies are cleared by the server on logout
   }
 
   // Public endpoints
@@ -126,7 +95,7 @@ export class ApiClient {
 
   // Auth endpoints
   async login(email: string, password: string) {
-    const response = await this.axiosInstance.post<ApiResponse<{ user: any; accessToken: string; refreshToken: string }>>(
+    const response = await this.axiosInstance.post<ApiResponse<{ user: any }>>(
       "/api/auth/login",
       { email, password }
     );
@@ -134,7 +103,7 @@ export class ApiClient {
   }
 
   async forceLogin(email: string, password: string) {
-    const response = await this.axiosInstance.post<ApiResponse<{ user: any; accessToken: string; refreshToken: string; message: string }>>(
+    const response = await this.axiosInstance.post<ApiResponse<{ user: any; message: string }>>(
       "/api/auth/force-login",
       { email, password }
     );
@@ -172,18 +141,16 @@ export class ApiClient {
   }
 
   async logout() {
-    const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
-    const response = await this.axiosInstance.post<ApiResponse<void>>("/api/auth/logout", {
-      refreshToken,
-    });
-    this.clearToken();
+    // Refresh token is in httpOnly cookie, sent automatically
+    const response = await this.axiosInstance.post<ApiResponse<void>>("/api/auth/logout", {});
     return response.data;
   }
 
-  async refreshToken(refreshToken: string) {
-    const response = await this.axiosInstance.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
+  async refreshToken() {
+    // Refresh token is in httpOnly cookie, sent automatically
+    const response = await this.axiosInstance.post<ApiResponse<{ message: string }>>(
       "/api/auth/refresh-token",
-      { refreshToken }
+      {}
     );
     return response.data;
   }
