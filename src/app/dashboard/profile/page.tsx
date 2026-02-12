@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { UserProfile, ApiResponse } from "@/types/user";
+import { UserProfile } from "@/types/user";
 import EditProfileModal from "@/components/Dashboard/EditProfileModal";
 import ProfileSkeleton from "@/components/ProfileSkeleton";
 import { api } from "@/lib/api";
@@ -47,8 +47,9 @@ export default function ProfilePage() {
     }
   };
 
-  const handleEditSuccess = (updatedProfile: UserProfile) => {
-    setProfile(updatedProfile);
+  const handleEditSuccess = async () => {
+    // Fetch fresh profile data from API to ensure we have all fields
+    await fetchProfile();
     setIsEditModalOpen(false);
     setSuccessMessage("Profile updated successfully!");
     setTimeout(() => setSuccessMessage(""), 5000);

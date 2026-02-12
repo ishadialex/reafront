@@ -18,7 +18,7 @@ interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: UserProfile;
-  onSuccess: (updatedProfile: UserProfile) => void;
+  onSuccess: () => Promise<void>;
 }
 
 const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileModalProps) => {
@@ -273,13 +273,10 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
           detail: { profile: result.data }
         }));
 
-        // Call onSuccess first to update parent state
-        onSuccess(result.data);
+        // Call onSuccess to trigger parent to fetch fresh profile data
+        await onSuccess();
 
-        // Close modal after short delay to allow state updates
-        setTimeout(() => {
-          onClose();
-        }, 100);
+        // Modal will be closed by parent's handleEditSuccess
       } else {
         if (result.errors) {
           setFieldErrors(result.errors);
