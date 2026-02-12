@@ -14,15 +14,14 @@ function GlobalSessionTimeout({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(accessToken !== null && isLoggedIn === "true");
   }, []);
 
-  // Only use session timeout hook if user is authenticated
-  const { showWarning, remainingSeconds, continueSession } = isAuthenticated
-    ? useSessionTimeout()
-    : { showWarning: false, remainingSeconds: 0, continueSession: () => {} };
+  // Always call the hook (Rules of Hooks - must be called unconditionally)
+  // But only show warning when user is authenticated
+  const { showWarning, remainingSeconds, continueSession } = useSessionTimeout();
 
   return (
     <>
-      {/* Global Session Timeout Warning Modal */}
-      {showWarning && (
+      {/* Global Session Timeout Warning Modal - Only show if authenticated */}
+      {isAuthenticated && showWarning && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-dark">
             <div className="mb-4 flex items-center gap-3">
