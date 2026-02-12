@@ -56,9 +56,13 @@ export class ApiClient {
               return this.axiosInstance.request(error.config);
             }
           } catch (refreshError) {
-            // Refresh failed, redirect to login
+            // Refresh failed, clear login flag and redirect to login
             if (typeof window !== "undefined") {
-              window.location.href = "/signin";
+              localStorage.removeItem("isLoggedIn");
+              localStorage.removeItem("userName");
+              localStorage.removeItem("userEmail");
+              localStorage.removeItem("userProfilePicture");
+              window.location.href = "/signin?reason=session_expired";
             }
           }
         }
