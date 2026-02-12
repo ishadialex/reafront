@@ -23,10 +23,32 @@ const Header = () => {
 
   useEffect(() => {
     const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    const accessToken = localStorage.getItem("accessToken");
-    setIsLoggedIn(loggedIn && !!accessToken);
+    // No longer check for accessToken in localStorage since we use httpOnly cookies
+    setIsLoggedIn(loggedIn);
     setIsAuthChecked(true);
   }, []);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear httpOnly cookies
+      await axios.post(`${API_URL}/api/auth/logout`, {}, {
+        withCredentials: true,
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Clear localStorage regardless of API call success
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userProfilePicture");
+
+      // Redirect to home page
+      window.location.href = "/";
+    }
+  };
 
   // Fetch PDF documents from API
   useEffect(() => {
@@ -364,15 +386,25 @@ const Header = () => {
                     {/* Mobile Sign In and Sign Up Links / Dashboard */}
                     {isAuthChecked && (
                       isLoggedIn ? (
-                        <li className="xlg:hidden">
-                          <Link
-                            href="/dashboard"
-                            onClick={() => setNavbarOpen(false)}
-                            className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 mt-2 block rounded-full px-8 py-3 text-center text-base font-medium text-white transition duration-300"
-                          >
-                            Dashboard
-                          </Link>
-                        </li>
+                        <>
+                          <li className="xlg:hidden">
+                            <Link
+                              href="/dashboard"
+                              onClick={() => setNavbarOpen(false)}
+                              className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 mt-2 block rounded-full px-8 py-3 text-center text-base font-medium text-white transition duration-300"
+                            >
+                              Dashboard
+                            </Link>
+                          </li>
+                          <li className="xlg:hidden">
+                            <button
+                              onClick={handleLogout}
+                              className="text-dark hover:text-red-500 mt-2 flex w-full py-2 text-base dark:text-white/70 dark:hover:text-red-400"
+                            >
+                              Logout
+                            </button>
+                          </li>
+                        </>
                       ) : (
                         <>
                           <li className="xlg:hidden">
@@ -402,12 +434,20 @@ const Header = () => {
               <div className="flex items-center justify-end gap-3 pr-16 xlg:pr-0">
                 {isAuthChecked && (
                   isLoggedIn ? (
-                    <Link
-                      href="/dashboard"
-                      className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 hidden rounded-full px-8 py-3 text-base font-medium text-white transition duration-300 xlg:block xlg:px-9"
-                    >
-                      Dashboard
-                    </Link>
+                    <>
+                      <Link
+                        href="/dashboard"
+                        className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 hidden rounded-full px-8 py-3 text-base font-medium text-white transition duration-300 xlg:block xlg:px-9"
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="text-dark hidden px-7 py-3 text-base font-medium hover:text-red-500 xlg:block dark:text-white dark:hover:text-red-400"
+                      >
+                        Logout
+                      </button>
+                    </>
                   ) : (
                     <>
                       <Link
