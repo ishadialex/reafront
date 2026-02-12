@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthCallbackSkeleton from "@/components/AuthCallbackSkeleton";
+import axios from "axios";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 // Force dynamic rendering - don't statically generate this page
 export const dynamic = 'force-dynamic';
@@ -10,38 +13,80 @@ export const dynamic = 'force-dynamic';
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    const error = searchParams.get("error");
+    const processCallback = async () => {
+      // Prevent double execution
+      if (isProcessing) return;
+      setIsProcessing(true);
 
-    if (error) {
-      // Handle OAuth errors
-      let errorMessage = "Authentication failed";
-      switch (error) {
-        case "missing_code":
-          errorMessage = "Authorization code missing";
-          break;
-        case "invalid_token":
-          errorMessage = "Invalid authentication token";
-          break;
-        case "email_already_exists":
-          errorMessage = "This email is already linked to another account";
-          break;
-        case "oauth_failed":
-          errorMessage = "OAuth authentication failed";
-          break;
+      const error = searchParams.get("error");
+
+      if (error) {
+        // Handle OAuth errors
+        let errorMessage = "Authentication failed";
+        switch (error) {
+          case "missing_code":
+            errorMessage = "Authorization code missing";
+            break;
+          case "invalid_token":
+            errorMessage = "Invalid authentication token";
+            break;
+          case "email_already_exists":
+            errorMessage = "This email is already linked to another account";
+            break;
+          case "oauth_failed":
+            errorMessage = "OAuth authentication failed";
+            break;
+        }
+
+        alert(errorMessage);
+        router.replace("/signin");
+        return;
       }
 
-      alert(errorMessage);
-      router.replace("/signin");
-      return;
-    }
+      try {
+        // Fetch user profile (cookies sent automatically)
+        const response = await axios.get(`${API_URL}/api/profile`, {
+          withCredentials: true,
+        });
 
-    // Tokens are now in httpOnly cookies (set by backend during redirect)
-    // Just set login state and redirect to dashboard
-    localStorage.setItem("isLoggedIn", "true");
-    router.replace("/dashboard");
-  }, [searchParams, router]);
+        if (response.data.success) {
+          const user = response.data.data;
+
+          // Store user data in localStorage
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("user", JSON.stringify(user));
+
+          if (user.email) {
+            localStorage.setItem("userEmail", user.email);
+          }
+
+          if (user.firstName || user.lastName) {
+            const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+            localStorage.setItem("userName", userName);
+          }
+
+          if (user.profilePhoto) {
+            localStorage.setItem("userProfilePicture", user.profilePhoto);
+          }
+
+          // Redirect to dashboard
+          router.replace("/dashboard");
+        } else {
+          throw new Error("Failed to fetch profile");
+        }
+      } catch (err) {
+        console.error("OAuth callback error:", err);
+        // Clear any partial state and redirect to signin
+        localStorage.removeItem("isLoggedIn");
+        router.replace("/signin?error=oauth_failed");
+      }
+    };
+
+    processCallback();
+  }, [searchParams, router, isProcessing]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

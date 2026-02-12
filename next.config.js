@@ -28,7 +28,8 @@ const nextConfig = {
   async rewrites() {
     // Proxy API requests through the frontend domain so cookies are first-party.
     // This fixes third-party cookie blocking in Safari, Firefox, and Brave.
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:4000";
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:4001";
+    console.log("🔧 Next.js Rewrites: Proxying /api/* to", backendUrl);
     return [
       {
         source: "/api/:path*",

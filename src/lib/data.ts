@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+// For server-side fetches, use direct backend URL (not the rewrite proxy)
+const API_URL = process.env.BACKEND_URL || "http://localhost:4001";
 
 export async function getTeamMembers() {
   try {
