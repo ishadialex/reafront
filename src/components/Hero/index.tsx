@@ -32,7 +32,9 @@ const Hero = () => {
           setTypedText(fullText.slice(0, currentIndex));
           currentIndex++;
         } else {
-          clearInterval(typingInterval);
+          if (typingInterval !== undefined) {
+            clearInterval(typingInterval);
+          }
           setIsTypingComplete(true);
         }
       }, 100); // Type one character every 100ms
