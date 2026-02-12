@@ -12,7 +12,7 @@ const SUPPORT_INFO = {
 interface PasscodeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (passcode: string) => void;
+  onSuccess: (token: string) => void;
   documentTitle: string;
 }
 
@@ -41,14 +41,16 @@ const PasscodeModal = ({
     setIsLoading(true);
 
     try {
-      // Verify the passcode via backend API
-      const isValid = await verifyPasscode(passcode);
+      // Verify the passcode via backend API and get JWT token
+      const response = await verifyPasscode(passcode);
 
-      if (isValid) {
-        // Store verification and passcode in session
-        storeVerifiedAccess(passcode);
-        // Call success callback with the passcode
-        onSuccess(passcode);
+      if (response && response.data) {
+        // Store JWT token and expiry in session
+        storeVerifiedAccess(response.data.token, response.data.expiresAt);
+
+        // Call success callback with the token
+        onSuccess(response.data.token);
+
         // Close modal
         onClose();
       } else {

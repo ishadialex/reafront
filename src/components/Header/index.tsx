@@ -7,7 +7,7 @@ import ThemeToggler from "./ThemeToggler";
 import LanguageSelector from "./LanguageSelector";
 import menuData from "./menuData";
 import PasscodeModal from "@/components/PasscodeModal";
-import { hasVerifiedAccess, getVerifiedPasscode } from "@/utils/passcode";
+import { hasVerifiedAccess, getAccessToken } from "@/utils/passcode";
 import axios from "axios";
 import { Menu } from "@/types/menu";
 
@@ -140,12 +140,12 @@ const Header = () => {
   ) => {
     // Check if user already has verified access
     if (hasVerifiedAccess()) {
-      // Get the stored passcode and add it to the URL
-      const storedPasscode = getVerifiedPasscode();
-      if (storedPasscode) {
+      // Get the stored JWT token and add it to the URL
+      const token = getAccessToken();
+      if (token) {
         e.preventDefault();
-        const urlWithPasscode = `${path}&passcode=${encodeURIComponent(storedPasscode)}`;
-        window.open(urlWithPasscode, "_blank");
+        const urlWithToken = `${path}&token=${encodeURIComponent(token)}`;
+        window.open(urlWithToken, "_blank");
         setNavbarOpen(false);
         return;
       }
@@ -162,11 +162,11 @@ const Header = () => {
   };
 
   // Handle successful passcode verification
-  const handlePasscodeSuccess = (passcode: string) => {
+  const handlePasscodeSuccess = (token: string) => {
     if (pendingDocument) {
-      // Open the document in a new tab with the verified passcode
-      const urlWithPasscode = `${pendingDocument.path}&passcode=${encodeURIComponent(passcode)}`;
-      window.open(urlWithPasscode, "_blank");
+      // Open the document in a new tab with the JWT token
+      const urlWithToken = `${pendingDocument.path}&token=${encodeURIComponent(token)}`;
+      window.open(urlWithToken, "_blank");
       setPendingDocument(null);
     }
   };

@@ -9,7 +9,7 @@ function PDFViewerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pdfFile = searchParams.get("file");
-  const passcodeParam = searchParams.get("passcode"); // Get passcode from URL
+  const tokenParam = searchParams.get("token"); // Get JWT token from URL
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
@@ -28,44 +28,73 @@ function PDFViewerContent() {
     );
   }
 
-  if (!passcodeParam) {
+  if (!tokenParam) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-dark">
         <div className="rounded-xl bg-white p-8 shadow-xl dark:bg-gray-dark">
-          <p className="text-lg text-red-600 dark:text-red-400">Access denied: No passcode provided</p>
+          <p className="text-lg text-red-600 dark:text-red-400">Access denied: No access token provided</p>
         </div>
       </div>
     );
   }
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = pdfFile;
-    link.download = pdfFile.split("/").pop() || "document.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleClose = () => {
-    router.push("/");
-  };
-
-  // Extract filename from pdfFile path and create secure PDF URL with passcode
+  // Extract filename from pdfFile path and create secure PDF URL with JWT token
   const getSecurePdfUrl = () => {
-    if (!pdfFile || !passcodeParam) return pdfFile;
+    if (!pdfFile || !tokenParam) return pdfFile;
 
     // Extract filename from path (e.g., "/pdfs/filename.pdf" -> "filename.pdf")
     const filename = pdfFile.split('/').pop();
 
-    // Create secure URL with passcode - use full backend URL
-    const securePdfUrl = `${API_URL}/api/pdf/serve/${filename}?passcode=${encodeURIComponent(passcodeParam)}`;
+    // Create secure URL with JWT token - use full backend URL
+    const securePdfUrl = `${API_URL}/api/pdf/serve/${filename}?token=${encodeURIComponent(tokenParam)}`;
 
     return securePdfUrl;
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownload = async () => {
+    if (!tokenParam) {
+      alert("Cannot download: No access token");
+      return;
+    }
+
+    try {
+      // Get the secure PDF URL (without the #toolbar parameters)
+      const filename = pdfFile.split('/').pop();
+      const securePdfUrl = `${API_URL}/api/pdf/serve/${filename}?token=${encodeURIComponent(tokenParam)}`;
+
+      // Fetch the PDF with the token
+      const response = await fetch(securePdfUrl);
+
+      if (!response.ok) {
+        throw new Error("Failed to download PDF");
+      }
+
+      // Get the blob
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename || "document.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download PDF. Please try again.");
+    }
+  };
+
+  const handleClose = () => {
+    router.push("/");
   };
 
   // Add PDF parameters for better iOS compatibility
