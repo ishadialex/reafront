@@ -7,11 +7,21 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 function GlobalSessionTimeout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check if user is logged in
+  // Monitor authentication status continuously
   useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    setIsAuthenticated(accessToken !== null && isLoggedIn === "true");
+    const checkAuth = () => {
+      const accessToken = localStorage.getItem("accessToken");
+      const isLoggedIn = localStorage.getItem("isLoggedIn");
+      setIsAuthenticated(accessToken !== null && isLoggedIn === "true");
+    };
+
+    // Check immediately
+    checkAuth();
+
+    // Check every 2 seconds to stay in sync
+    const authInterval = setInterval(checkAuth, 2000);
+
+    return () => clearInterval(authInterval);
   }, []);
 
   // Always call the hook (Rules of Hooks - must be called unconditionally)
