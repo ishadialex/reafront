@@ -15,6 +15,27 @@ export function useSessionTimeout() {
   const warningLockedRef = useRef<boolean>(false); // Lock to prevent resets during warning
   const THROTTLE_INTERVAL = 30000; // Only reset timer once every 30 seconds
 
+  // Track authentication state to re-run effect when user logs in/out
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Monitor authentication changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const accessToken = localStorage.getItem('accessToken');
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      const authenticated = accessToken !== null && isLoggedIn === 'true';
+      setIsAuthenticated(authenticated);
+    };
+
+    // Check immediately
+    checkAuth();
+
+    // Set up interval to check periodically (every 2 seconds)
+    const authCheckInterval = setInterval(checkAuth, 2000);
+
+    return () => clearInterval(authCheckInterval);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.logout();
@@ -143,6 +164,17 @@ export function useSessionTimeout() {
 
   useEffect(() => {
     console.log('🚀 useSessionTimeout hook mounted/re-rendered');
+    console.log('🔐 Authentication status:', isAuthenticated);
+
+    if (!isAuthenticated) {
+      console.log('⏭️ User not authenticated, skipping session timeout setup');
+      // Clear any existing timers when user logs out
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+      if (warningTimeoutIdRef.current) clearTimeout(warningTimeoutIdRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      setShowWarning(false);
+      return;
+    }
 
     // Set component as active when effect runs
     isActive.current = true;
@@ -172,9 +204,8 @@ export function useSessionTimeout() {
         }
       } catch (error) {
         console.error('❌ Failed to fetch session timeout:', error);
-        // Use default 30 minutes on error
-        console.log('⏱️ Using default 30 minutes timeout');
-        resetTimerFunc();
+        // Don't set up timer on error to prevent issues on signin page
+        console.log('⚠️ Skipping timer setup due to error');
       }
     };
 
@@ -244,7 +275,7 @@ export function useSessionTimeout() {
       window.removeEventListener('sessionTimeoutUpdated', handleSettingsUpdate as EventListener);
       console.log('🧹 Cleanup complete');
     };
-  }, [handleActivity, resetTimerFunc]);
+  }, [handleActivity, resetTimerFunc, isAuthenticated]);
 
   // Return a function to update timeout when settings change
   const updateSessionTimeout = useCallback((minutes: number) => {

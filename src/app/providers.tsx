@@ -21,7 +21,7 @@ function GlobalSessionTimeout({ children }: { children: React.ReactNode }) {
   return (
     <>
       {/* Global Session Timeout Warning Modal - Only show if authenticated */}
-      {isAuthenticated && showWarning && (
+      {isAuthenticated && showWarning && remainingSeconds > 0 && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-dark">
             <div className="mb-4 flex items-center gap-3">
@@ -55,6 +55,30 @@ function GlobalSessionTimeout({ children }: { children: React.ReactNode }) {
             >
               Continue Session
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Logging Out Modal - Show when countdown reaches 0 */}
+      {isAuthenticated && showWarning && remainingSeconds === 0 && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-dark">
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <svg className="h-6 w-6 animate-spin text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            </div>
+            <div className="text-center">
+              <h3 className="mb-2 text-lg font-bold text-black dark:text-white">
+                Session Expired
+              </h3>
+              <p className="text-sm text-body-color dark:text-body-color-dark">
+                Logging you out...
+              </p>
+            </div>
           </div>
         </div>
       )}
