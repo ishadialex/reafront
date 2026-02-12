@@ -22,6 +22,7 @@ function AuthCallbackContent() {
       setIsProcessing(true);
 
       const error = searchParams.get("error");
+      const token = searchParams.get("token");
 
       if (error) {
         // Handle OAuth errors
@@ -46,14 +47,22 @@ function AuthCallbackContent() {
         return;
       }
 
+      if (!token) {
+        console.error("No OAuth token provided");
+        router.replace("/signin?error=oauth_failed");
+        return;
+      }
+
       try {
-        // Fetch user profile (cookies sent automatically)
-        const response = await axios.get(`${API_URL}/api/profile`, {
-          withCredentials: true,
-        });
+        // Exchange temporary OAuth token for httpOnly cookies
+        // This request goes through the rewrite proxy, making cookies first-party
+        const response = await axios.post(`${API_URL}/api/auth/exchange-oauth-token`,
+          { token },
+          { withCredentials: true }
+        );
 
         if (response.data.success) {
-          const user = response.data.data;
+          const user = response.data.data.user;
 
           // Store user data in localStorage
           localStorage.setItem("isLoggedIn", "true");
@@ -75,7 +84,7 @@ function AuthCallbackContent() {
           // Redirect to dashboard
           router.replace("/dashboard");
         } else {
-          throw new Error("Failed to fetch profile");
+          throw new Error("Token exchange failed");
         }
       } catch (err) {
         console.error("OAuth callback error:", err);
