@@ -19,7 +19,7 @@ const Hero = () => {
   useEffect(() => {
     const fullText = captions[currentCaptionIndex];
     let currentIndex = 0;
-    let typingInterval: NodeJS.Timeout;
+    let typingInterval: NodeJS.Timeout | undefined;
     setTypedText("");
     setIsTypingComplete(false);
     setIsFadingOut(false);
@@ -40,7 +40,7 @@ const Hero = () => {
 
     return () => {
       clearTimeout(startDelay);
-      if (typingInterval) {
+      if (typingInterval !== undefined) {
         clearInterval(typingInterval);
       }
     };
