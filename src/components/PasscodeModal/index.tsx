@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { verifyPasscode, storeVerifiedAccess } from "@/utils/passcode";
-import { SUPPORT_INFO } from "@/config/document-passcodes";
+
+const SUPPORT_INFO = {
+  email: "info@alvaradoassociatepartners.com",
+  phone: "(424) 519-5003",
+  message: "Please contact our support team to obtain an access code for our documents.",
+};
 
 interface PasscodeModalProps {
   isOpen: boolean;
