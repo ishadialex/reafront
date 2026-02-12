@@ -484,19 +484,6 @@ function SigninContent() {
                       {isLoading ? "Signing in..." : "Sign in"}
                     </button>
                   </div>
-
-                  {/* Demo credentials info */}
-                  <div className="mb-6 rounded-lg bg-blue-50 p-4 text-sm dark:bg-blue-900/20">
-                    <p className="mb-2 font-semibold text-blue-900 dark:text-blue-300">
-                      Demo Credentials:
-                    </p>
-                    <p className="text-blue-800 dark:text-blue-400">
-                      Email: demo@alvarado.com
-                    </p>
-                    <p className="text-blue-800 dark:text-blue-400">
-                      Password: Demo1234!
-                    </p>
-                  </div>
                 </form>
                 <p className="text-body-color text-center text-base font-medium">
                   Don’t you have an account?{" "}

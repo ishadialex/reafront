@@ -34,9 +34,12 @@ const ProfileDropdown = () => {
       photo: storedPhoto
     });
 
+    // If we have cached data, use it immediately and hide loading skeleton
+    const hasCachedData = storedEmail || storedName;
     if (storedEmail) setUserEmail(storedEmail);
     if (storedName) setUserName(storedName);
     if (storedPhoto) setProfilePhoto(storedPhoto);
+    if (hasCachedData) setLoadingProfile(false);
 
     const fetchUserData = async () => {
       try {
