@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 interface Property {
   id: number;
@@ -14,9 +15,13 @@ interface Property {
   bathrooms: number;
   parking: number;
   status: string;
+  minInvestment?: number;
+  expectedROI?: number;
+  imageUrl?: string;
 }
 
-const properties: Property[] = [
+// Fallback properties to show if API fails or returns no data
+const fallbackProperties: Property[] = [
   {
     id: 1,
     title: "Cycladic home in Fira, Greece",
@@ -108,6 +113,36 @@ const properties: Property[] = [
     status: "For Sale",
   },
 ];
+
+// Helper function to format property data from API
+function formatPropertyData(apiProperty: any): Property {
+  // Get images array - handle both formats
+  let images: string[] = [];
+  if (apiProperty.imageUrl) {
+    images = [apiProperty.imageUrl];
+  } else if (apiProperty.images && Array.isArray(apiProperty.images)) {
+    images = apiProperty.images;
+  } else {
+    // Fallback images
+    images = [
+      "/images/how-it-works/property-1.jpg",
+      "/images/how-it-works/property-2.jpg",
+      "/images/how-it-works/property-3.jpg",
+    ];
+  }
+
+  return {
+    id: apiProperty.id,
+    title: apiProperty.title || apiProperty.name || "Property",
+    price: apiProperty.price || (apiProperty.minInvestment ? `$${apiProperty.minInvestment.toLocaleString()}` : "$0"),
+    description: apiProperty.description || "Investment property opportunity",
+    images: images,
+    bedrooms: apiProperty.bedrooms || 0,
+    bathrooms: apiProperty.bathrooms || 0,
+    parking: apiProperty.parking || 0,
+    status: apiProperty.status || "Available",
+  };
+}
 
 function PropertyCard({ property }: { property: Property }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -333,6 +368,39 @@ function PropertyCard({ property }: { property: Property }) {
 }
 
 export default function ListingsPage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProperties = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch properties from API - works with or without authentication
+        const result = await api.getProperties();
+        
+        if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+          // Format API data to match our Property interface
+          const formattedProperties = result.data.map(formatPropertyData);
+          setProperties(formattedProperties);
+        } else {
+          // Use fallback data if API returns empty or invalid data
+          setProperties(fallbackProperties);
+        }
+      } catch (err) {
+        console.error("Failed to load properties:", err);
+        setError("Failed to load properties from server");
+        // Use fallback data on error
+        setProperties(fallbackProperties);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProperties();
+  }, []);
+
   return (
     <section className="relative z-10 overflow-hidden bg-white pb-12 pt-36 dark:bg-gray-dark md:pb-20 lg:pb-28 lg:pt-40">
       <div className="container mx-auto">
@@ -400,14 +468,31 @@ export default function ListingsPage() {
           <h2 className="text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-[45px] md:leading-tight">
             Properties
           </h2>
+          {error && (
+            <p className="mt-2 text-sm text-red-500">
+              {error}. Showing sample properties.
+            </p>
+          )}
         </div>
 
-        {/* Properties Grid */}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="h-[600px] animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700"
+              />
+            ))}
+          </div>
+        ) : (
+          /* Properties Grid */
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {properties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

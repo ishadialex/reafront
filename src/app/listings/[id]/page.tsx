@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { use, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { api } from "@/lib/api";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -46,8 +47,8 @@ interface Property {
   longitude?: number;
 }
 
-// Mock data - in a real app, this would be fetched based on the ID
-const propertyData: Record<number, Property> = {
+// Fallback mock data - used if API fails or returns no data
+const fallbackPropertyData: Record<number, Property> = {
   1: {
     id: 1,
     title: "Cycladic home in Fira, Greece",
@@ -209,6 +210,47 @@ const propertyData: Record<number, Property> = {
   },
 };
 
+// Helper function to format property data from API
+function formatPropertyDetails(apiProperty: any): Property {
+  // Get images array - handle both formats
+  let images: string[] = [];
+  if (apiProperty.imageUrl) {
+    images = [apiProperty.imageUrl];
+  } else if (apiProperty.images && Array.isArray(apiProperty.images)) {
+    images = apiProperty.images;
+  } else {
+    // Fallback images
+    images = [
+      "/images/how-it-works/property-1.jpg",
+      "/images/how-it-works/property-2.jpg",
+      "/images/how-it-works/property-3.jpg",
+    ];
+  }
+
+  return {
+    id: apiProperty.id,
+    title: apiProperty.title || apiProperty.name || "Property",
+    price: apiProperty.price || (apiProperty.minInvestment ? `$${apiProperty.minInvestment.toLocaleString()}` : "$0"),
+    location: apiProperty.location || apiProperty.address || "Location not specified",
+    description: apiProperty.description || "Investment property opportunity",
+    images: images,
+    bedrooms: apiProperty.bedrooms || 0,
+    bathrooms: apiProperty.bathrooms || 0,
+    parking: apiProperty.parking || 0,
+    status: apiProperty.status || "Available",
+    area: apiProperty.area || apiProperty.size || "N/A",
+    type: apiProperty.type || apiProperty.propertyType || "Property",
+    lotSize: apiProperty.lotSize,
+    rooms: apiProperty.rooms || apiProperty.bedrooms,
+    customId: apiProperty.customId || String(apiProperty.id),
+    available: apiProperty.available || "Yes",
+    floors: apiProperty.floors || 1,
+    features: apiProperty.features,
+    latitude: apiProperty.latitude || 40.7128,
+    longitude: apiProperty.longitude || -74.0060,
+  };
+}
+
 export default function PropertyDetailsPage({
   params,
 }: {
@@ -216,11 +258,51 @@ export default function PropertyDetailsPage({
 }) {
   const { id } = use(params);
   const propertyId = parseInt(id);
-  const property = propertyData[propertyId];
-
+  
+  const [property, setProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isFading, setIsFading] = useState(false);
+
+  // Fetch property data from API
+  useEffect(() => {
+    const loadProperty = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Try to fetch from API - works with or without authentication
+        const result = await api.getProperty(id);
+        
+        if (result.success && result.data) {
+          // Format API data to match our Property interface
+          const formattedProperty = formatPropertyDetails(result.data);
+          setProperty(formattedProperty);
+        } else {
+          // Use fallback data if API returns empty or invalid data
+          if (fallbackPropertyData[propertyId]) {
+            setProperty(fallbackPropertyData[propertyId]);
+          } else {
+            setError("Property not found");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load property:", err);
+        // Use fallback data on error
+        if (fallbackPropertyData[propertyId]) {
+          setProperty(fallbackPropertyData[propertyId]);
+          setError(null);
+        } else {
+          setError("Failed to load property details");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProperty();
+  }, [id, propertyId]);
 
   // Auto-slide images every 3 seconds with fade effect
   useEffect(() => {
@@ -239,12 +321,31 @@ export default function PropertyDetailsPage({
     }
   }, [property]);
 
-  if (!property) {
+  if (loading) {
+    return (
+      <section className="relative z-10 overflow-hidden bg-white pb-12 pt-36 dark:bg-gray-dark md:pb-20 lg:pb-28 lg:pt-40">
+        <div className="container mx-auto">
+          <div className="animate-pulse">
+            <div className="mb-8 h-96 rounded-2xl bg-gray-200 dark:bg-gray-700" />
+            <div className="mb-4 h-12 w-3/4 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="mb-4 h-8 w-1/2 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="space-y-2">
+              <div className="h-4 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-4 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="h-4 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!property || error) {
     return (
       <section className="relative z-10 overflow-hidden bg-white pb-12 pt-36 dark:bg-gray-dark md:pb-20 lg:pb-28 lg:pt-40">
         <div className="container mx-auto text-center">
           <h1 className="mb-4 text-3xl font-bold text-black dark:text-white">
-            Property Not Found
+            {error || "Property Not Found"}
           </h1>
           <Link
             href="/listings"
