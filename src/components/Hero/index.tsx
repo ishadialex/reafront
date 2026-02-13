@@ -16,6 +16,9 @@ const Hero = () => {
     "Property Investment Made Simple"
   ];
 
+  // Index of caption to show when non-English language is selected
+  const NON_ENGLISH_CAPTION_INDEX = 1; // "Turn Property into Profit"
+
   // Check current language on mount and set up listener for language changes
   useEffect(() => {
     // Check if current language is English
@@ -24,10 +27,10 @@ const Hero = () => {
       const isEn = !savedLangCode || savedLangCode === 'en';
       setIsEnglish(isEn);
       
-      // If not English, set to second caption without animation
+      // If not English, set to static caption without animation
       if (!isEn) {
-        setCurrentCaptionIndex(1);
-        setTypedText(captions[1]);
+        setCurrentCaptionIndex(NON_ENGLISH_CAPTION_INDEX);
+        setTypedText(captions[NON_ENGLISH_CAPTION_INDEX]);
         setIsTypingComplete(true);
       }
     };
@@ -36,7 +39,9 @@ const Hero = () => {
     checkLanguage();
 
     // Set up interval to check for language changes
-    const interval = setInterval(checkLanguage, 500);
+    // Note: Polling is used as a simple solution. For production, consider
+    // implementing a custom event system or context provider for better performance
+    const interval = setInterval(checkLanguage, 1000); // Check every second
 
     return () => clearInterval(interval);
   }, []);
@@ -45,7 +50,7 @@ const Hero = () => {
   useEffect(() => {
     // Skip animation if not English
     if (!isEnglish) {
-      setTypedText(captions[1]); // Show second caption statically
+      setTypedText(captions[NON_ENGLISH_CAPTION_INDEX]); // Show static caption
       return;
     }
 
