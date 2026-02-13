@@ -5,6 +5,7 @@ import Link from "next/link";
 import { use, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { api } from "@/lib/api";
+import { formatPropertyDetails, FormattedPropertyDetails, PropertyFeatures } from "@/utils/propertyFormatter";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -14,41 +15,8 @@ const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
   ),
 });
 
-// This would typically come from a database or API
-// For now, we'll use the same data structure as the listings page
-interface PropertyFeatures {
-  intercom?: string[];
-  interiorDetails?: string[];
-  outdoorDetails?: string[];
-  utilities?: string[];
-  otherFeatures?: string[];
-}
-
-interface Property {
-  id: number;
-  title: string;
-  price: string;
-  location: string;
-  description: string;
-  images: string[];
-  bedrooms: number;
-  bathrooms: number;
-  parking: number;
-  status: string;
-  area: string;
-  type: string;
-  lotSize?: string;
-  rooms?: number;
-  customId?: string;
-  available?: string;
-  floors?: number;
-  features?: PropertyFeatures;
-  latitude?: number;
-  longitude?: number;
-}
-
 // Fallback mock data - used if API fails or returns no data
-const fallbackPropertyData: Record<number, Property> = {
+const fallbackPropertyData: Record<number, FormattedPropertyDetails> = {
   1: {
     id: 1,
     title: "Cycladic home in Fira, Greece",
@@ -210,47 +178,6 @@ const fallbackPropertyData: Record<number, Property> = {
   },
 };
 
-// Helper function to format property data from API
-function formatPropertyDetails(apiProperty: any): Property {
-  // Get images array - handle both formats
-  let images: string[] = [];
-  if (apiProperty.imageUrl) {
-    images = [apiProperty.imageUrl];
-  } else if (apiProperty.images && Array.isArray(apiProperty.images)) {
-    images = apiProperty.images;
-  } else {
-    // Fallback images
-    images = [
-      "/images/how-it-works/property-1.jpg",
-      "/images/how-it-works/property-2.jpg",
-      "/images/how-it-works/property-3.jpg",
-    ];
-  }
-
-  return {
-    id: apiProperty.id,
-    title: apiProperty.title || apiProperty.name || "Property",
-    price: apiProperty.price || (apiProperty.minInvestment ? `$${apiProperty.minInvestment.toLocaleString()}` : "$0"),
-    location: apiProperty.location || apiProperty.address || "Location not specified",
-    description: apiProperty.description || "Investment property opportunity",
-    images: images,
-    bedrooms: apiProperty.bedrooms || 0,
-    bathrooms: apiProperty.bathrooms || 0,
-    parking: apiProperty.parking || 0,
-    status: apiProperty.status || "Available",
-    area: apiProperty.area || apiProperty.size || "N/A",
-    type: apiProperty.type || apiProperty.propertyType || "Property",
-    lotSize: apiProperty.lotSize,
-    rooms: apiProperty.rooms || apiProperty.bedrooms,
-    customId: apiProperty.customId || String(apiProperty.id),
-    available: apiProperty.available || "Yes",
-    floors: apiProperty.floors || 1,
-    features: apiProperty.features,
-    latitude: apiProperty.latitude || 40.7128,
-    longitude: apiProperty.longitude || -74.0060,
-  };
-}
-
 export default function PropertyDetailsPage({
   params,
 }: {
@@ -259,7 +186,7 @@ export default function PropertyDetailsPage({
   const { id } = use(params);
   const propertyId = parseInt(id);
   
-  const [property, setProperty] = useState<Property | null>(null);
+  const [property, setProperty] = useState<FormattedPropertyDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);

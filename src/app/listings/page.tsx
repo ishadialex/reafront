@@ -4,24 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-
-interface Property {
-  id: number;
-  title: string;
-  price: string;
-  description: string;
-  images: string[];
-  bedrooms: number;
-  bathrooms: number;
-  parking: number;
-  status: string;
-  minInvestment?: number;
-  expectedROI?: number;
-  imageUrl?: string;
-}
+import { formatPropertyData, FormattedProperty } from "@/utils/propertyFormatter";
 
 // Fallback properties to show if API fails or returns no data
-const fallbackProperties: Property[] = [
+const fallbackProperties: FormattedProperty[] = [
   {
     id: 1,
     title: "Cycladic home in Fira, Greece",
@@ -114,37 +100,7 @@ const fallbackProperties: Property[] = [
   },
 ];
 
-// Helper function to format property data from API
-function formatPropertyData(apiProperty: any): Property {
-  // Get images array - handle both formats
-  let images: string[] = [];
-  if (apiProperty.imageUrl) {
-    images = [apiProperty.imageUrl];
-  } else if (apiProperty.images && Array.isArray(apiProperty.images)) {
-    images = apiProperty.images;
-  } else {
-    // Fallback images
-    images = [
-      "/images/how-it-works/property-1.jpg",
-      "/images/how-it-works/property-2.jpg",
-      "/images/how-it-works/property-3.jpg",
-    ];
-  }
-
-  return {
-    id: apiProperty.id,
-    title: apiProperty.title || apiProperty.name || "Property",
-    price: apiProperty.price || (apiProperty.minInvestment ? `$${apiProperty.minInvestment.toLocaleString()}` : "$0"),
-    description: apiProperty.description || "Investment property opportunity",
-    images: images,
-    bedrooms: apiProperty.bedrooms || 0,
-    bathrooms: apiProperty.bathrooms || 0,
-    parking: apiProperty.parking || 0,
-    status: apiProperty.status || "Available",
-  };
-}
-
-function PropertyCard({ property }: { property: Property }) {
+function PropertyCard({ property }: { property: FormattedProperty }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -368,7 +324,7 @@ function PropertyCard({ property }: { property: Property }) {
 }
 
 export default function ListingsPage() {
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<FormattedProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
