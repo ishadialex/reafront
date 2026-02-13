@@ -308,7 +308,7 @@ const Header = () => {
                 >
                   <ul className="block xlg:flex xlg:space-x-12">
                     {dynamicMenuData.map((menuItem, index) => (
-                      <li key={index} className="group relative">
+                      <li key={menuItem.id || menuItem.title} className="group relative">
                         {menuItem.path ? (
                           <Link
                             href={menuItem.path}
@@ -350,10 +350,11 @@ const Header = () => {
                             >
                               {menuItem.submenu.map((submenuItem, index) => {
                                 const isActive = usePathName === submenuItem.path || usePathName?.startsWith(submenuItem.path + '/');
+                                const itemKey = submenuItem.id || submenuItem.path || `submenu-${index}`;
                                 return submenuItem.newTab ? (
                                   <a
                                     href={submenuItem.path}
-                                    key={index}
+                                    key={itemKey}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => {
@@ -379,7 +380,7 @@ const Header = () => {
                                 ) : (
                                   <Link
                                     href={submenuItem.path}
-                                    key={index}
+                                    key={itemKey}
                                     onClick={() => setNavbarOpen(false)}
                                     className={`block rounded-sm py-2.5 pl-4 pr-3 text-sm xlg:px-3 ${
                                       isActive

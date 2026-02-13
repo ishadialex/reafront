@@ -3,21 +3,23 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+const captions = [
+  "Passive Income Through Strategic Real Estate Investment",
+  "Turn Property into Profit",
+  "Property Investment Made Simple"
+];
+
 const Hero = () => {
   const [currentCaptionIndex, setCurrentCaptionIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
-  const captions = [
-    "Passive Income Through Strategic Real Estate Investment",
-    "Turn Property into Profit",
-    "Property Investment Made Simple"
-  ];
-
   // Typing effect for current caption
   useEffect(() => {
     const fullText = captions[currentCaptionIndex];
+    if (!fullText) return; // Safety check
+
     let currentIndex = 0;
     setTypedText("");
     setIsTypingComplete(false);
@@ -33,23 +35,31 @@ const Hero = () => {
       }
     }, 100); // Type one character every 100ms
 
-    return () => clearInterval(typingInterval);
+    return () => {
+      clearInterval(typingInterval);
+    };
   }, [currentCaptionIndex]);
 
   // Rotation effect - fade out, then move to next caption
   useEffect(() => {
     if (!isTypingComplete) return;
 
-    const timeout = setTimeout(() => {
+    let fadeTimeout: NodeJS.Timeout;
+    let switchTimeout: NodeJS.Timeout;
+
+    fadeTimeout = setTimeout(() => {
       setIsFadingOut(true);
 
       // After fade out completes, switch to next caption
-      setTimeout(() => {
+      switchTimeout = setTimeout(() => {
         setCurrentCaptionIndex((prevIndex) => (prevIndex + 1) % captions.length);
       }, 500); // Wait for fade out animation
     }, 3000); // Wait 3 seconds after typing completes before fading out
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(fadeTimeout);
+      clearTimeout(switchTimeout);
+    };
   }, [isTypingComplete]);
 
   return (
@@ -76,10 +86,16 @@ const Hero = () => {
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
               <div className="mx-auto max-w-[800px] text-center">
-                <h1 className="mb-5 flex min-h-[120px] items-end justify-center text-3xl font-bold leading-tight text-black dark:text-white sm:min-h-[140px] sm:text-4xl sm:leading-tight md:min-h-[160px] md:text-5xl md:leading-tight">
-                  <span className={`inline-block ${
-                    isFadingOut ? 'opacity-0 transition-opacity duration-500' : ''
-                  }`}>
+                <h1
+                  className="mb-5 flex min-h-[140px] items-center justify-center text-2xl font-bold leading-snug text-black dark:text-white sm:min-h-[140px] sm:text-4xl sm:leading-tight md:min-h-[160px] md:text-5xl md:leading-tight"
+                  translate="no"
+                >
+                  <span
+                    className={`notranslate inline-block ${
+                      isFadingOut ? 'opacity-0 transition-opacity duration-500' : ''
+                    }`}
+                    translate="no"
+                  >
                     {typedText}
                     <span className="animate-pulse">|</span>
                   </span>
