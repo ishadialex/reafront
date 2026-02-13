@@ -8,6 +8,7 @@ const Hero = () => {
   const [typedText, setTypedText] = useState("");
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [isEnglish, setIsEnglish] = useState(true);
 
   const captions = [
     "Passive Income Through Strategic Real Estate Investment",
@@ -15,8 +16,39 @@ const Hero = () => {
     "Property Investment Made Simple"
   ];
 
-  // Typing effect for current caption
+  // Check current language on mount and set up listener for language changes
   useEffect(() => {
+    // Check if current language is English
+    const checkLanguage = () => {
+      const savedLangCode = localStorage.getItem('selectedLanguage');
+      const isEn = !savedLangCode || savedLangCode === 'en';
+      setIsEnglish(isEn);
+      
+      // If not English, set to second caption without animation
+      if (!isEn) {
+        setCurrentCaptionIndex(1);
+        setTypedText(captions[1]);
+        setIsTypingComplete(true);
+      }
+    };
+
+    // Check on mount
+    checkLanguage();
+
+    // Set up interval to check for language changes
+    const interval = setInterval(checkLanguage, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Typing effect for current caption (only when English is selected)
+  useEffect(() => {
+    // Skip animation if not English
+    if (!isEnglish) {
+      setTypedText(captions[1]); // Show second caption statically
+      return;
+    }
+
     const fullText = captions[currentCaptionIndex];
     let currentIndex = 0;
     let typingInterval: NodeJS.Timeout | undefined;
@@ -24,33 +56,28 @@ const Hero = () => {
     setIsTypingComplete(false);
     setIsFadingOut(false);
 
-    // Add a small delay before starting the typing animation
-    // This prevents conflicts with Google Translate's initial page translation
-    const startDelay = setTimeout(() => {
-      typingInterval = setInterval(() => {
-        if (currentIndex <= fullText.length) {
-          setTypedText(fullText.slice(0, currentIndex));
-          currentIndex++;
-        } else {
-          if (typingInterval !== undefined) {
-            clearInterval(typingInterval);
-          }
-          setIsTypingComplete(true);
+    typingInterval = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setTypedText(fullText.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        if (typingInterval !== undefined) {
+          clearInterval(typingInterval);
         }
-      }, 100); // Type one character every 100ms
-    }, 500); // Wait 500ms before starting animation
+        setIsTypingComplete(true);
+      }
+    }, 100); // Type one character every 100ms
 
     return () => {
-      clearTimeout(startDelay);
       if (typingInterval !== undefined) {
         clearInterval(typingInterval);
       }
     };
-  }, [currentCaptionIndex]);
+  }, [currentCaptionIndex, isEnglish]);
 
-  // Rotation effect - fade out, then move to next caption
+  // Rotation effect - fade out, then move to next caption (only when English is selected)
   useEffect(() => {
-    if (!isTypingComplete) return;
+    if (!isEnglish || !isTypingComplete) return;
 
     const timeout = setTimeout(() => {
       setIsFadingOut(true);
@@ -62,7 +89,7 @@ const Hero = () => {
     }, 3000); // Wait 3 seconds after typing completes before fading out
 
     return () => clearTimeout(timeout);
-  }, [isTypingComplete]);
+  }, [isTypingComplete, isEnglish]);
 
   return (
     <>
@@ -88,12 +115,12 @@ const Hero = () => {
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
               <div className="mx-auto max-w-[800px] text-center">
-                <h1 className="notranslate mb-5 flex min-h-[120px] items-end justify-center text-3xl font-bold leading-tight text-black dark:text-white sm:min-h-[140px] sm:text-4xl sm:leading-tight md:min-h-[160px] md:text-5xl md:leading-tight">
+                <h1 className="mb-5 flex min-h-[120px] items-end justify-center text-3xl font-bold leading-tight text-black dark:text-white sm:min-h-[140px] sm:text-4xl sm:leading-tight md:min-h-[160px] md:text-5xl md:leading-tight">
                   <span className={`inline-block ${
                     isFadingOut ? 'opacity-0 transition-opacity duration-500' : ''
                   }`}>
                     {typedText}
-                    <span className="animate-pulse">|</span>
+                    {isEnglish && <span className="animate-pulse">|</span>}
                   </span>
                 </h1>
                 <p className="mb-12 text-base leading-relaxed! text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
