@@ -150,7 +150,7 @@ function ResetPasswordForm() {
                 placeholder="Enter new password"
               />
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-                Min 8 characters, uppercase, lowercase, number, special character
+                Must contain at least 8 characters, including uppercase, lowercase, number, and special character
               </p>
               {passwordStrengthError && (
                 <p className="mt-2 text-sm text-red-500 dark:text-red-400">

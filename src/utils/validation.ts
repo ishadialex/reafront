@@ -31,7 +31,9 @@ export const validateEmail = (email: string): string => {
     return "Please enter a valid email address";
   }
   
-  if (email.split("@")[1] && !email.split("@")[1].includes(".")) {
+  // Check domain has a period
+  const parts = email.split("@");
+  if (parts[1] && !parts[1].includes(".")) {
     return "Email domain must contain a period";
   }
 

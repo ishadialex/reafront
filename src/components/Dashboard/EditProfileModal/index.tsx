@@ -72,9 +72,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
 
   // Real-time phone validation
   useEffect(() => {
-    if (formData.phone) {
-      setPhoneError(validatePhone(formData.phone));
-    }
+    setPhoneError(validatePhone(formData.phone || ""));
   }, [formData.phone]);
 
   // Prevent body scroll when modal is open
@@ -243,8 +241,12 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
     }
     if (!formData.phone?.trim()) {
       errors.phone = "Phone number is required";
-    } else if (phoneError) {
-      errors.phone = phoneError;
+    } else {
+      // Use the real-time validation error if present
+      const phoneValidationError = validatePhone(formData.phone);
+      if (phoneValidationError) {
+        errors.phone = phoneValidationError;
+      }
     }
 
     setFieldErrors(errors);
