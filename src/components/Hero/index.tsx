@@ -8,37 +8,82 @@ const Hero = () => {
   const [typedText, setTypedText] = useState("");
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [isEnglish, setIsEnglish] = useState(true);
 
+  // Define captions outside of effects to avoid dependency issues
   const captions = [
     "Passive Income Through Strategic Real Estate Investment",
     "Turn Property into Profit",
     "Property Investment Made Simple"
   ];
 
-  // Typing effect for current caption
+  // Index of caption to show when non-English language is selected
+  const NON_ENGLISH_CAPTION_INDEX = 1; // "Turn Property into Profit"
+
+  // Check current language on mount and set up listener for language changes
   useEffect(() => {
+    // Check if current language is English
+    const checkLanguage = () => {
+      const savedLangCode = localStorage.getItem('selectedLanguage');
+      const isEn = !savedLangCode || savedLangCode === 'en';
+      setIsEnglish(isEn);
+      
+      // If not English, set to static caption without animation
+      if (!isEn) {
+        setCurrentCaptionIndex(NON_ENGLISH_CAPTION_INDEX);
+        setTypedText(captions[NON_ENGLISH_CAPTION_INDEX]);
+        setIsTypingComplete(true);
+      }
+    };
+
+    // Check on mount
+    checkLanguage();
+
+    // Set up interval to check for language changes
+    // Note: Polling is used as a simple solution. For production, consider
+    // implementing a custom event system or context provider for better performance
+    const interval = setInterval(checkLanguage, 1000); // Check every second
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Typing effect for current caption (only when English is selected)
+  useEffect(() => {
+    // Skip animation if not English
+    if (!isEnglish) {
+      setTypedText(captions[NON_ENGLISH_CAPTION_INDEX]); // Show static caption
+      return;
+    }
+
     const fullText = captions[currentCaptionIndex];
     let currentIndex = 0;
+    let typingInterval: NodeJS.Timeout | undefined;
     setTypedText("");
     setIsTypingComplete(false);
     setIsFadingOut(false);
 
-    const typingInterval = setInterval(() => {
+    typingInterval = setInterval(() => {
       if (currentIndex <= fullText.length) {
         setTypedText(fullText.slice(0, currentIndex));
         currentIndex++;
       } else {
-        clearInterval(typingInterval);
+        if (typingInterval !== undefined) {
+          clearInterval(typingInterval);
+        }
         setIsTypingComplete(true);
       }
     }, 100); // Type one character every 100ms
 
-    return () => clearInterval(typingInterval);
-  }, [currentCaptionIndex]);
+    return () => {
+      if (typingInterval !== undefined) {
+        clearInterval(typingInterval);
+      }
+    };
+  }, [currentCaptionIndex, isEnglish]);
 
-  // Rotation effect - fade out, then move to next caption
+  // Rotation effect - fade out, then move to next caption (only when English is selected)
   useEffect(() => {
-    if (!isTypingComplete) return;
+    if (!isEnglish || !isTypingComplete) return;
 
     const timeout = setTimeout(() => {
       setIsFadingOut(true);
@@ -50,7 +95,7 @@ const Hero = () => {
     }, 3000); // Wait 3 seconds after typing completes before fading out
 
     return () => clearTimeout(timeout);
-  }, [isTypingComplete]);
+  }, [isTypingComplete, isEnglish]);
 
   return (
     <>
@@ -81,7 +126,7 @@ const Hero = () => {
                     isFadingOut ? 'opacity-0 transition-opacity duration-500' : ''
                   }`}>
                     {typedText}
-                    <span className="animate-pulse">|</span>
+                    {isEnglish && <span className="animate-pulse">|</span>}
                   </span>
                 </h1>
                 <p className="mb-12 text-base leading-relaxed! text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
