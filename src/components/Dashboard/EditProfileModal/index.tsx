@@ -6,6 +6,7 @@ import axios from "axios";
 import { UserProfile, UpdateProfileRequest, ApiResponse } from "@/types/user";
 import { api } from "@/lib/api";
 import DatePicker from "@/components/DatePicker";
+import { validateEmail, validatePhone } from "@/utils/validation";
 
 const getImageUrl = (path: string | null | undefined) => {
   if (!path) return null;
@@ -29,6 +30,7 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [phoneError, setPhoneError] = useState("");
 
   const [formData, setFormData] = useState<UpdateProfileRequest>({
     firstName: profile.firstName,
@@ -65,7 +67,15 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
     });
     setErrorMessage("");
     setFieldErrors({});
+    setPhoneError("");
   }, [profile, isOpen]);
+
+  // Real-time phone validation
+  useEffect(() => {
+    if (formData.phone) {
+      setPhoneError(validatePhone(formData.phone));
+    }
+  }, [formData.phone]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -127,6 +137,10 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
         delete newErrors[field];
         return newErrors;
       });
+    }
+    // Clear phone error when phone changes
+    if (field === "phone") {
+      setPhoneError("");
     }
   };
 
@@ -229,6 +243,8 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
     }
     if (!formData.phone?.trim()) {
       errors.phone = "Phone number is required";
+    } else if (phoneError) {
+      errors.phone = phoneError;
     }
 
     setFieldErrors(errors);
@@ -438,12 +454,12 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
-                    fieldErrors.phone ? "border-red-500" : "border-gray-200 dark:border-gray-700"
+                    fieldErrors.phone || phoneError ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                   }`}
                   placeholder="+1 (555) 123-4567"
                 />
-                {fieldErrors.phone && (
-                  <p className="mt-0.5 text-[10px] text-red-500">{fieldErrors.phone}</p>
+                {(fieldErrors.phone || phoneError) && (
+                  <p className="mt-0.5 text-[10px] text-red-500">{fieldErrors.phone || phoneError}</p>
                 )}
               </div>
 

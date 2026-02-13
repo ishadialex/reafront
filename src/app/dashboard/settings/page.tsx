@@ -6,6 +6,7 @@ import { AxiosError } from "axios";
 import { api } from "@/lib/api";
 import { TabWrapper } from "./TabWrapper";
 import SettingsSkeleton from "@/components/SettingsSkeleton";
+import { validatePasswordStrength } from "@/utils/validation";
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -47,6 +48,7 @@ function SettingsContent() {
     confirmPassword: "",
   });
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+  const [passwordStrengthError, setPasswordStrengthError] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Settings state
@@ -92,6 +94,11 @@ function SettingsContent() {
     fetchProfile();
     fetch2FAStatus();
   }, []);
+
+  // Real-time password strength validation
+  useEffect(() => {
+    setPasswordStrengthError(validatePasswordStrength(passwordForm.newPassword));
+  }, [passwordForm.newPassword]);
 
   const fetchProfile = async () => {
     try {
@@ -170,8 +177,8 @@ function SettingsContent() {
     }
     if (!passwordForm.newPassword) {
       errors.newPassword = "New password is required";
-    } else if (passwordForm.newPassword.length < 8) {
-      errors.newPassword = "Password must be at least 8 characters";
+    } else if (passwordStrengthError) {
+      errors.newPassword = passwordStrengthError;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
@@ -515,12 +522,15 @@ function SettingsContent() {
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                   className={`w-full rounded-lg border bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-primary dark:bg-gray-800 dark:text-white sm:text-base ${
-                    passwordErrors.newPassword ? "border-red-500" : "border-gray-200 dark:border-gray-700"
+                    passwordErrors.newPassword || passwordStrengthError ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                   }`}
                   placeholder="Enter new password"
                 />
-                {passwordErrors.newPassword && (
-                  <p className="mt-1 text-xs text-red-500">{passwordErrors.newPassword}</p>
+                <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                  Min 8 characters, uppercase, lowercase, number, special character
+                </p>
+                {(passwordErrors.newPassword || passwordStrengthError) && (
+                  <p className="mt-1 text-xs text-red-500">{passwordErrors.newPassword || passwordStrengthError}</p>
                 )}
               </div>
 
