@@ -77,6 +77,10 @@ const FALLBACK_IMAGES = [
   "/images/how-it-works/property-3.jpg",
 ];
 
+// Default coordinates (New York City)
+const DEFAULT_LATITUDE = 40.7128;
+const DEFAULT_LONGITUDE = -74.0060;
+
 /**
  * Helper function to extract images from API property data
  */
@@ -131,7 +135,7 @@ export function formatPropertyDetails(apiProperty: ApiPropertyResponse): Formatt
     available: apiProperty.available || "Yes",
     floors: apiProperty.floors || 1,
     features: apiProperty.features,
-    latitude: apiProperty.latitude || 40.7128,
-    longitude: apiProperty.longitude || -74.0060,
+    latitude: apiProperty.latitude || DEFAULT_LATITUDE,
+    longitude: apiProperty.longitude || DEFAULT_LONGITUDE,
   };
 }
