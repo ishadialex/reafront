@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { use, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { api } from "@/lib/api";
+import { InvestmentProperty } from "@/types/investment";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -46,7 +48,50 @@ interface Property {
   longitude?: number;
 }
 
-// Mock data - in a real app, this would be fetched based on the ID
+// Helper function to map API response to Property interface
+function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
+  const statusMap: Record<string, string> = {
+    available: "For Sale",
+    "fully-funded": "Sold Out",
+    "coming-soon": "Coming Soon",
+    closed: "Closed",
+  };
+
+  return {
+    id: parseInt(apiProperty.id) || 1,
+    title: apiProperty.title,
+    price: `$${apiProperty.minInvestment.toLocaleString()}`,
+    location: apiProperty.location,
+    description: apiProperty.description,
+    images: apiProperty.images && apiProperty.images.length > 0 ? apiProperty.images : [
+      "/images/how-it-works/property-1.jpg",
+      "/images/how-it-works/property-2.jpg",
+      "/images/how-it-works/property-3.jpg",
+    ],
+    bedrooms: apiProperty.bedrooms,
+    bathrooms: apiProperty.bathrooms,
+    parking: apiProperty.parking,
+    status: statusMap[apiProperty.status] || "For Sale",
+    area: apiProperty.area,
+    type: apiProperty.category ? apiProperty.category.charAt(0).toUpperCase() + apiProperty.category.slice(1) : "Property",
+    lotSize: apiProperty.area,
+    rooms: apiProperty.bedrooms + 1,
+    customId: apiProperty.id,
+    available: apiProperty.status === "available" ? "Yes" : "No",
+    floors: 1,
+    latitude: 40.7580,
+    longitude: -73.9855,
+    features: {
+      intercom: [],
+      interiorDetails: apiProperty.features || [],
+      outdoorDetails: [],
+      utilities: [],
+      otherFeatures: [],
+    },
+  };
+}
+
+// Mock data - used as fallback if API fails
 const propertyData: Record<number, Property> = {
   1: {
     id: 1,
@@ -216,11 +261,48 @@ export default function PropertyDetailsPage({
 }) {
   const { id } = use(params);
   const propertyId = parseInt(id);
-  const property = propertyData[propertyId];
 
+  const [property, setProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isFading, setIsFading] = useState(false);
+
+  // Fetch property data
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        setLoading(true);
+        const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("isLoggedIn") === "true";
+
+        if (isLoggedIn) {
+          try {
+            const response = await api.getProperty(id);
+            if (response.success && response.data) {
+              const mappedProperty = mapApiPropertyToLocal(response.data);
+              setProperty(mappedProperty);
+            } else {
+              // Fallback to mock data
+              setProperty(propertyData[propertyId] || null);
+            }
+          } catch (error) {
+            console.log("API fetch failed, using mock data:", error);
+            setProperty(propertyData[propertyId] || null);
+          }
+        } else {
+          console.log("User not logged in, showing mock property");
+          setProperty(propertyData[propertyId] || null);
+        }
+      } catch (error) {
+        console.error("Error fetching property:", error);
+        setProperty(propertyData[propertyId] || null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperty();
+  }, [id, propertyId]);
 
   // Auto-slide images every 3 seconds with fade effect
   useEffect(() => {
@@ -238,6 +320,55 @@ export default function PropertyDetailsPage({
       return () => clearInterval(interval);
     }
   }, [property]);
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <section className="relative z-10 bg-white pb-12 pt-36 dark:bg-gray-dark md:pb-20 lg:pb-28 lg:pt-40">
+        <div className="container mx-auto">
+          {/* Back Button Skeleton */}
+          <div className="mb-6 h-6 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+
+          {/* Title Section Skeleton */}
+          <div className="mb-8">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="h-10 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+                <div className="h-10 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+              </div>
+              <div className="h-16 w-32 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
+            </div>
+            <div className="mb-3 h-12 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-6 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+          </div>
+
+          {/* Image Gallery Skeleton */}
+          <div className="mb-8 overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-dark">
+            <div className="h-[400px] w-full animate-pulse bg-gray-200 dark:bg-gray-700 md:h-[500px] lg:h-[600px]" />
+            <div className="border-t border-gray-200 p-4 dark:border-gray-700 md:p-6">
+              <div className="flex justify-center gap-3 md:gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 w-28 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 md:h-24 md:w-32" />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Content Grid Skeleton */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <div className="mb-8 h-48 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
+              <div className="mb-8 h-32 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
+              <div className="h-32 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
+            </div>
+            <div className="lg:col-span-1">
+              <div className="h-96 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!property) {
     return (

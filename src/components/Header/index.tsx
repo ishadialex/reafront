@@ -22,10 +22,25 @@ const Header = () => {
   const [dynamicMenuData, setDynamicMenuData] = useState<Menu[]>(menuData);
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    // No longer check for accessToken in localStorage since we use httpOnly cookies
-    setIsLoggedIn(loggedIn);
-    setIsAuthChecked(true);
+    const checkAuthStatus = () => {
+      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+      setIsLoggedIn(loggedIn);
+      setIsAuthChecked(true);
+    };
+
+    // Check on mount
+    checkAuthStatus();
+
+    // Listen for storage changes (when localStorage is updated in another tab or programmatically)
+    window.addEventListener("storage", checkAuthStatus);
+
+    // Listen for custom auth event (for same-tab login/logout)
+    window.addEventListener("authStateChanged", checkAuthStatus);
+
+    return () => {
+      window.removeEventListener("storage", checkAuthStatus);
+      window.removeEventListener("authStateChanged", checkAuthStatus);
+    };
   }, []);
 
   // Handle logout
@@ -44,6 +59,12 @@ const Header = () => {
       localStorage.removeItem("userEmail");
       localStorage.removeItem("userName");
       localStorage.removeItem("userProfilePicture");
+
+      // Dispatch custom event to notify Header of auth state change
+      window.dispatchEvent(new Event("authStateChanged"));
+
+      // Update state immediately
+      setIsLoggedIn(false);
 
       // Redirect to home page
       window.location.href = "/";

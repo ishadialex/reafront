@@ -62,6 +62,8 @@ export class ApiClient {
               localStorage.removeItem("userName");
               localStorage.removeItem("userEmail");
               localStorage.removeItem("userProfilePicture");
+              // Dispatch custom event to notify Header of auth state change
+              window.dispatchEvent(new Event("authStateChanged"));
               window.location.href = "/signin?reason=session_expired";
             }
           }
@@ -491,6 +493,67 @@ export class ApiClient {
       balance: number;
       recipientExists: boolean;
     }>>("/api/transfers", data);
+    return response.data;
+  }
+
+  // KYC endpoints
+  async getKYCStatus() {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      status: "not_started" | "in_progress" | "documents_uploaded" | "pending_review" | "verified" | "rejected";
+      currentStep?: number;
+      completedSteps?: number[];
+      submittedAt?: string;
+      reviewedAt?: string;
+      rejectionReason?: string;
+    }>>("/api/kyc/status");
+    return response.data;
+  }
+
+  async updateKYCProgress(data: {
+    step: number;
+    personalInfo?: any;
+    documentInfo?: any;
+  }) {
+    const response = await this.axiosInstance.put<ApiResponse<any>>("/api/kyc/progress", data);
+    return response.data;
+  }
+
+  async submitKYC(data: {
+    personalInfo: any;
+    documentInfo: any;
+  }) {
+    const response = await this.axiosInstance.post<ApiResponse<{
+      status: string;
+      message: string;
+    }>>("/api/kyc/submit", data);
+    return response.data;
+  }
+
+  async uploadKYCDocument(file: File, documentType: string) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("documentType", documentType);
+    const response = await this.axiosInstance.post<ApiResponse<{ fileUrl: string }>>(
+      "/api/kyc/upload-document",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  }
+
+  // Newsletter endpoints
+  async subscribeToNewsletter(data: { name: string; email: string }) {
+    const response = await this.axiosInstance.post<ApiResponse<{
+      message: string;
+    }>>("/api/newsletter/subscribe", data);
+    return response.data;
+  }
+
+  // Contact endpoints
+  async submitContact(data: { name: string; email: string; phone: string; message: string }) {
+    const response = await this.axiosInstance.post<ApiResponse<{
+      message: string;
+    }>>("/api/contact", data);
     return response.data;
   }
 }

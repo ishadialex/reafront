@@ -6,16 +6,39 @@ import { api } from "@/lib/api";
 
 const SecuritySettingsPage = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [kycStatus, setKycStatus] = useState<"pending" | "verified" | "rejected" | null>(null);
+  const [kycStatus, setKycStatus] = useState<"not_started" | "in_progress" | "documents_uploaded" | "pending_review" | "verified" | "rejected" | null>(null);
+  const [kycCurrentStep, setKycCurrentStep] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.getProfile();
-        if (response.success && response.data) {
-          setTwoFactorEnabled(response.data.twoFactorEnabled || false);
-          setKycStatus(response.data.kycStatus || null);
+        // Fetch user profile for 2FA status
+        const profileResponse = await api.getProfile();
+        if (profileResponse.success && profileResponse.data) {
+          setTwoFactorEnabled(profileResponse.data.twoFactorEnabled || false);
+          // Use KYC status from profile as fallback
+          if (profileResponse.data.kycStatus) {
+            setKycStatus(profileResponse.data.kycStatus);
+          }
+        }
+
+        // Fetch detailed KYC status
+        try {
+          const kycResponse = await api.getKYCStatus();
+          if (kycResponse.success && kycResponse.data) {
+            setKycStatus(kycResponse.data.status);
+            setKycCurrentStep(kycResponse.data.currentStep || null);
+          }
+        } catch (kycError) {
+          console.log("KYC API not available, checking localStorage");
+          // Fallback to localStorage
+          const savedProgress = localStorage.getItem("kycProgress");
+          if (savedProgress) {
+            const progress = JSON.parse(savedProgress);
+            setKycStatus(progress.status || "not_started");
+            setKycCurrentStep(progress.step || null);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch user data:", error);
@@ -26,6 +49,52 @@ const SecuritySettingsPage = () => {
 
     fetchUserData();
   }, []);
+
+  // Helper function to get KYC badge details
+  const getKYCBadgeDetails = () => {
+    switch (kycStatus) {
+      case "verified":
+        return {
+          statusText: "✓ Verified",
+          statusColor: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+          buttonText: "View KYC Details",
+        };
+      case "rejected":
+        return {
+          statusText: "✗ Rejected",
+          statusColor: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+          buttonText: "Resubmit KYC",
+        };
+      case "pending_review":
+        return {
+          statusText: "⏳ Pending Review",
+          statusColor: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+          buttonText: "Check Status",
+        };
+      case "documents_uploaded":
+        return {
+          statusText: "📄 Documents Ready",
+          statusColor: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+          buttonText: "Review & Submit",
+        };
+      case "in_progress":
+        const stepText = kycCurrentStep ? ` (Step ${kycCurrentStep}/5)` : "";
+        return {
+          statusText: `⚡ In Progress${stepText}`,
+          statusColor: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+          buttonText: "Continue KYC",
+        };
+      case "not_started":
+      default:
+        return {
+          statusText: "Not Started",
+          statusColor: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+          buttonText: "Start KYC Verification",
+        };
+    }
+  };
+
+  const kycBadge = getKYCBadgeDetails();
 
   const securityFeatures = [
     {
@@ -73,29 +142,10 @@ const SecuritySettingsPage = () => {
         </svg>
       ),
       status: kycStatus,
-      statusText:
-        kycStatus === "verified"
-          ? "Verified"
-          : kycStatus === "rejected"
-          ? "Rejected"
-          : kycStatus === "pending"
-          ? "Pending Review"
-          : "Not Started",
-      statusColor:
-        kycStatus === "verified"
-          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-          : kycStatus === "rejected"
-          ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-          : kycStatus === "pending"
-          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+      statusText: kycBadge.statusText,
+      statusColor: kycBadge.statusColor,
       link: "/dashboard/security/kyc",
-      buttonText:
-        kycStatus === "verified"
-          ? "View KYC Details"
-          : kycStatus === "pending"
-          ? "Check Status"
-          : "Start KYC Verification",
+      buttonText: kycBadge.buttonText,
     },
   ];
 
@@ -128,7 +178,7 @@ const SecuritySettingsPage = () => {
                   <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"></div>
                 ) : (
                   <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${feature.statusColor}`}
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${feature.statusColor}`}
                   >
                     {feature.statusText}
                   </span>
@@ -139,9 +189,25 @@ const SecuritySettingsPage = () => {
               <h3 className="mb-2 text-xl font-semibold text-black dark:text-white">
                 {feature.title}
               </h3>
-              <p className="mb-6 text-sm text-body-color dark:text-body-color-dark">
+              <p className="mb-4 text-sm text-body-color dark:text-body-color-dark">
                 {feature.description}
               </p>
+
+              {/* KYC Progress Bar (only for KYC when in progress) */}
+              {feature.title === "KYC Verification" && kycStatus === "in_progress" && kycCurrentStep && (
+                <div className="mb-4">
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="text-body-color dark:text-body-color-dark">Progress</span>
+                    <span className="font-semibold text-primary">{Math.round((kycCurrentStep / 5) * 100)}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                    <div
+                      className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
+                      style={{ width: `${(kycCurrentStep / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
 
               {/* Action Button */}
               <Link

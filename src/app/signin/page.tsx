@@ -66,6 +66,9 @@ function SigninContent() {
       localStorage.setItem("userProfilePicture", data.user.profilePhoto);
     }
 
+    // Dispatch custom event to notify Header of auth state change
+    window.dispatchEvent(new Event("authStateChanged"));
+
     router.push("/dashboard");
   };
 

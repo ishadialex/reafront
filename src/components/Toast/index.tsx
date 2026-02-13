@@ -88,17 +88,17 @@ const Toast = ({ message, type = "success", onClose, duration = 3000 }: ToastPro
 
   return (
     <div
-      className={`fixed top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 rounded-lg p-4 shadow-xl ${getBgColor()}`}
+      className={`fixed top-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 rounded-lg p-4 shadow-xl w-[calc(100%-2rem)] sm:w-auto sm:min-w-[500px] sm:max-w-[700px] ${getBgColor()}`}
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/20">
         <div className={getIconColor()}>
           {getIcon()}
         </div>
       </div>
-      <p className="text-sm font-medium text-white">{message}</p>
+      <p className="text-sm font-medium text-white flex-1">{message}</p>
       <button
         onClick={onClose}
-        className="ml-2 text-white/80 hover:text-white"
+        className="ml-2 flex-shrink-0 text-white/80 hover:text-white"
       >
         <svg
           className="h-4 w-4"

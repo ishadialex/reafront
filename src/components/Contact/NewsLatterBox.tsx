@@ -1,9 +1,51 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useState, FormEvent } from "react";
+import { api } from "@/lib/api";
 
 const NewsLatterBox = () => {
   const { theme } = useTheme();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!name.trim() || !email.trim()) {
+      setErrorMessage("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.subscribeToNewsletter({ name, email });
+
+      if (response.success) {
+        setSuccessMessage(response.message || "Successfully subscribed to our newsletter!");
+        setName("");
+        setEmail("");
+
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setSuccessMessage("");
+        }, 5000);
+      } else {
+        setErrorMessage(response.message || "Subscription failed. Please try again.");
+      }
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || "An error occurred. Please try again later.";
+      setErrorMessage(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="shadow-three dark:bg-gray-dark relative z-10 rounded-xs bg-white p-8 sm:p-11 lg:p-8 xl:p-11">
@@ -11,31 +53,53 @@ const NewsLatterBox = () => {
         Subscribe to receive future updates
       </h3>
       <p className="border-body-color/25 text-body-color mb-11 border-b pb-11 text-base leading-relaxed dark:border-white/25">
-        Lorem ipsum dolor sited Sed ullam corper consectur adipiscing Mae ornare
-        massa quis lectus.
+        Stay informed about our latest investment opportunities, market insights, and exclusive updates delivered straight to your inbox.
       </p>
-      <div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-4 rounded-xs bg-green-100 p-4 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <p className="text-sm font-medium">{successMessage}</p>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="mb-4 rounded-xs bg-red-100 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+          <p className="text-sm font-medium">{errorMessage}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
           name="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           placeholder="Enter your name"
-          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
+          disabled={loading}
+          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
         />
         <input
           type="email"
           name="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"
-          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
+          disabled={loading}
+          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
         />
-        <input
+        <button
           type="submit"
-          value="Subscribe"
-          className="bg-primary shadow-submit hover:bg-primary/90 dark:shadow-submit-dark mb-5 flex w-full cursor-pointer items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300"
-        />
+          disabled={loading}
+          className="bg-primary shadow-submit hover:bg-primary/90 dark:shadow-submit-dark mb-5 flex w-full cursor-pointer items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? "Subscribing..." : "Subscribe"}
+        </button>
         <p className="text-body-color dark:text-body-color-dark text-center text-base leading-relaxed">
-          No spam guaranteed, So please don’t send any spam mail.
+          No spam guaranteed, So please don't send any spam mail.
         </p>
-      </div>
+      </form>
 
       <div>
         <span className="absolute top-7 left-2">

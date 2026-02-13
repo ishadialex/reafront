@@ -1,73 +1,171 @@
+"use client";
+
+import { useState, FormEvent } from "react";
 import NewsLatterBox from "./NewsLatterBox";
+import { api } from "@/lib/api";
 
 const Contact = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!name.trim() || !email.trim() || !phone.trim() || !message.trim()) {
+      setErrorMessage("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.submitContact({ name, email, phone, message });
+
+      if (response.success) {
+        setSuccessMessage(response.message || "Message sent successfully! We'll get back to you soon.");
+        setName("");
+        setEmail("");
+        setPhone("");
+        setMessage("");
+
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setSuccessMessage("");
+        }, 5000);
+      } else {
+        setErrorMessage(response.message || "Failed to send message. Please try again.");
+      }
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || "An error occurred. Please try again later.";
+      setErrorMessage(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <section id="contact" className="overflow-hidden py-16 md:py-20 lg:py-28">
+    <section id="contact" className="overflow-hidden py-8 md:py-12 lg:py-16">
       <div className="container">
         <div className="-mx-4 flex flex-wrap">
           <div className="w-full px-4 lg:w-7/12 xl:w-8/12">
             <div
-              className="mb-12 rounded-xs bg-white px-8 py-11 shadow-three dark:bg-gray-dark sm:p-[55px] lg:mb-5 lg:px-8 xl:p-[55px]"
+              className="mb-8 rounded-xs bg-white px-6 py-8 shadow-three dark:bg-gray-dark sm:px-8 sm:py-10 lg:mb-5 lg:px-8 xl:px-10 xl:py-12"
               data-wow-delay=".15s
               "
             >
-              <h2 className="mb-3 text-2xl font-bold text-black dark:text-white sm:text-3xl lg:text-2xl xl:text-3xl">
-                Need Help? Open a Ticket
+              <h2 className="mb-3 text-xl font-bold text-black dark:text-white sm:text-2xl lg:text-xl xl:text-2xl">
+                Get in Touch
               </h2>
-              <p className="mb-12 text-base font-medium text-body-color">
-                Our support team will get back to you ASAP via email.
+              <p className="mb-8 text-sm font-medium text-body-color sm:text-base">
+                Have a question or want to learn more? Send us a message and we'll respond as soon as possible.
               </p>
-              <form>
+
+              {/* Success Message */}
+              {successMessage && (
+                <div className="mb-6 rounded-xs bg-green-100 p-4 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <p className="text-sm font-medium">{successMessage}</p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="mb-6 rounded-xs bg-red-100 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                  <p className="text-sm font-medium">{errorMessage}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
                 <div className="-mx-4 flex flex-wrap">
                   <div className="w-full px-4 md:w-1/2">
-                    <div className="mb-8">
+                    <div className="mb-5">
                       <label
                         htmlFor="name"
-                        className="mb-3 block text-sm font-medium text-dark dark:text-white"
+                        className="mb-2 block text-sm font-medium text-dark dark:text-white"
                       >
                         Your Name
                       </label>
                       <input
                         type="text"
+                        name="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         placeholder="Enter your name"
-                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-hidden focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+                        disabled={loading}
+                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     </div>
                   </div>
                   <div className="w-full px-4 md:w-1/2">
-                    <div className="mb-8">
+                    <div className="mb-5">
                       <label
                         htmlFor="email"
-                        className="mb-3 block text-sm font-medium text-dark dark:text-white"
+                        className="mb-2 block text-sm font-medium text-dark dark:text-white"
                       >
                         Your Email
                       </label>
                       <input
                         type="email"
+                        name="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="Enter your email"
-                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-hidden focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+                        disabled={loading}
+                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     </div>
                   </div>
                   <div className="w-full px-4">
-                    <div className="mb-8">
+                    <div className="mb-5">
+                      <label
+                        htmlFor="phone"
+                        className="mb-2 block text-sm font-medium text-dark dark:text-white"
+                      >
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Enter your phone number"
+                        disabled={loading}
+                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full px-4">
+                    <div className="mb-5">
                       <label
                         htmlFor="message"
-                        className="mb-3 block text-sm font-medium text-dark dark:text-white"
+                        className="mb-2 block text-sm font-medium text-dark dark:text-white"
                       >
                         Your Message
                       </label>
                       <textarea
                         name="message"
-                        rows={5}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        rows={4}
                         placeholder="Enter your Message"
-                        className="border-stroke w-full resize-none rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-hidden focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+                        disabled={loading}
+                        className="border-stroke w-full resize-none rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                       ></textarea>
                     </div>
                   </div>
                   <div className="w-full px-4">
-                    <button className="rounded-xs bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark">
-                      Submit Ticket
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="rounded-xs bg-primary px-6 py-3 text-sm font-medium text-white shadow-submit duration-300 hover:bg-primary/90 sm:px-8 sm:py-3.5 sm:text-base dark:shadow-submit-dark disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loading ? "Sending..." : "Send Message"}
                     </button>
                   </div>
                 </div>

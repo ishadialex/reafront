@@ -12,7 +12,7 @@ const ContactPage = () => {
   return (
     <>
       {/* Contact Header Section */}
-      <section className="relative overflow-hidden bg-gray-2 dark:bg-bg-color-dark pt-[120px] pb-16 md:pt-[140px] md:pb-20 lg:pt-[160px] lg:pb-24">
+      <section className="relative overflow-hidden bg-gray-2 dark:bg-bg-color-dark pt-[100px] pb-8 md:pt-[110px] md:pb-10 lg:pt-[120px] lg:pb-12">
         <div className="container">
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">

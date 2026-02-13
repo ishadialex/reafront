@@ -15,6 +15,10 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [passwordStrengthError, setPasswordStrengthError] = useState("");
+  const [passwordMatchError, setPasswordMatchError] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -22,17 +26,51 @@ function ResetPasswordForm() {
     }
   }, [token]);
 
+  // Real-time password strength validation
+  useEffect(() => {
+    if (newPassword === "") {
+      setPasswordStrengthError("");
+      return;
+    }
+
+    const errors: string[] = [];
+    if (newPassword.length < 8) errors.push("at least 8 characters");
+    if (!/[A-Z]/.test(newPassword)) errors.push("one uppercase letter");
+    if (!/[a-z]/.test(newPassword)) errors.push("one lowercase letter");
+    if (!/[0-9]/.test(newPassword)) errors.push("one number");
+    if (!/[^A-Za-z0-9]/.test(newPassword)) errors.push("one special character");
+
+    if (errors.length > 0) {
+      setPasswordStrengthError(`Password must contain ${errors.join(", ")}`);
+    } else {
+      setPasswordStrengthError("");
+    }
+  }, [newPassword]);
+
+  // Real-time password match validation
+  useEffect(() => {
+    if (confirmPassword === "") {
+      setPasswordMatchError("");
+    } else if (newPassword !== confirmPassword) {
+      setPasswordMatchError("Passwords do not match");
+    } else {
+      setPasswordMatchError("");
+    }
+  }, [newPassword, confirmPassword]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+    if (passwordStrengthError) {
+      setError("Please enter a valid password that meets all requirements");
+      setPasswordTouched(true);
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long");
+    if (passwordMatchError) {
+      setError("Passwords do not match");
+      setConfirmPasswordTouched(true);
       return;
     }
 
@@ -125,15 +163,27 @@ function ResetPasswordForm() {
                 type="password"
                 id="newPassword"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setPasswordTouched(true);
+                }}
+                onBlur={() => setPasswordTouched(true)}
                 required
-                minLength={8}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                className={`w-full rounded-lg border bg-white px-4 py-3 text-black placeholder-gray-400 focus:outline-none focus:ring-2 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 ${
+                  passwordTouched && passwordStrengthError
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500"
+                    : "border-gray-300 focus:border-primary focus:ring-primary/20 dark:border-gray-700"
+                }`}
                 placeholder="Enter new password"
               />
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-                Must be at least 8 characters long
+                Min 8 characters, uppercase, lowercase, number, special character
               </p>
+              {passwordTouched && passwordStrengthError && (
+                <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+                  {passwordStrengthError}
+                </p>
+              )}
             </div>
 
             <div>
@@ -144,12 +194,24 @@ function ResetPasswordForm() {
                 type="password"
                 id="confirmPassword"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setConfirmPasswordTouched(true);
+                }}
+                onBlur={() => setConfirmPasswordTouched(true)}
                 required
-                minLength={8}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                className={`w-full rounded-lg border bg-white px-4 py-3 text-black placeholder-gray-400 focus:outline-none focus:ring-2 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 ${
+                  confirmPasswordTouched && passwordMatchError
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500"
+                    : "border-gray-300 focus:border-primary focus:ring-primary/20 dark:border-gray-700"
+                }`}
                 placeholder="Confirm new password"
               />
+              {confirmPasswordTouched && passwordMatchError && (
+                <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+                  {passwordMatchError}
+                </p>
+              )}
             </div>
 
             <button

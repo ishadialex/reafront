@@ -24,6 +24,8 @@ const SignupForm = () => {
   const [tempPhoneError, setTempPhoneError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -405,9 +407,13 @@ const SignupForm = () => {
             name="password"
             placeholder="Enter your Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setPasswordTouched(true);
+            }}
+            onBlur={() => setPasswordTouched(true)}
             className={`w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
-              passwordStrengthError
+              passwordTouched && passwordStrengthError
                 ? "border-red-500 focus:border-red-500 dark:border-red-500"
                 : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
             }`}
@@ -415,7 +421,7 @@ const SignupForm = () => {
           <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
             Min 8 characters, uppercase, lowercase, number, special character
           </p>
-          {passwordStrengthError && (
+          {passwordTouched && passwordStrengthError && (
             <p className="mt-2 text-sm text-red-500 dark:text-red-400">
               {passwordStrengthError}
             </p>
@@ -434,14 +440,18 @@ const SignupForm = () => {
             name="confirmPassword"
             placeholder="Confirm your Password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setConfirmPasswordTouched(true);
+            }}
+            onBlur={() => setConfirmPasswordTouched(true)}
             className={`w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
-              passwordError
+              confirmPasswordTouched && passwordError
                 ? "border-red-500 focus:border-red-500 dark:border-red-500"
                 : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
             }`}
           />
-          {passwordError && (
+          {confirmPasswordTouched && passwordError && (
             <p className="mt-2 text-sm text-red-500 dark:text-red-400">
               {passwordError}
             </p>

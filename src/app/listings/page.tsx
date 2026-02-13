@@ -2,10 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import { InvestmentProperty } from "@/types/investment";
 
 interface Property {
-  id: number;
+  id: string;
   title: string;
   price: string;
   description: string;
@@ -16,9 +18,10 @@ interface Property {
   status: string;
 }
 
-const properties: Property[] = [
+// Fallback mock properties data
+const mockProperties: Property[] = [
   {
-    id: 1,
+    id: "1",
     title: "Cycladic home in Fira, Greece",
     price: "$25,000",
     description: "This luxury villa has the best location and feature specious terraces with famous view of ...",
@@ -30,10 +33,10 @@ const properties: Property[] = [
     bedrooms: 3,
     bathrooms: 3,
     parking: 2,
-    status: "For Rent",
+    status: "Available",
   },
   {
-    id: 2,
+    id: "2",
     title: "Entire Rental Property Ownership",
     price: "$15,000",
     description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
@@ -45,10 +48,10 @@ const properties: Property[] = [
     bedrooms: 4,
     bathrooms: 2,
     parking: 1,
-    status: "For Sale",
+    status: "Available",
   },
   {
-    id: 3,
+    id: "3",
     title: "Entire Rental Property Ownership",
     price: "$15,000",
     description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
@@ -60,10 +63,10 @@ const properties: Property[] = [
     bedrooms: 2,
     bathrooms: 2,
     parking: 1,
-    status: "For Rent",
+    status: "Available",
   },
   {
-    id: 4,
+    id: "4",
     title: "Entire Rental Property Ownership",
     price: "$15,000",
     description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
@@ -75,10 +78,10 @@ const properties: Property[] = [
     bedrooms: 5,
     bathrooms: 3,
     parking: 2,
-    status: "For Sale",
+    status: "Available",
   },
   {
-    id: 5,
+    id: "5",
     title: "Entire Rental Property Ownership",
     price: "$15,000",
     description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
@@ -90,10 +93,10 @@ const properties: Property[] = [
     bedrooms: 3,
     bathrooms: 2,
     parking: 2,
-    status: "For Rent",
+    status: "Available",
   },
   {
-    id: 6,
+    id: "6",
     title: "Entire Rental Property Ownership",
     price: "$15,000",
     description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
@@ -105,9 +108,35 @@ const properties: Property[] = [
     bedrooms: 4,
     bathrooms: 3,
     parking: 1,
-    status: "For Sale",
+    status: "Available",
   },
 ];
+
+// Helper function to map API property data to component format
+function mapPropertyData(apiProperty: InvestmentProperty): Property {
+  const statusMap: Record<string, string> = {
+    available: "Available",
+    "fully-funded": "Fully Funded",
+    "coming-soon": "Coming Soon",
+    closed: "Closed",
+  };
+
+  return {
+    id: apiProperty.id,
+    title: apiProperty.title,
+    price: `$${apiProperty.minInvestment.toLocaleString()}`,
+    description: apiProperty.description,
+    images: apiProperty.images && apiProperty.images.length > 0 ? apiProperty.images : [
+      "/images/how-it-works/property-1.jpg",
+      "/images/how-it-works/property-2.jpg",
+      "/images/how-it-works/property-3.jpg",
+    ],
+    bedrooms: apiProperty.bedrooms,
+    bathrooms: apiProperty.bathrooms,
+    parking: apiProperty.parking,
+    status: statusMap[apiProperty.status] || "Available",
+  };
+}
 
 function PropertyCard({ property }: { property: Property }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -333,6 +362,42 @@ function PropertyCard({ property }: { property: Property }) {
 }
 
 export default function ListingsPage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        // Check if user is logged in before making authenticated API call
+        const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("isLoggedIn") === "true";
+
+        if (isLoggedIn) {
+          const response = await api.getProperties();
+          if (response.success && response.data && response.data.length > 0) {
+            // Map API data to component format
+            const mappedProperties = response.data.map((prop: InvestmentProperty) => mapPropertyData(prop));
+            setProperties(mappedProperties);
+          } else {
+            // Use fallback mock data if no properties from API
+            setProperties(mockProperties);
+          }
+        } else {
+          // User not logged in, use fallback mock data
+          console.log("User not logged in, showing mock properties");
+          setProperties(mockProperties);
+        }
+      } catch (error: any) {
+        console.error("Failed to fetch properties, using fallback data:", error);
+        // Use fallback mock data on error (don't propagate auth errors)
+        setProperties(mockProperties);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
   return (
     <section className="relative z-10 overflow-hidden bg-white pb-12 pt-36 dark:bg-gray-dark md:pb-20 lg:pb-28 lg:pt-40">
       <div className="container mx-auto">
@@ -402,12 +467,48 @@ export default function ListingsPage() {
           </h2>
         </div>
 
-        {/* Properties Grid */}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-gray-dark"
+              >
+                <div className="h-64 w-full animate-pulse bg-gray-200 dark:bg-gray-700" />
+                <div className="p-6">
+                  <div className="mb-3 h-6 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="mb-4 h-8 w-1/2 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="mb-6 space-y-2">
+                    <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="mb-6 flex gap-6">
+                    <div className="h-5 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-5 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-5 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="h-12 w-full animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Properties Grid */
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {properties.length > 0 ? (
+              properties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-lg text-body-color dark:text-body-color-dark">
+                  No properties available at the moment.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

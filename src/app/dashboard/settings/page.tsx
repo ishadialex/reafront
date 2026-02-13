@@ -48,6 +48,9 @@ function SettingsContent() {
   });
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordStrengthError, setPasswordStrengthError] = useState("");
+  const [newPasswordTouched, setNewPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
 
   // Settings state
   const [settings, setSettings] = useState<UserSettings>({
@@ -147,6 +150,27 @@ function SettingsContent() {
     }
   };
 
+  // Real-time password strength validation
+  useEffect(() => {
+    if (passwordForm.newPassword === "") {
+      setPasswordStrengthError("");
+      return;
+    }
+
+    const errors: string[] = [];
+    if (passwordForm.newPassword.length < 8) errors.push("at least 8 characters");
+    if (!/[A-Z]/.test(passwordForm.newPassword)) errors.push("one uppercase letter");
+    if (!/[a-z]/.test(passwordForm.newPassword)) errors.push("one lowercase letter");
+    if (!/[0-9]/.test(passwordForm.newPassword)) errors.push("one number");
+    if (!/[^A-Za-z0-9]/.test(passwordForm.newPassword)) errors.push("one special character");
+
+    if (errors.length > 0) {
+      setPasswordStrengthError(`Password must contain ${errors.join(", ")}`);
+    } else {
+      setPasswordStrengthError("");
+    }
+  }, [passwordForm.newPassword]);
+
   const showNotification = (message: string, type: "success" | "error") => {
     if (type === "success") {
       setSuccessMessage(message);
@@ -170,11 +194,14 @@ function SettingsContent() {
     }
     if (!passwordForm.newPassword) {
       errors.newPassword = "New password is required";
-    } else if (passwordForm.newPassword.length < 8) {
-      errors.newPassword = "Password must be at least 8 characters";
+      setNewPasswordTouched(true);
+    } else if (passwordStrengthError) {
+      errors.newPassword = passwordStrengthError;
+      setNewPasswordTouched(true);
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
+      setConfirmPasswordTouched(true);
     }
 
     if (Object.keys(errors).length > 0) {
@@ -194,6 +221,8 @@ function SettingsContent() {
       if (result.success) {
         showNotification("Password updated successfully!", "success");
         setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        setNewPasswordTouched(false);
+        setConfirmPasswordTouched(false);
       } else {
         showNotification(result.message || "Failed to update password", "error");
       }
@@ -513,12 +542,22 @@ function SettingsContent() {
                 <input
                   type="password"
                   value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  onChange={(e) => {
+                    setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                    setNewPasswordTouched(true);
+                  }}
+                  onBlur={() => setNewPasswordTouched(true)}
                   className={`w-full rounded-lg border bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-primary dark:bg-gray-800 dark:text-white sm:text-base ${
-                    passwordErrors.newPassword ? "border-red-500" : "border-gray-200 dark:border-gray-700"
+                    (newPasswordTouched && passwordStrengthError) || passwordErrors.newPassword ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                   }`}
                   placeholder="Enter new password"
                 />
+                <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                  Min 8 characters, uppercase, lowercase, number, special character
+                </p>
+                {newPasswordTouched && passwordStrengthError && !passwordErrors.newPassword && (
+                  <p className="mt-1 text-xs text-red-500">{passwordStrengthError}</p>
+                )}
                 {passwordErrors.newPassword && (
                   <p className="mt-1 text-xs text-red-500">{passwordErrors.newPassword}</p>
                 )}
@@ -531,12 +570,19 @@ function SettingsContent() {
                 <input
                   type="password"
                   value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  onChange={(e) => {
+                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value });
+                    setConfirmPasswordTouched(true);
+                  }}
+                  onBlur={() => setConfirmPasswordTouched(true)}
                   className={`w-full rounded-lg border bg-white px-4 py-3 text-sm text-black outline-none transition-colors focus:border-primary dark:bg-gray-800 dark:text-white sm:text-base ${
-                    passwordErrors.confirmPassword ? "border-red-500" : "border-gray-200 dark:border-gray-700"
+                    (confirmPasswordTouched && passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword !== "") || passwordErrors.confirmPassword ? "border-red-500" : "border-gray-200 dark:border-gray-700"
                   }`}
                   placeholder="Confirm new password"
                 />
+                {confirmPasswordTouched && passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword !== "" && !passwordErrors.confirmPassword && (
+                  <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
+                )}
                 {passwordErrors.confirmPassword && (
                   <p className="mt-1 text-xs text-red-500">{passwordErrors.confirmPassword}</p>
                 )}
