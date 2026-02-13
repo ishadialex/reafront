@@ -10,6 +10,7 @@ const Hero = () => {
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isEnglish, setIsEnglish] = useState(true);
 
+  // Define captions outside of effects to avoid dependency issues
   const captions = [
     "Passive Income Through Strategic Real Estate Investment",
     "Turn Property into Profit",
