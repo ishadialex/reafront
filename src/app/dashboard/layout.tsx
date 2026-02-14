@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Check authentication immediately (synchronously) to avoid flash
   // Tokens are in httpOnly cookies, just check the login flag
   const isLoggedIn = typeof window !== 'undefined' ? localStorage.getItem("isLoggedIn") : null;
-  const [isAuthenticated, setIsAuthenticated] = useState(
+  const [isAuthenticated] = useState(
     isLoggedIn === "true"
   );
 
@@ -177,12 +177,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Dropdown Menu - Expands below when three-dot is clicked */}
           {mobileMenuOpen && (
             <>
-              {/* Overlay to close menu when clicking outside */}
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setMobileMenuOpen(false)}
-              />
-
               {/* Dropdown content */}
               <div className="relative z-50 h-16 border-t border-gray-200 bg-white px-4 dark:border-gray-700 dark:bg-gray-dark">
                 <div className="flex h-full items-center justify-between gap-4">

@@ -191,14 +191,11 @@ const NotificationPanel = () => {
 
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return;
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     try {
-      setActionLoading(true);
       await api.markAllNotificationsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch {
       // ignore
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -285,7 +282,7 @@ const NotificationPanel = () => {
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-[60vh] overflow-y-auto md:max-h-96">
+          <div className="max-h-[288px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 md:max-h-[352px]">
             {loading ? (
               <>
                 <NotificationSkeleton />

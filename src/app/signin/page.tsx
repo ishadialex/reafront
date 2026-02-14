@@ -69,7 +69,8 @@ function SigninContent() {
     // Dispatch custom event to notify Header of auth state change
     window.dispatchEvent(new Event("authStateChanged"));
 
-    router.push("/dashboard");
+    const redirectTo = searchParams.get("redirect");
+    router.push(redirectTo || "/dashboard");
   };
 
   const handleForceLogin = async () => {

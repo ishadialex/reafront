@@ -4,14 +4,63 @@ import { useState, useEffect } from "react";
 import { Testimonial } from "@/types/testimonial";
 import SectionTitle from "../Common/SectionTitle";
 import SingleTestimonial from "./SingleTestimonial";
+import TestimonialsSkeleton from "./TestimonialsSkeleton";
 
-interface TestimonialsProps {
-  testimonials: Testimonial[];
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-const Testimonials = ({ testimonials }: TestimonialsProps) => {
+
+const Testimonials = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/public/reviews`);
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        const list: any[] =
+          data?.data?.reviews ?? data?.data ?? data?.reviews ?? [];
+        if (!Array.isArray(list) || list.length === 0) {
+          setTestimonials([]);
+          return;
+        }
+        setTestimonials(
+          list.map((r: any) => {
+            const firstName = r.user?.firstName ?? "";
+            const lastName = r.user?.lastName ?? "";
+            const name =
+              r.user?.name ||
+              [firstName, lastName].filter(Boolean).join(" ") ||
+              "Anonymous";
+            const image =
+              r.user?.profilePicture ||
+              r.user?.avatar ||
+              r.user?.photo ||
+              r.user?.picture ||
+              r.user?.profilePhoto ||
+              r.user?.imageUrl ||
+              "/images/testimonials/auth-01.png";
+            return {
+              id: String(r.id ?? r._id ?? Math.random()),
+              name,
+              designation: r.user?.role ?? "Verified Investor",
+              content: r.body ?? r.comment ?? "",
+              image,
+              star: r.rating ?? 5,
+            };
+          }),
+        );
+      } catch {
+        setTestimonials([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReviews();
+  }, []);
 
   // Auto-slide for mobile carousel
   useEffect(() => {
@@ -50,6 +99,7 @@ const Testimonials = ({ testimonials }: TestimonialsProps) => {
     }, 500);
   };
 
+  if (loading) return <TestimonialsSkeleton />;
   if (testimonials.length === 0) return null;
 
   return (

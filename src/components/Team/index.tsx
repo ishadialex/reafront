@@ -3,18 +3,53 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { TeamMember } from "@/types/team";
+import TeamSkeleton from "./TeamSkeleton";
 
-interface TeamProps {
-  members: TeamMember[];
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-const Team = ({ members }: TeamProps) => {
+
+const Team = () => {
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
   const [desktopIndex, setDesktopIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(true);
 
-  if (members.length === 0) return null;
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/public/team`);
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        const list: any[] = data?.data ?? data?.members ?? data?.team ?? [];
+        if (!Array.isArray(list) || list.length === 0) {
+          setMembers([]);
+          return;
+        }
+        setMembers(
+          list.map((m: any) => ({
+            id: String(m.id ?? m._id ?? Math.random()),
+            name: m.name ?? [m.firstName, m.lastName].filter(Boolean).join(" ") ?? "Team Member",
+            role: m.role ?? m.position ?? m.designation ?? "",
+            image: (() => {
+              const raw = m.image ?? m.photo ?? m.profilePhoto ?? m.avatar ?? "";
+              if (!raw) return "/images/team/member-1.jpeg";
+              if (raw.startsWith("http")) return raw;
+              if (raw.startsWith("/")) return raw;
+              return `/images/team/${raw}`;
+            })(),
+            instagram: m.instagram ?? m.instagramUrl ?? null,
+          })),
+        );
+      } catch {
+        setMembers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTeam();
+  }, []);
 
   // Auto-slide for mobile carousel
   useEffect(() => {
@@ -57,6 +92,9 @@ const Team = ({ members }: TeamProps) => {
     }
   }, [desktopIndex, members.length]);
 
+  if (loading) return <TeamSkeleton />;
+  if (members.length === 0) return null;
+
   const nextMember = () => {
     setIsFading(true);
     setTimeout(() => {
@@ -94,19 +132,6 @@ const Team = ({ members }: TeamProps) => {
       setDesktopIndex((prev) => prev - 1);
     }
   };
-
-  // Get visible members for desktop (max 3)
-  const getVisibleDesktopMembers = () => {
-    const visible = [];
-    const maxVisible = Math.min(3, members.length);
-    for (let i = 0; i < maxVisible; i++) {
-      const index = (desktopIndex + i) % members.length;
-      visible.push(members[index]);
-    }
-    return visible;
-  };
-
-  const visibleDesktopMembers = getVisibleDesktopMembers();
 
   const TeamMemberCard = ({ member, priority }: { member: TeamMember; priority?: boolean }) => (
     <div className="group w-full max-w-[330px] h-[489px] rounded-lg bg-black p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,108,247,0.6)] dark:bg-gray-900 cursor-pointer md:p-8">

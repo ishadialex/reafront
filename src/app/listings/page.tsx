@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
 import { InvestmentProperty } from "@/types/investment";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface Property {
   id: string;
@@ -368,27 +369,17 @@ export default function ListingsPage() {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        // Check if user is logged in before making authenticated API call
-        const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("isLoggedIn") === "true";
-
-        if (isLoggedIn) {
-          const response = await api.getProperties();
-          if (response.success && response.data && response.data.length > 0) {
-            // Map API data to component format
-            const mappedProperties = response.data.map((prop: InvestmentProperty) => mapPropertyData(prop));
-            setProperties(mappedProperties);
-          } else {
-            // Use fallback mock data if no properties from API
-            setProperties(mockProperties);
-          }
+        const res = await fetch(`${API_URL}/api/public/properties`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        const list: InvestmentProperty[] = data.data || [];
+        if (list.length > 0) {
+          setProperties(list.map(mapPropertyData));
         } else {
-          // User not logged in, use fallback mock data
-          console.log("User not logged in, showing mock properties");
           setProperties(mockProperties);
         }
       } catch (error: any) {
         console.error("Failed to fetch properties, using fallback data:", error);
-        // Use fallback mock data on error (don't propagate auth errors)
         setProperties(mockProperties);
       } finally {
         setLoading(false);

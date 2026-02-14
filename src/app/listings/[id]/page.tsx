@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { api } from "@/lib/api";
 import { InvestmentProperty } from "@/types/investment";
 
 // Dynamically import the map component with SSR disabled
@@ -46,6 +45,22 @@ interface Property {
   features?: PropertyFeatures;
   latitude?: number;
   longitude?: number;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
+interface Review {
+  id: string;
+  rating: number;
+  body?: string;
+  comment?: string;
+  createdAt: string;
+  user: {
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    profilePhoto?: string;
+  };
 }
 
 // Helper function to map API response to Property interface
@@ -268,33 +283,32 @@ export default function PropertyDetailsPage({
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isFading, setIsFading] = useState(false);
 
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const reviewFormRef = useRef<HTMLDivElement>(null);
+
   // Fetch property data
   useEffect(() => {
     const fetchProperty = async () => {
       try {
         setLoading(true);
-        const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("isLoggedIn") === "true";
-
-        if (isLoggedIn) {
-          try {
-            const response = await api.getProperty(id);
-            if (response.success && response.data) {
-              const mappedProperty = mapApiPropertyToLocal(response.data);
-              setProperty(mappedProperty);
-            } else {
-              // Fallback to mock data
-              setProperty(propertyData[propertyId] || null);
-            }
-          } catch (error) {
-            console.log("API fetch failed, using mock data:", error);
-            setProperty(propertyData[propertyId] || null);
-          }
+        const res = await fetch(`${API_URL}/api/public/properties/${id}`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        const apiProperty = data.data ?? data;
+        if (apiProperty && apiProperty.id) {
+          setProperty(mapApiPropertyToLocal(apiProperty));
         } else {
-          console.log("User not logged in, showing mock property");
           setProperty(propertyData[propertyId] || null);
         }
-      } catch (error) {
-        console.error("Error fetching property:", error);
+      } catch {
         setProperty(propertyData[propertyId] || null);
       } finally {
         setLoading(false);
@@ -303,6 +317,63 @@ export default function PropertyDetailsPage({
 
     fetchProperty();
   }, [id, propertyId]);
+
+  // Check login state & fetch reviews
+  useEffect(() => {
+    setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/public/properties/${id}/reviews`);
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        const list = data?.data?.reviews ?? data.data ?? data.reviews ?? [];
+        setReviews(Array.isArray(list) ? list : []);
+      } catch {
+        setReviews([]);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, [id]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewComment.trim()) return;
+    setReviewSubmitting(true);
+    setReviewError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/reviews/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ rating: reviewRating, body: reviewComment.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || "Failed to submit review");
+      }
+      const reviewObj = data.data?.review ?? data.data ?? data.review;
+      const newReview: Review = reviewObj?.id ? reviewObj : {
+        id: Date.now().toString(),
+        rating: reviewRating,
+        body: reviewComment.trim(),
+        createdAt: new Date().toISOString(),
+        user: { name: "You" },
+      };
+      setReviews((prev) => [newReview, ...prev]);
+      setReviewComment("");
+      setReviewRating(5);
+      setReviewSuccess(true);
+      setTimeout(() => setReviewSuccess(false), 3000);
+    } catch (err: any) {
+      setReviewError(err.message || "Something went wrong");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   // Auto-slide images every 3 seconds with fade effect
   useEffect(() => {
@@ -1101,6 +1172,143 @@ export default function PropertyDetailsPage({
                   </svg>
                   <span className="text-base">{property.location}</span>
                 </p>
+              </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark" ref={reviewFormRef}>
+              <div className="p-6 md:p-8">
+                <h2 className="mb-6 text-2xl font-bold text-black dark:text-white">
+                  Reviews {reviews.length > 0 && <span className="text-lg font-normal text-body-color dark:text-body-color-dark">({reviews.length})</span>}
+                </h2>
+
+                {/* Add Review Form - logged in only */}
+                {isLoggedIn ? (
+                  <form onSubmit={handleSubmitReview} className="mb-8 rounded-xl border border-gray-200 p-5 dark:border-gray-700">
+                    <h3 className="mb-4 text-base font-semibold text-black dark:text-white">Write a Review</h3>
+
+                    {/* Star Rating */}
+                    <div className="mb-4 flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className="transition-transform hover:scale-110"
+                        >
+                          <svg
+                            className={`h-7 w-7 ${star <= reviewRating ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </button>
+                      ))}
+                      <span className="ml-2 text-sm text-body-color dark:text-body-color-dark">{reviewRating} / 5</span>
+                    </div>
+
+                    {/* Comment */}
+                    <textarea
+                      rows={3}
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your experience with this property..."
+                      className="mb-4 w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                      required
+                    />
+
+                    {reviewError && (
+                      <p className="mb-3 text-sm text-red-500">{reviewError}</p>
+                    )}
+                    {reviewSuccess && (
+                      <p className="mb-3 text-sm text-green-500">Review submitted successfully!</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={reviewSubmitting || !reviewComment.trim()}
+                      className="rounded-lg bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-black/80 disabled:opacity-50 dark:bg-primary dark:hover:bg-primary/90"
+                    >
+                      {reviewSubmitting ? "Submitting..." : "Submit Review"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="mb-8 rounded-xl border border-dashed border-gray-300 p-5 text-center dark:border-gray-700">
+                    <p className="text-sm text-body-color dark:text-body-color-dark">
+                      <Link href={`/signin?redirect=/listings/${id}`} className="font-semibold text-primary hover:underline">Sign in</Link>
+                      {" "}to leave a review
+                    </p>
+                  </div>
+                )}
+
+                {/* Reviews List */}
+                {reviewsLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex gap-4">
+                        <div className="h-10 w-10 flex-shrink-0 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                          <div className="h-3 w-full animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                          <div className="h-3 w-4/5 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-body-color dark:text-body-color-dark">
+                    No reviews yet. Be the first to review this property!
+                  </p>
+                ) : (
+                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {reviews.map((review) => {
+                      const displayName = review.user?.name ||
+                        [review.user?.firstName, review.user?.lastName].filter(Boolean).join(" ") ||
+                        "Anonymous";
+                      const initials = displayName.charAt(0).toUpperCase();
+                      const date = new Date(review.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric", month: "short", day: "numeric",
+                      });
+                      return (
+                        <div key={review.id} className="flex gap-4 py-5">
+                          {review.user?.profilePhoto ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={review.user.profilePhoto}
+                              alt={displayName}
+                              className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                              {initials}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-semibold text-black dark:text-white">{displayName}</span>
+                              <span className="text-xs text-body-color dark:text-body-color-dark">{date}</span>
+                            </div>
+                            <div className="mt-1 mb-2 flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <svg
+                                  key={star}
+                                  className={`h-4 w-4 ${star <= review.rating ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              ))}
+                            </div>
+                            <p className="text-sm leading-relaxed text-body-color dark:text-body-color-dark">{review.body ?? review.comment}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

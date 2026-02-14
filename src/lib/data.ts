@@ -83,20 +83,40 @@ export async function getTeamMembers() {
 
 export async function getTestimonials() {
   try {
-    const response = await fetch(`${API_URL}/api/public/testimonials`, {
+    const response = await fetch(`${API_URL}/api/public/reviews`, {
       next: { revalidate: 60 },
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch testimonials");
+      throw new Error("Failed to fetch reviews");
     }
 
     const data = await response.json();
-    const testimonialsData = data.data || [];
-    // Return API data if available, otherwise return mock data
-    return testimonialsData.length > 0 ? testimonialsData : mockTestimonials;
+    const reviews: any[] = data?.data?.reviews ?? data?.data ?? data?.reviews ?? [];
+
+    if (!Array.isArray(reviews) || reviews.length === 0) {
+      return mockTestimonials;
+    }
+
+    // Map review shape → Testimonial shape
+    return reviews.map((r: any) => {
+      const firstName = r.user?.firstName ?? "";
+      const lastName = r.user?.lastName ?? "";
+      const name =
+        r.user?.name ||
+        [firstName, lastName].filter(Boolean).join(" ") ||
+        "Anonymous";
+      return {
+        id: String(r.id ?? r._id ?? Math.random()),
+        name,
+        designation: r.user?.role ?? "Verified Investor",
+        content: r.body ?? r.comment ?? "",
+        image: r.user?.profilePicture || "/images/testimonials/auth-01.png",
+        star: r.rating ?? 5,
+      };
+    });
   } catch (error) {
-    console.error("Failed to fetch testimonials, using fallback data:", error);
+    console.error("Failed to fetch reviews, using fallback data:", error);
     return mockTestimonials;
   }
 }
