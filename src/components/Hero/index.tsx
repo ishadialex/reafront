@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -68,21 +69,16 @@ const Hero = () => {
         id="home"
         className="relative z-10 overflow-hidden bg-white pb-8 pt-[100px] dark:bg-gray-dark md:pb-16 md:pt-[120px] xl:pb-20 xl:pt-[140px] 2xl:pb-24 2xl:pt-[160px]"
       >
-        {/* Video Background */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 z-0 h-full w-full object-cover opacity-20 dark:opacity-10"
-        >
-          <source src="/herovid.mp4" type="video/mp4" />
-        </video>
+        {/* Hero Background Image */}
+        <Image
+          src="/images/hero/home-1.jpeg"
+          alt="Hero background"
+          fill
+          className="z-0 object-cover"
+          priority
+        />
 
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 z-0 bg-black/30 dark:bg-black/50" />
-
-        <div className="container relative z-10">
+<div className="container relative z-10">
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
               <div className="mx-auto max-w-[800px] text-center">
