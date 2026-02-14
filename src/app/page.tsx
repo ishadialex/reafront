@@ -9,9 +9,8 @@ import Team from "@/components/Team";
 import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 import InvestmentsSkeleton from "@/components/TwoWaysToInvest/InvestmentsSkeleton";
-import TeamSkeleton from "@/components/Team/TeamSkeleton";
 import { Metadata } from "next";
-import { getTeamMembers, getInvestmentOptions } from "@/lib/data";
+import { getInvestmentOptions } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Alvarado Associates - Real Estate Investment Platform",
@@ -23,12 +22,6 @@ async function InvestmentsSection() {
   return <TwoWaysToInvest options={options} />;
 }
 
-async function TeamSection() {
-  const members = await getTeamMembers();
-  return <Team members={members} />;
-}
-
-
 export default function Home() {
   return (
     <>
@@ -39,9 +32,7 @@ export default function Home() {
       <Suspense fallback={<InvestmentsSkeleton />}>
         <InvestmentsSection />
       </Suspense>
-      <Suspense fallback={<TeamSkeleton />}>
-        <TeamSection />
-      </Suspense>
+      <Team />
       <Video />
       {/* <Brands /> */}
       <Testimonials />
