@@ -20,6 +20,8 @@ function SigninContent() {
   const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false);
   const [showExistingSessionModal, setShowExistingSessionModal] = useState(false);
   const [existingSessionData, setExistingSessionData] = useState<any>(null);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -92,6 +94,32 @@ function SigninContent() {
     }
   };
 
+  const handle2FAVerification = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/auth/login`,
+        { email, password, twoFactorCode },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        storeSessionAndRedirect(response.data.data);
+      } else {
+        setError("2FA verification failed. Please try again.");
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Invalid 2FA code. Please try again.";
+      setError(errorMessage);
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -120,6 +148,14 @@ function SigninContent() {
       if (err.response?.status === 409 && err.response?.data?.requiresForceLogin) {
         setExistingSessionData(err.response.data);
         setShowExistingSessionModal(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if 2FA is required
+      if (err.response?.data?.requires2FA || err.response?.data?.requiresTwoFactor) {
+        setRequires2FA(true);
+        setError("");
         setIsLoading(false);
         return;
       }
@@ -384,22 +420,75 @@ function SigninContent() {
                   </p>
                   <span className="bg-body-color/50 hidden h-[1px] w-full max-w-[70px] sm:block"></span>
                 </div>
-                <form onSubmit={handleSubmit}>
-                  {error && (
-                    <div className={`mb-6 rounded-lg p-4 text-sm ${requiresVerification ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                      <p className="mb-3">{error}</p>
-                      {requiresVerification && (
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/verify-otp?email=${encodeURIComponent(unverifiedEmail)}`)}
-                          className="mt-2 w-full rounded-sm bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90 transition-all duration-300"
-                        >
-                          Verify Email Now
-                        </button>
-                      )}
+                {requires2FA ? (
+                  <form onSubmit={handle2FAVerification}>
+                    {error && (
+                      <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                        <p>{error}</p>
+                      </div>
+                    )}
+                    <div className="mb-6 rounded-lg bg-blue-100 p-4 dark:bg-blue-900/30">
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                        Two-factor authentication is required. Please enter your 6-digit code from your authenticator app.
+                      </p>
                     </div>
-                  )}
-                  <div className="mb-5">
+                    <div className="mb-5">
+                      <label
+                        htmlFor="twoFactorCode"
+                        className="text-dark mb-3 block text-sm dark:text-white"
+                      >
+                        Authentication Code
+                      </label>
+                      <input
+                        type="text"
+                        id="twoFactorCode"
+                        name="twoFactorCode"
+                        value={twoFactorCode}
+                        onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="Enter 6-digit code"
+                        required
+                        maxLength={6}
+                        className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base text-center tracking-widest outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
+                      />
+                    </div>
+                    <div className="mb-6">
+                      <button
+                        type="submit"
+                        disabled={isLoading || twoFactorCode.length !== 6}
+                        className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex w-full items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isLoading ? "Verifying..." : "Verify & Sign In"}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRequires2FA(false);
+                        setTwoFactorCode("");
+                        setError("");
+                      }}
+                      className="text-primary text-sm hover:underline"
+                    >
+                      ← Back to login
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleSubmit}>
+                    {error && (
+                      <div className={`mb-6 rounded-lg p-4 text-sm ${requiresVerification ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        <p className="mb-3">{error}</p>
+                        {requiresVerification && (
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/verify-otp?email=${encodeURIComponent(unverifiedEmail)}`)}
+                            className="mt-2 w-full rounded-sm bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90 transition-all duration-300"
+                          >
+                            Verify Email Now
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <div className="mb-5">
                     <label
                       htmlFor="email"
                       className="text-dark mb-3 block text-sm dark:text-white"
@@ -489,8 +578,9 @@ function SigninContent() {
                     </button>
                   </div>
                 </form>
+                )}
                 <p className="text-body-color text-center text-base font-medium">
-                  Don’t you have an account?{" "}
+                  Don't you have an account?{" "}
                   <Link href="/signup" className="text-primary hover:underline">
                     Sign up
                   </Link>
