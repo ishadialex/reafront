@@ -2,10 +2,20 @@
 
 import { ThemeProvider } from "next-themes";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 function GlobalSessionTimeout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Don't run session timeout on auth pages (signin, signup, verify, reset password, etc.)
+  const isAuthPage = pathname === "/signin" ||
+                     pathname === "/signup" ||
+                     pathname?.startsWith("/verify") ||
+                     pathname?.startsWith("/reset-password") ||
+                     pathname?.startsWith("/forgot-password") ||
+                     pathname?.startsWith("/auth/");
 
   // Monitor authentication status continuously
   useEffect(() => {
@@ -25,8 +35,8 @@ function GlobalSessionTimeout({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Always call the hook (Rules of Hooks - must be called unconditionally)
-  // But only show warning when user is authenticated
-  const { showWarning, remainingSeconds, continueSession } = useSessionTimeout();
+  // But only show warning when user is authenticated AND not on auth pages
+  const { showWarning, remainingSeconds, continueSession } = useSessionTimeout(isAuthPage);
 
   return (
     <>

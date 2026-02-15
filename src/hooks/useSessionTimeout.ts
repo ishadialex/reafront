@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
-export function useSessionTimeout() {
+export function useSessionTimeout(isAuthPage: boolean = false) {
   const router = useRouter();
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutIdRef = useRef<NodeJS.Timeout | null>(null);
@@ -167,6 +167,18 @@ export function useSessionTimeout() {
   useEffect(() => {
     console.log('🚀 useSessionTimeout hook mounted/re-rendered');
     console.log('🔐 Authentication status:', isAuthenticated);
+    console.log('📄 Is auth page:', isAuthPage);
+
+    // Skip session timeout completely on auth pages (signin, signup, etc.)
+    if (isAuthPage) {
+      console.log('⏭️ On auth page, skipping session timeout setup completely');
+      // Clear any existing timers
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+      if (warningTimeoutIdRef.current) clearTimeout(warningTimeoutIdRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      setShowWarning(false);
+      return;
+    }
 
     if (!isAuthenticated) {
       console.log('⏭️ User not authenticated, skipping session timeout setup');
@@ -277,7 +289,7 @@ export function useSessionTimeout() {
       window.removeEventListener('sessionTimeoutUpdated', handleSettingsUpdate as EventListener);
       console.log('🧹 Cleanup complete');
     };
-  }, [handleActivity, resetTimerFunc, isAuthenticated]);
+  }, [handleActivity, resetTimerFunc, isAuthenticated, isAuthPage]);
 
   // Return a function to update timeout when settings change
   const updateSessionTimeout = useCallback((minutes: number) => {
