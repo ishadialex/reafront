@@ -146,6 +146,7 @@ function AuthCallbackContent() {
 
   const handle2FAVerification = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setError("");
     setIsLoading(true);
 
@@ -155,6 +156,8 @@ function AuthCallbackContent() {
         { token: oauthToken, twoFactorCode },
         { withCredentials: true }
       );
+
+      console.log("OAuth 2FA verification response:", response.data);
 
       if (response.data.success) {
         const user = response.data.data.user;
@@ -181,12 +184,20 @@ function AuthCallbackContent() {
       } else {
         setError("2FA verification failed. Please try again.");
         setIsLoading(false);
+        setTwoFactorCode(""); // Clear the code for retry
       }
     } catch (err: any) {
+      console.error("OAuth 2FA verification error:", err);
+      console.log("Error response:", err.response?.data);
+
       const errorMessage =
         err.response?.data?.message || "Invalid 2FA code. Please try again.";
       setError(errorMessage);
       setIsLoading(false);
+      setTwoFactorCode(""); // Clear the code for retry
+
+      // Important: Keep requires2FA true so we stay on the 2FA form
+      // Do NOT redirect or change the form state
     }
   };
 
