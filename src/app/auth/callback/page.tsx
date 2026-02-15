@@ -98,12 +98,84 @@ function AuthCallbackContent() {
   }, [searchParams, router, isProcessing]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
-          Completing authentication...
-        </p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-black dark:via-gray-900 dark:to-black">
+      <div className="relative flex flex-col items-center justify-center px-4">
+        {/* Animated gradient spinner with flowing particle spiral */}
+        <div className="relative">
+          {/* Outer ring with gradient */}
+          <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full bg-gradient-to-tr from-primary via-blue-500 to-primary opacity-75 blur-sm sm:h-24 sm:w-24"></div>
+
+          {/* Middle ring */}
+          <div className="absolute inset-2 h-16 w-16 animate-spin rounded-full bg-gradient-to-br from-primary/50 to-transparent sm:h-20 sm:w-20" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+
+          {/* Flowing particle spiral - neon colors */}
+          <div className="absolute inset-0 h-20 w-20 sm:h-24 sm:w-24">
+            {/* Pink particle */}
+            <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite] sm:h-24 sm:w-24">
+              <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-pink-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(236, 72, 153, 0.9)' }}></div>
+            </div>
+
+            {/* Blue particle */}
+            <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_0.6s] sm:h-24 sm:w-24">
+              <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-blue-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(59, 130, 246, 0.9)' }}></div>
+            </div>
+
+            {/* Green particle */}
+            <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_1.2s] sm:h-24 sm:w-24">
+              <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-green-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(34, 197, 94, 0.9)' }}></div>
+            </div>
+
+            {/* Yellow particle */}
+            <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_1.8s] sm:h-24 sm:w-24">
+              <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-yellow-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(234, 179, 8, 0.9)' }}></div>
+            </div>
+
+            {/* Red particle */}
+            <div className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-[particle-spiral_3s_ease-in-out_infinite_2.4s] sm:h-24 sm:w-24">
+              <div className="absolute left-1/2 top-2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-red-500 blur-[1px] sm:h-3 sm:w-3" style={{ boxShadow: '0 0 15px rgba(239, 68, 68, 0.9)' }}></div>
+            </div>
+          </div>
+
+          {/* Inner ring with logo */}
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-xl dark:bg-gray-900 sm:h-24 sm:w-24">
+            <div className="text-2xl font-bold text-primary sm:text-3xl">A</div>
+          </div>
+        </div>
+
+        <style jsx>{`
+          @keyframes particle-spiral {
+            0% {
+              transform: rotate(0deg) scale(0.8);
+              opacity: 0;
+            }
+            15% {
+              opacity: 1;
+            }
+            50% {
+              transform: rotate(180deg) scale(1.1);
+              opacity: 1;
+            }
+            85% {
+              opacity: 1;
+            }
+            100% {
+              transform: rotate(360deg) scale(0.8);
+              opacity: 0;
+            }
+          }
+        `}</style>
+
+        {/* Loading text with animation */}
+        <div className="mt-8 text-center">
+          <h3 className="mb-2 text-lg font-semibold text-gray-800 dark:text-white sm:text-xl">
+            Completing Authentication
+          </h3>
+          <div className="flex items-center justify-center gap-1">
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: '0ms' }}></div>
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: '150ms' }}></div>
+            <div className="h-2 w-2 animate-bounce rounded-full bg-primary" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        </div>
       </div>
     </div>
   );
