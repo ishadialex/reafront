@@ -583,7 +583,7 @@ export class ApiClient {
     postalCode: string;
     country: string;
     idFrontUrl: string;
-    idBackUrl: string;
+    idBackUrl?: string; // Optional - only required for driver's licenses
     proofOfAddressUrl: string;
     selfieUrl: string;
     documentType: string;

@@ -325,6 +325,91 @@ export default function DashboardOverviewPage() {
     return () => clearInterval(pollInterval);
   }, [data.user?.kycStatus]); // Re-run when KYC status changes
 
+  // Generate dynamic greeting based on time of day and context
+  const greeting = useMemo(() => {
+    if (!data.user) return { message: "Welcome back!", subtitle: "Here's an overview of your investment portfolio" };
+
+    const now = new Date();
+    const hour = now.getHours();
+    const firstName = data.user.name.split(" ")[0];
+
+    // Determine time period
+    let timeOfDay = "";
+    let greetingPrefix = "";
+    let contextualMessage = "";
+
+    if (hour >= 5 && hour < 12) {
+      timeOfDay = "morning";
+      greetingPrefix = "Good morning";
+      const morningMessages = [
+        "Great to see you starting your day with us!",
+        "Ready to make today count?",
+        "Let's make some smart investment moves today!",
+        "Time to check on your portfolio growth!",
+        "Here's your portfolio summary to start the day"
+      ];
+      contextualMessage = morningMessages[Math.floor(Math.random() * morningMessages.length)];
+    } else if (hour >= 12 && hour < 17) {
+      timeOfDay = "afternoon";
+      greetingPrefix = "Good afternoon";
+      const afternoonMessages = [
+        "Hope your day is going well!",
+        "Let's see how your investments are performing!",
+        "Time to check your portfolio progress!",
+        "Your investments are working hard for you!",
+        "Here's an overview of your investment portfolio"
+      ];
+      contextualMessage = afternoonMessages[Math.floor(Math.random() * afternoonMessages.length)];
+    } else if (hour >= 17 && hour < 21) {
+      timeOfDay = "evening";
+      greetingPrefix = "Good evening";
+      const eveningMessages = [
+        "Wrapping up the day? Check your portfolio!",
+        "See how your investments performed today!",
+        "Your portfolio summary is ready!",
+        "Time to review today's market movements!",
+        "Here's your end-of-day portfolio update"
+      ];
+      contextualMessage = eveningMessages[Math.floor(Math.random() * eveningMessages.length)];
+    } else {
+      timeOfDay = "night";
+      greetingPrefix = "Good evening";
+      const nightMessages = [
+        "Working late? Your investments never sleep!",
+        "Your portfolio is working while you rest!",
+        "Even at night, your money is growing!",
+        "Late night portfolio check? We've got you covered!",
+        "Here's your investment portfolio overview"
+      ];
+      contextualMessage = nightMessages[Math.floor(Math.random() * nightMessages.length)];
+    }
+
+    // Check day of week for weekend messages
+    const dayOfWeek = now.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      const weekendMessages = [
+        "Enjoying the weekend? Your investments are still working!",
+        "Weekend vibes! But your portfolio never takes a break!",
+        "Relax this weekend knowing your money is working for you!",
+      ];
+      contextualMessage = weekendMessages[Math.floor(Math.random() * weekendMessages.length)];
+    }
+
+    // Check if it's the start of the month
+    const dayOfMonth = now.getDate();
+    if (dayOfMonth === 1) {
+      contextualMessage = "Happy new month! Time to review your investment goals!";
+    } else if (dayOfMonth <= 3) {
+      contextualMessage = "New month, new opportunities! Check your portfolio!";
+    }
+
+    return {
+      message: `${greetingPrefix}, ${firstName}!`,
+      subtitle: contextualMessage,
+      timeOfDay
+    };
+  }, [data.user]);
+
   // Calculate stats from investments
   const stats = useMemo(() => {
     const totalInvested = data.investments.reduce((sum, inv) => sum + inv.amount, 0);
@@ -456,10 +541,10 @@ export default function DashboardOverviewPage() {
           ) : (
             <>
               <h1 className="text-2xl font-bold text-black dark:text-white md:text-3xl">
-                Welcome back, {data.user?.name.split(" ")[0]}!
+                {greeting.message}
               </h1>
               <p className="mt-1 text-sm text-body-color dark:text-body-color-dark md:text-base">
-                Here&apos;s an overview of your investment portfolio
+                {greeting.subtitle}
               </p>
             </>
           )}
