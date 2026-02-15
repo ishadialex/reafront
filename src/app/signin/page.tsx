@@ -135,6 +135,29 @@ function SigninContent() {
         { withCredentials: true } // Send and receive httpOnly cookies
       );
 
+      console.log("Login response:", response.data);
+
+      // Check if 2FA is required in the response (even on success)
+      const responseData = response.data;
+      const requires2FACheck =
+        responseData?.requires2FA ||
+        responseData?.requiresTwoFactor ||
+        responseData?.require2FA ||
+        responseData?.code === "REQUIRE_2FA" ||
+        responseData?.code === "TWO_FACTOR_REQUIRED" ||
+        responseData?.data?.requires2FA ||
+        responseData?.data?.requiresTwoFactor ||
+        responseData?.message?.toLowerCase().includes("2fa") ||
+        responseData?.message?.toLowerCase().includes("two-factor");
+
+      if (requires2FACheck) {
+        console.log("2FA is required (from success response), showing 2FA input");
+        setRequires2FA(true);
+        setError("");
+        setIsLoading(false);
+        return;
+      }
+
       if (response.data.success) {
         storeSessionAndRedirect(response.data.data);
       } else {
@@ -143,6 +166,16 @@ function SigninContent() {
       }
     } catch (err: any) {
       console.error("Login error:", err);
+      console.log("Error response data:", err.response?.data);
+      console.log("Error response status:", err.response?.status);
+
+      // Save to localStorage for debugging (persists across refresh)
+      localStorage.setItem("lastLoginError", JSON.stringify({
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+        timestamp: new Date().toISOString()
+      }));
 
       // Active session on another device - show warning modal
       if (err.response?.status === 409 && err.response?.data?.requiresForceLogin) {
@@ -152,8 +185,18 @@ function SigninContent() {
         return;
       }
 
-      // Check if 2FA is required
-      if (err.response?.data?.requires2FA || err.response?.data?.requiresTwoFactor) {
+      // Check if 2FA is required - handle multiple possible response formats
+      const responseData = err.response?.data;
+      const requires2FACheck =
+        responseData?.requires2FA ||
+        responseData?.requiresTwoFactor ||
+        responseData?.require2FA ||
+        responseData?.code === "REQUIRE_2FA" ||
+        responseData?.code === "TWO_FACTOR_REQUIRED" ||
+        (err.response?.status === 403 && responseData?.message?.toLowerCase().includes("2fa"));
+
+      if (requires2FACheck) {
+        console.log("2FA is required, showing 2FA input");
         setRequires2FA(true);
         setError("");
         setIsLoading(false);
