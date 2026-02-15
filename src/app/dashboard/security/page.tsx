@@ -53,6 +53,28 @@ const SecuritySettingsPage = () => {
     fetchUserData();
   }, []);
 
+  // Poll for KYC status updates every 5 seconds
+  useEffect(() => {
+    const pollKYCStatus = async () => {
+      try {
+        const kycResponse = await api.getKYCStatus();
+        if (kycResponse.success && kycResponse.data) {
+          const newStatus = kycResponse.data.status;
+          if (newStatus !== kycStatus) {
+            console.log("🔄 Security page KYC status updated:", kycStatus, "→", newStatus);
+            setKycStatus(newStatus);
+            setKycCurrentStep(kycResponse.data.currentStep || null);
+          }
+        }
+      } catch (error) {
+        // Silently fail - polling will retry
+      }
+    };
+
+    const pollInterval = setInterval(pollKYCStatus, 5000);
+    return () => clearInterval(pollInterval);
+  }, [kycStatus]); // Re-run when KYC status changes
+
   const handleRequire2FAToggle = async () => {
     if (!twoFactorEnabled) return;
     setRequire2FALoading(true);

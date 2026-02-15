@@ -12,8 +12,18 @@ const getImageUrl = (path: string | null | undefined) => {
   return `${baseUrl}${path}`;
 };
 
-const ProfileDropdown = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface ProfileDropdownProps {
+  isOpen?: boolean;
+  onToggle?: () => void;
+}
+
+const ProfileDropdown = ({ isOpen: controlledIsOpen, onToggle }: ProfileDropdownProps = {}) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const toggleOpen = onToggle || (() => setInternalIsOpen(!internalIsOpen));
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [userName, setUserName] = useState("");
@@ -90,6 +100,28 @@ const ProfileDropdown = () => {
     };
   }, []);
 
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        // Close the dropdown
+        if (onToggle && isOpen) {
+          onToggle();
+        } else if (internalIsOpen) {
+          setInternalIsOpen(false);
+        }
+      }
+    };
+
+    // Only add listener when dropdown is open
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isOpen, onToggle, internalIsOpen]);
+
 
   const handleSignOut = () => {
     // Clear all auth data
@@ -109,7 +141,7 @@ const ProfileDropdown = () => {
     <div className="relative" ref={dropdownRef}>
       {/* Profile Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
       >
         {/* Avatar */}
@@ -164,7 +196,7 @@ const ProfileDropdown = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-dark">
+        <div className="absolute right-0 top-full z-[100] mt-2 w-72 overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-dark">
           {/* User Info Section */}
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 px-6 py-5 dark:from-primary/10 dark:to-primary/20">
             <h3 className="mb-1 text-base font-semibold text-black dark:text-white">
@@ -179,7 +211,11 @@ const ProfileDropdown = () => {
           <div className="p-3">
             <button
               onClick={() => {
-                setIsOpen(false);
+                if (onToggle && isOpen) {
+                  onToggle();
+                } else {
+                  setInternalIsOpen(false);
+                }
                 router.push("/dashboard/profile");
               }}
               className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-black transition-all hover:bg-gray-100 hover:pl-5 dark:text-white dark:hover:bg-gray-800"
@@ -202,7 +238,11 @@ const ProfileDropdown = () => {
 
             <button
               onClick={() => {
-                setIsOpen(false);
+                if (onToggle && isOpen) {
+                  onToggle();
+                } else {
+                  setInternalIsOpen(false);
+                }
                 router.push("/dashboard/settings");
               }}
               className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-black transition-all hover:bg-gray-100 hover:pl-5 dark:text-white dark:hover:bg-gray-800"
@@ -231,7 +271,11 @@ const ProfileDropdown = () => {
 
             <button
               onClick={() => {
-                setIsOpen(false);
+                if (onToggle && isOpen) {
+                  onToggle();
+                } else {
+                  setInternalIsOpen(false);
+                }
                 router.push("/dashboard/support");
               }}
               className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-black transition-all hover:bg-gray-100 hover:pl-5 dark:text-white dark:hover:bg-gray-800"

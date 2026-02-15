@@ -197,7 +197,7 @@ export class ApiClient {
   }
 
   async validateSession() {
-    const response = await this.axiosInstance.get<ApiResponse<{ valid: boolean; checkInterval: number }>>(
+    const response = await this.axiosInstance.post<ApiResponse<{ valid: boolean; checkInterval: number }>>(
       "/api/auth/validate-session"
     );
     return response.data;
@@ -546,33 +546,76 @@ export class ApiClient {
   // KYC endpoints
   async getKYCStatus() {
     const response = await this.axiosInstance.get<ApiResponse<{
-      status: "not_started" | "in_progress" | "documents_uploaded" | "pending_review" | "verified" | "rejected";
-      currentStep?: number;
-      completedSteps?: number[];
-      submittedAt?: string;
-      reviewedAt?: string;
-      rejectionReason?: string;
+      kyc: {
+        id: string;
+        fullName: string;
+        dateOfBirth: string;
+        nationality: string;
+        address: string;
+        city: string;
+        state: string;
+        postalCode: string;
+        country: string;
+        idFrontUrl: string | null;
+        idBackUrl: string | null;
+        proofOfAddressUrl: string | null;
+        selfieUrl: string | null;
+        documentType: string;
+        documentNumber: string;
+        status: "not_submitted" | "pending" | "approved" | "rejected";
+        submittedAt: string | null;
+        reviewedAt: string | null;
+        rejectionReason: string;
+        createdAt: string;
+        updatedAt: string;
+      };
     }>>("/api/kyc/status");
     return response.data;
   }
 
-  async updateKYCProgress(data: {
-    step: number;
-    personalInfo?: any;
-    documentInfo?: any;
+  async submitKYC(data: {
+    fullName: string;
+    dateOfBirth: string;
+    nationality: string;
+    address: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    idFrontUrl: string;
+    idBackUrl: string;
+    proofOfAddressUrl: string;
+    selfieUrl: string;
+    documentType: string;
+    documentNumber: string;
   }) {
-    const response = await this.axiosInstance.put<ApiResponse<any>>("/api/kyc/progress", data);
+    const response = await this.axiosInstance.post<ApiResponse<{
+      kyc: {
+        id: string;
+        status: string;
+        submittedAt: string;
+      };
+    }>>("/api/kyc/submit", data);
     return response.data;
   }
 
-  async submitKYC(data: {
-    personalInfo: any;
-    documentInfo: any;
+  async updateKYC(data: {
+    fullName?: string;
+    dateOfBirth?: string;
+    nationality?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    idFrontUrl?: string;
+    idBackUrl?: string;
+    proofOfAddressUrl?: string;
+    selfieUrl?: string;
+    documentType?: string;
+    documentNumber?: string;
   }) {
-    const response = await this.axiosInstance.post<ApiResponse<{
-      status: string;
-      message: string;
-    }>>("/api/kyc/submit", data);
+    const response = await this.axiosInstance.put<ApiResponse<{ kyc: any }>>("/api/kyc/update", data);
     return response.data;
   }
 

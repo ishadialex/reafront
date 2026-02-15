@@ -103,17 +103,41 @@ function SigninContent() {
     setError("");
     setIsLoading(true);
 
+    console.log("Sending 2FA verification with code:", twoFactorCode);
+
     try {
+      // Backend requires email, password, AND 2FA code for verification
+      const payload = {
+        email,
+        password,
+        code: twoFactorCode,  // Backend expects 'code' as the field name
+      };
+
+      console.log("2FA verification payload:", payload);
+
       const response = await axios.post(
-        `${API_URL}/api/auth/login`,
-        { email, password, twoFactorCode },
+        `${API_URL}/api/auth/verify-2fa-login`,
+        payload,
         { withCredentials: true }
       );
 
       console.log("2FA verification response:", response.data);
 
       if (response.data.success) {
-        storeSessionAndRedirect(response.data.data);
+        // Handle both possible response structures:
+        // 1. { success: true, data: { user: {...} } } - nested structure
+        // 2. { success: true, user: {...} } - direct structure
+        const userData = response.data.data || response.data;
+
+        console.log("User data extracted:", userData);
+
+        if (userData && userData.user) {
+          storeSessionAndRedirect(userData);
+        } else {
+          console.error("No user data in response:", response.data);
+          setError("Login successful but user data is missing. Please try again.");
+          setIsLoading(false);
+        }
       } else {
         setError("2FA verification failed. Please try again.");
         setIsLoading(false);
@@ -121,7 +145,9 @@ function SigninContent() {
       }
     } catch (err: any) {
       console.error("2FA verification error:", err);
-      console.log("Error response:", err.response?.data);
+      console.log("Error response status:", err.response?.status);
+      console.log("Error response data:", err.response?.data);
+      console.log("Error message:", err.message);
 
       const errorMessage =
         err.response?.data?.message || "Invalid 2FA code. Please try again.";
@@ -499,12 +525,14 @@ function SigninContent() {
                       <input
                         type="text"
                         id="twoFactorCode"
-                        name="twoFactorCode"
+                        name="one-time-code"
                         value={twoFactorCode}
                         onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         placeholder="Enter 6-digit code"
                         required
                         maxLength={6}
+                        autoComplete="one-time-code"
+                        inputMode="numeric"
                         className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base text-center tracking-widest outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
                       />
                     </div>

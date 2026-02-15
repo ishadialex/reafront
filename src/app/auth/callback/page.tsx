@@ -23,7 +23,18 @@ function AuthCallbackContent() {
   useEffect(() => {
     const processCallback = async () => {
       // Prevent double execution
-      if (isProcessing) return;
+      if (isProcessing) {
+        console.log("⏭️ Skipping OAuth callback - already processing");
+        return;
+      }
+
+      // Don't process callback again if we're already on the 2FA form
+      if (requires2FA) {
+        console.log("⏭️ Skipping OAuth callback - already on 2FA form");
+        return;
+      }
+
+      console.log("🔄 Processing OAuth callback...");
       setIsProcessing(true);
 
       const error = searchParams.get("error");
@@ -68,8 +79,21 @@ function AuthCallbackContent() {
 
         console.log("OAuth token exchange response:", response.data);
 
+        // Save to localStorage for debugging
+        localStorage.setItem("lastOAuthResponse", JSON.stringify({
+          data: response.data,
+          timestamp: new Date().toISOString()
+        }));
+
         // Check if 2FA is required
         const responseData = response.data;
+
+        console.log("Checking for 2FA requirement...");
+        console.log("requiresTwoFactor:", responseData?.requiresTwoFactor);
+        console.log("requires2FA:", responseData?.requires2FA);
+        console.log("code:", responseData?.code);
+        console.log("message:", responseData?.message);
+
         const requires2FACheck =
           responseData?.requires2FA ||
           responseData?.requiresTwoFactor ||
@@ -81,13 +105,20 @@ function AuthCallbackContent() {
           responseData?.message?.toLowerCase().includes("2fa") ||
           responseData?.message?.toLowerCase().includes("two-factor");
 
+        console.log("2FA check result:", requires2FACheck);
+
         if (requires2FACheck) {
-          console.log("2FA is required for OAuth login, showing 2FA input");
-          setOauthToken(token);
+          console.log("✅ 2FA is required for OAuth login, showing 2FA input");
+          // Store the oauthToken from backend response (permanent token, not temporary one)
+          const permanentOAuthToken = responseData.oauthToken || responseData.data?.oauthToken;
+          console.log("📝 Storing permanent oauthToken:", permanentOAuthToken);
+          setOauthToken(permanentOAuthToken);
           setRequires2FA(true);
           setIsProcessing(false);
           return;
         }
+
+        console.log("❌ 2FA not required, proceeding with normal login");
 
         if (response.data.success) {
           const user = response.data.data.user;
@@ -109,6 +140,9 @@ function AuthCallbackContent() {
             localStorage.setItem("userProfilePicture", user.profilePhoto);
           }
 
+          // Dispatch custom event to notify Header of auth state change
+          window.dispatchEvent(new Event("authStateChanged"));
+
           // Redirect to dashboard
           router.replace("/dashboard");
         } else {
@@ -129,7 +163,10 @@ function AuthCallbackContent() {
 
         if (requires2FACheck) {
           console.log("2FA is required (from error response), showing 2FA input");
-          setOauthToken(token);
+          // Store the oauthToken from backend response (permanent token, not temporary one)
+          const permanentOAuthToken = responseData.oauthToken || responseData.data?.oauthToken;
+          console.log("📝 Storing permanent oauthToken (from error):", permanentOAuthToken);
+          setOauthToken(permanentOAuthToken);
           setRequires2FA(true);
           setIsProcessing(false);
           return;
@@ -149,38 +186,91 @@ function AuthCallbackContent() {
     e.stopPropagation();
     setError("");
     setIsLoading(true);
+    setIsProcessing(true); // Prevent useEffect from running again
+
+    // Clear URL parameters immediately to prevent useEffect from running again
+    router.replace("/auth/callback", { scroll: false });
 
     try {
+      console.log("🔐 Submitting OAuth 2FA verification with oauthToken:", oauthToken, "and code:", twoFactorCode);
+
       const response = await axios.post(
-        `${API_URL}/api/auth/exchange-oauth-token`,
-        { token: oauthToken, twoFactorCode },
+        `${API_URL}/api/auth/verify-2fa-login`,
+        { oauthToken: oauthToken, code: twoFactorCode },  // Use verify-2fa-login endpoint for OAuth 2FA
         { withCredentials: true }
       );
 
       console.log("OAuth 2FA verification response:", response.data);
+      console.log("Response headers:", response.headers);
+      console.log("Response status:", response.status);
+
+      // Check if cookies were set
+      console.log("Cookies after 2FA verification:", document.cookie);
+
+      // Save to localStorage for debugging (persists even if page redirects)
+      localStorage.setItem("lastOAuth2FAResponse", JSON.stringify({
+        data: response.data,
+        headers: response.headers,
+        status: response.status,
+        cookies: document.cookie,
+        timestamp: new Date().toISOString()
+      }));
 
       if (response.data.success) {
-        const user = response.data.data.user;
+        // Handle both possible response structures
+        const userData = response.data.data || response.data;
+        console.log("📦 userData extracted:", userData);
 
-        // Store user data in localStorage
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("user", JSON.stringify(user));
+        // Try multiple possible user locations
+        const user = userData.user || userData;
+        console.log("👤 Final user object:", user);
+        console.log("🔍 User has email?", !!user?.email);
+        console.log("🔍 User structure:", {
+          hasEmail: !!user?.email,
+          hasFirstName: !!user?.firstName,
+          hasLastName: !!user?.lastName,
+          hasProfilePhoto: !!user?.profilePhoto,
+          keys: user ? Object.keys(user) : []
+        });
 
-        if (user.email) {
-          localStorage.setItem("userEmail", user.email);
+        // Check if we have valid user data (must at least have email or id)
+        if (user && (user.email || user.id || user._id)) {
+          console.log("✅ Valid user data found, storing and redirecting");
+
+          // Store user data in localStorage
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("user", JSON.stringify(user));
+
+          if (user.email) {
+            localStorage.setItem("userEmail", user.email);
+          }
+
+          if (user.firstName || user.lastName) {
+            const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+            localStorage.setItem("userName", userName);
+          }
+
+          if (user.profilePhoto) {
+            localStorage.setItem("userProfilePicture", user.profilePhoto);
+          }
+
+          console.log("✅ User data stored successfully");
+          console.log("Final cookies before redirect:", document.cookie);
+
+          // Dispatch custom event to notify Header of auth state change
+          window.dispatchEvent(new Event("authStateChanged"));
+
+          // Redirect to dashboard
+          console.log("Redirecting to dashboard...");
+          router.replace("/dashboard");
+        } else {
+          console.error("❌ No user data in OAuth response");
+          console.error("Full response:", response.data);
+          console.error("userData:", userData);
+          console.error("user:", user);
+          setError("Authentication successful but user data is missing. Please try again.");
+          setIsLoading(false);
         }
-
-        if (user.firstName || user.lastName) {
-          const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-          localStorage.setItem("userName", userName);
-        }
-
-        if (user.profilePhoto) {
-          localStorage.setItem("userProfilePicture", user.profilePhoto);
-        }
-
-        // Redirect to dashboard
-        router.replace("/dashboard");
       } else {
         setError("2FA verification failed. Please try again.");
         setIsLoading(false);
@@ -237,12 +327,14 @@ function AuthCallbackContent() {
                     <input
                       type="text"
                       id="twoFactorCode"
-                      name="twoFactorCode"
+                      name="one-time-code"
                       value={twoFactorCode}
                       onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       placeholder="Enter 6-digit code"
                       required
                       maxLength={6}
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
                       autoFocus
                       className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base text-center tracking-widest outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
                     />

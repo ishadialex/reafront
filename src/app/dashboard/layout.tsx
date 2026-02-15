@@ -17,6 +17,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<'notification' | 'profile' | null>(null);
   const router = useRouter();
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -175,12 +176,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   {/* Left side - Theme Toggler and Notification */}
                   <div className="flex items-center gap-2">
                     <ThemeToggler />
-                    <NotificationPanel />
+                    <NotificationPanel
+                      isOpen={activeDropdown === 'notification'}
+                      onToggle={() => setActiveDropdown(activeDropdown === 'notification' ? null : 'notification')}
+                    />
                   </div>
 
                   {/* Right side - Profile Dropdown */}
                   <div className="flex items-center gap-2">
-                    <ProfileDropdown />
+                    <ProfileDropdown
+                      isOpen={activeDropdown === 'profile'}
+                      onToggle={() => setActiveDropdown(activeDropdown === 'profile' ? null : 'profile')}
+                    />
                   </div>
                 </div>
               </div>

@@ -74,8 +74,17 @@ const NotificationSkeleton = () => (
   </div>
 );
 
-const NotificationPanel = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface NotificationPanelProps {
+  isOpen?: boolean;
+  onToggle?: () => void;
+}
+
+const NotificationPanel = ({ isOpen: controlledIsOpen, onToggle }: NotificationPanelProps = {}) => {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const toggleOpen = onToggle || (() => setInternalIsOpen(!internalIsOpen));
   const dropdownRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
 
@@ -163,15 +172,27 @@ const NotificationPanel = () => {
     loadNotifications();
   }, [loadNotifications]);
 
+  // Click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        // Close the dropdown
+        if (onToggle && isOpen) {
+          onToggle();
+        } else if (internalIsOpen) {
+          setInternalIsOpen(false);
+        }
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
+    // Only add listener when dropdown is open
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isOpen, onToggle, internalIsOpen]);
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
@@ -204,7 +225,11 @@ const NotificationPanel = () => {
       setActionLoading(true);
       await api.clearAllNotifications();
       setNotifications([]);
-      setIsOpen(false);
+      if (onToggle && isOpen) {
+        onToggle();
+      } else {
+        setInternalIsOpen(false);
+      }
     } catch {
       // ignore
     } finally {
@@ -216,7 +241,7 @@ const NotificationPanel = () => {
     <div className="relative" ref={dropdownRef}>
       {/* Notification Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 md:h-14 md:w-14"
         aria-label="Notifications"
       >
@@ -242,7 +267,7 @@ const NotificationPanel = () => {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="fixed right-2 top-[4.5rem] z-50 w-[calc(100vw-1rem)] max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-dark md:absolute md:right-0 md:top-full md:mt-4 md:w-96">
+        <div className="fixed left-2 right-2 top-[8.5rem] z-[100] mx-auto w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-dark lg:absolute lg:left-auto lg:right-0 lg:top-full lg:mt-4 lg:w-96">
           {/* Header */}
           <div className="flex items-center justify-between bg-gradient-to-br from-primary/5 to-primary/10 px-4 py-3 dark:from-primary/10 dark:to-primary/20 md:px-6 md:py-4">
             <div>

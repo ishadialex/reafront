@@ -9,7 +9,7 @@ interface UserData {
   name: string;
   email: string;
   accountBalance: number;
-  kycStatus: "pending" | "verified" | "rejected";
+  kycStatus: "not_started" | "in_progress" | "documents_uploaded" | "pending_review" | "verified" | "rejected" | "pending";
   twoFactorEnabled: boolean;
 }
 
@@ -95,7 +95,7 @@ const fetchUserData = async (): Promise<UserData> => {
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         accountBalance: user.balance || 0,
-        kycStatus: user.kycStatus || "pending",
+        kycStatus: user.kycStatus || "not_started",
         twoFactorEnabled: user.twoFactorEnabled || false,
       };
     }
@@ -108,7 +108,7 @@ const fetchUserData = async (): Promise<UserData> => {
     name: "User",
     email: "",
     accountBalance: 0,
-    kycStatus: "pending",
+    kycStatus: "not_started",
     twoFactorEnabled: false,
   };
 };
@@ -299,6 +299,31 @@ export default function DashboardOverviewPage() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Poll for KYC status updates every 5 seconds
+  useEffect(() => {
+    const pollKYCStatus = async () => {
+      try {
+        const result = await api.getProfile();
+        if (result.success && result.data) {
+          const newKycStatus = result.data.kycStatus || "not_started";
+          // Only update if status changed
+          if (data.user && newKycStatus !== data.user.kycStatus) {
+            console.log("🔄 Dashboard KYC status updated:", data.user.kycStatus, "→", newKycStatus);
+            setData((prev) => ({
+              ...prev,
+              user: prev.user ? { ...prev.user, kycStatus: newKycStatus } : null
+            }));
+          }
+        }
+      } catch (error) {
+        // Silently fail - don't disrupt the dashboard
+      }
+    };
+
+    const pollInterval = setInterval(pollKYCStatus, 5000);
+    return () => clearInterval(pollInterval);
+  }, [data.user?.kycStatus]); // Re-run when KYC status changes
 
   // Calculate stats from investments
   const stats = useMemo(() => {
@@ -769,9 +794,11 @@ export default function DashboardOverviewPage() {
                         ? "bg-green-100 dark:bg-green-900/30"
                         : data.user?.kycStatus === "rejected"
                           ? "bg-red-100 dark:bg-red-900/30"
-                          : data.user?.kycStatus === "pending"
+                          : data.user?.kycStatus === "pending_review"
                             ? "bg-yellow-100 dark:bg-yellow-900/30"
-                            : "bg-gray-100 dark:bg-gray-700"
+                            : data.user?.kycStatus === "in_progress" || data.user?.kycStatus === "documents_uploaded"
+                              ? "bg-blue-100 dark:bg-blue-900/30"
+                              : "bg-gray-100 dark:bg-gray-700"
                     }`}>
                       {data.user?.kycStatus === "verified" ? (
                         <svg className="h-4 w-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -781,9 +808,13 @@ export default function DashboardOverviewPage() {
                         <svg className="h-4 w-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                      ) : data.user?.kycStatus === "pending" ? (
+                      ) : data.user?.kycStatus === "pending_review" ? (
                         <svg className="h-4 w-4 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : data.user?.kycStatus === "in_progress" || data.user?.kycStatus === "documents_uploaded" ? (
+                        <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       ) : (
                         <svg className="h-4 w-4 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -798,13 +829,23 @@ export default function DashboardOverviewPage() {
                       ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                       : data.user?.kycStatus === "rejected"
                         ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                        : data.user?.kycStatus === "pending"
+                        : data.user?.kycStatus === "pending_review"
                           ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          : data.user?.kycStatus === "in_progress" || data.user?.kycStatus === "documents_uploaded"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
                   }`}>
-                    {data.user?.kycStatus
-                      ? data.user.kycStatus.charAt(0).toUpperCase() + data.user.kycStatus.slice(1)
-                      : "Not Started"}
+                    {data.user?.kycStatus === "not_started"
+                      ? "Not Started"
+                      : data.user?.kycStatus === "in_progress"
+                        ? "In Progress"
+                        : data.user?.kycStatus === "documents_uploaded"
+                          ? "Documents Ready"
+                          : data.user?.kycStatus === "pending_review"
+                            ? "Pending Review"
+                            : data.user?.kycStatus
+                              ? data.user.kycStatus.charAt(0).toUpperCase() + data.user.kycStatus.slice(1)
+                              : "Not Started"}
                   </span>
                 </div>
 
