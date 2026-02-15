@@ -45,6 +45,11 @@ interface Property {
   features?: PropertyFeatures;
   latitude?: number;
   longitude?: number;
+  investmentType?: "individual" | "pooled";
+  managerName?: string;
+  managerRole?: string;
+  managerPhone?: string;
+  managerPhoto?: string | null;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -94,8 +99,11 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
     customId: apiProperty.id,
     available: apiProperty.status === "available" ? "Yes" : "No",
     floors: 1,
-    latitude: 40.7580,
-    longitude: -73.9855,
+    investmentType: apiProperty.investmentType,
+    managerName: (apiProperty as any).managerName || "",
+    managerRole: (apiProperty as any).managerRole || "",
+    managerPhone: (apiProperty as any).managerPhone || "",
+    managerPhoto: (apiProperty as any).managerPhoto || null,
     features: {
       intercom: [],
       interiorDetails: apiProperty.features || [],
@@ -282,6 +290,16 @@ export default function PropertyDetailsPage({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isFading, setIsFading] = useState(false);
+  const [slideDir, setSlideDir] = useState<"left" | "right">("left");
+
+  // Contact form state
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactSending, setContactSending] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -460,31 +478,34 @@ export default function PropertyDetailsPage({
   }
 
   const nextImage = () => {
+    setSlideDir("left");
     setIsFading(true);
     setTimeout(() => {
       setCurrentImageIndex((prev) =>
         prev === property.images.length - 1 ? 0 : prev + 1
       );
       setIsFading(false);
-    }, 500);
+    }, 400);
   };
 
   const prevImage = () => {
+    setSlideDir("right");
     setIsFading(true);
     setTimeout(() => {
       setCurrentImageIndex((prev) =>
         prev === 0 ? property.images.length - 1 : prev - 1
       );
       setIsFading(false);
-    }, 500);
+    }, 400);
   };
 
   const selectImage = (index: number) => {
+    setSlideDir(index > currentImageIndex ? "left" : "right");
     setIsFading(true);
     setTimeout(() => {
       setCurrentImageIndex(index);
       setIsFading(false);
-    }, 500);
+    }, 400);
   };
 
   return (
@@ -523,6 +544,13 @@ export default function PropertyDetailsPage({
               <span className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg dark:bg-white dark:text-black">
                 {property.type}
               </span>
+              {property.investmentType && (
+                <span className={`rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg ${
+                  property.investmentType === "individual" ? "bg-green-600" : "bg-orange-600"
+                }`}>
+                  {property.investmentType === "individual" ? "Individual" : "Pooled"}
+                </span>
+              )}
             </div>
 
             {/* Price Badge */}
@@ -551,18 +579,25 @@ export default function PropertyDetailsPage({
           </div>
         </div>
 
-        {/* Main Image Gallery - Full Width Hero Section */}
+        {/* Main Image Gallery */}
         <div className="mb-8 overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-dark">
-          {/* Large Image */}
-          <div className="relative h-[400px] w-full overflow-hidden md:h-[500px] lg:h-[600px]">
+          {/* Main Image */}
+          <div className="relative h-[260px] w-full overflow-hidden sm:h-[360px] md:h-[460px] lg:h-[540px]">
             {property.images[currentImageIndex] ? (
               <Image
                 src={property.images[currentImageIndex]}
                 alt={`${property.title} - Image ${currentImageIndex + 1}`}
                 fill
-                className={`object-cover transition-opacity duration-[2000ms] ${
-                  isFading ? 'opacity-0' : 'opacity-100'
-                }`}
+                className="object-cover"
+                style={{
+                  opacity: isFading ? 0 : 1,
+                  transform: isFading
+                    ? slideDir === "left"
+                      ? "translateX(-40px)"
+                      : "translateX(40px)"
+                    : "translateX(0)",
+                  transition: "opacity 0.4s ease, transform 0.4s ease",
+                }}
                 sizes="100vw"
                 priority
               />
@@ -574,88 +609,83 @@ export default function PropertyDetailsPage({
               </div>
             )}
 
-            {/* Navigation Arrows */}
+            {/* Navigation Arrows — only when more than 1 image */}
             {property.images.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-3 shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out hover:scale-110 hover:bg-white hover:shadow-xl active:scale-95 md:left-6 md:p-4"
+                  className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2.5 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-white active:scale-95 md:left-5 md:p-3"
                   aria-label="Previous image"
                 >
-                  <svg
-                    className="h-6 w-6 text-black md:h-7 md:w-7"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
+                  <svg className="h-5 w-5 text-black md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-3 shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out hover:scale-110 hover:bg-white hover:shadow-xl active:scale-95 md:right-6 md:p-4"
+                  className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2.5 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-white active:scale-95 md:right-5 md:p-3"
                   aria-label="Next image"
                 >
-                  <svg
-                    className="h-6 w-6 text-black md:h-7 md:w-7"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
+                  <svg className="h-5 w-5 text-black md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               </>
             )}
 
-            {/* Image Counter */}
-            <div className="absolute bottom-4 right-4 rounded-lg bg-black/70 px-4 py-2 backdrop-blur-sm">
-              <span className="text-sm font-medium text-white md:text-base">
-                {currentImageIndex + 1} / {property.images.length}
-              </span>
-            </div>
+            {/* Counter badge — only when more than 1 image */}
+            {property.images.length > 1 && (
+              <div className="absolute bottom-3 right-3 rounded-md bg-black/70 px-3 py-1 backdrop-blur-sm">
+                <span className="text-xs font-medium text-white md:text-sm">
+                  {currentImageIndex + 1} / {property.images.length}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Thumbnail Strip - Only show if multiple images */}
-          {property.images.length > 1 && (
-            <div className="border-t border-gray-200 p-4 dark:border-gray-700 md:p-6">
-              <div className={`flex gap-3 md:gap-4 ${
-                property.images.length <= 4
-                  ? 'justify-center'
-                  : 'overflow-x-auto'
-              }`}>
-                {property.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => selectImage(index)}
-                    className={`relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-lg transition-all duration-300 md:h-24 md:w-32 ${
-                      currentImageIndex === index
-                        ? "ring-4 ring-primary"
-                        : "opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                  <Image
-                    src={image}
-                    alt={`Thumbnail ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="128px"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-          )}
+          {/* Thumbnail strip — max 3 on mobile, max 4 on desktop */}
+          {property.images.length > 1 && (() => {
+            const mobileCount = Math.min(property.images.length, 3);
+            const desktopCount = Math.min(property.images.length, 4);
+            return (
+              <div className="border-t border-gray-200 px-4 py-4 dark:border-gray-700 md:px-6 md:py-5">
+                {/* Mobile: show up to 3 */}
+                <div className="flex items-center justify-center gap-2 md:hidden">
+                  {property.images.slice(0, mobileCount).map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => selectImage(index)}
+                      style={{ width: `${Math.floor(100 / mobileCount) - 2}%` }}
+                      className={`relative aspect-video flex-shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${
+                        currentImageIndex === index
+                          ? "ring-[3px] ring-primary"
+                          : "opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <Image src={image} alt={`Thumbnail ${index + 1}`} fill className="object-cover" sizes="33vw" />
+                    </button>
+                  ))}
+                </div>
+                {/* Desktop: show up to 4 */}
+                <div className="hidden items-center justify-center gap-3 md:flex">
+                  {property.images.slice(0, desktopCount).map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => selectImage(index)}
+                      style={{ width: `${Math.floor(100 / desktopCount) - 2}%` }}
+                      className={`relative aspect-video flex-shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${
+                        currentImageIndex === index
+                          ? "ring-4 ring-primary"
+                          : "opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <Image src={image} alt={`Thumbnail ${index + 1}`} fill className="object-cover" sizes="25vw" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Overview and Contact Form Grid */}
@@ -769,6 +799,40 @@ export default function PropertyDetailsPage({
                 </div>
               </div>
             </div>
+
+            {/* Investment Type Section */}
+            {property.investmentType && (
+              <div className={`mb-8 flex items-center gap-4 rounded-2xl p-5 ${
+                property.investmentType === "individual"
+                  ? "bg-green-900/30"
+                  : "bg-orange-900/30"
+              }`}>
+                <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${
+                  property.investmentType === "individual" ? "bg-green-600" : "bg-orange-600"
+                }`}>
+                  {property.investmentType === "individual" ? (
+                    <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p className={`text-xs font-medium uppercase tracking-wide ${
+                    property.investmentType === "individual" ? "text-green-400" : "text-orange-400"
+                  }`}>Investment Type</p>
+                  <p className="text-base font-bold text-white">
+                    {property.investmentType === "individual" ? "Individual Ownership" : "Pooled Investment"}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {property.investmentType === "individual" ? "You own 100% of this property" : "Co-invest with multiple investors"}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Description Section */}
             <div className="rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
@@ -1157,6 +1221,7 @@ export default function PropertyDetailsPage({
                   image={property.images[0]}
                   latitude={property.latitude}
                   longitude={property.longitude}
+                  locationName={property.location}
                 />
                 <p className="mt-4 flex items-start gap-2 text-body-color dark:text-body-color-dark">
                   <svg
@@ -1321,62 +1386,135 @@ export default function PropertyDetailsPage({
                 <div className="mb-6 flex flex-col items-center text-center">
                   <div className="mb-4 h-20 w-20 overflow-hidden rounded-full">
                     <Image
-                      src="/images/team/member-1.jpg"
-                      alt="Investment Analyst"
+                      src={property.managerPhoto || "/images/team/member-1.jpg"}
+                      alt={property.managerName || "Investment Analyst"}
                       width={80}
                       height={80}
                       className="h-full w-full object-cover"
                     />
                   </div>
                   <h3 className="mb-1 text-xl font-bold text-black dark:text-white">
-                    Addins Misna
+                    {property.managerName || "Investment Analyst"}
                   </h3>
                   <p className="text-sm text-body-color dark:text-body-color-dark">
-                    Investment Analyst
+                    {property.managerRole || "Property Manager"}
                   </p>
                 </div>
 
                 {/* Contact Form */}
-                <form className="space-y-4">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Your Name"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-                    />
+                {contactSuccess ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl bg-green-50 px-6 py-10 text-center dark:bg-green-900/20">
+                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-800">
+                      <svg className="h-7 w-7 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p className="text-base font-semibold text-green-700 dark:text-green-400">Message Sent!</p>
+                    <p className="mt-1 text-sm text-green-600 dark:text-green-500">We'll get back to you soon.</p>
+                    <button
+                      onClick={() => { setContactSuccess(false); setContactName(""); setContactEmail(""); setContactPhone(""); setContactMessage(""); }}
+                      className="mt-4 text-sm font-medium text-primary underline"
+                    >
+                      Send another
+                    </button>
                   </div>
-
-                  <div>
-                    <input
-                      type="email"
-                      placeholder="Your Email"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="tel"
-                      placeholder="Your Phone"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-                    />
-                  </div>
-
-                  <div>
-                    <textarea
-                      rows={4}
-                      defaultValue={`I'm interested in [${property.title}]`}
-                      className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="ease-in-up shadow-btn hover:shadow-btn-hover w-full rounded-lg bg-black px-8 py-4 text-center text-base font-semibold text-white transition duration-300 hover:bg-black/90 dark:bg-primary dark:hover:bg-primary/90"
+                ) : (
+                  <form
+                    className="space-y-4"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setContactError(null);
+                      const resolvedMessage = contactMessage.trim() || `I'm interested in ${property.title}`;
+                      if (!contactName.trim() || !contactEmail.trim() || !resolvedMessage) {
+                        setContactError("Name, email and message are required.");
+                        return;
+                      }
+                      if (resolvedMessage.length < 5) {
+                        setContactError("Message must be at least 5 characters.");
+                        return;
+                      }
+                      setContactSending(true);
+                      try {
+                        const res = await fetch(`${API_URL}/api/contact`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            name: contactName.trim(),
+                            email: contactEmail.trim(),
+                            phone: contactPhone.trim() || undefined,
+                            message: resolvedMessage,
+                          }),
+                        });
+                        if (!res.ok) {
+                          const data = await res.json().catch(() => ({}));
+                          throw new Error(data?.message || "Failed to send message.");
+                        }
+                        setContactSuccess(true);
+                      } catch (err: any) {
+                        setContactError(err.message || "Something went wrong. Please try again.");
+                      } finally {
+                        setContactSending(false);
+                      }
+                    }}
                   >
-                    Send Email
-                  </button>
-                </form>
+                    {contactError && (
+                      <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                        {contactError}
+                      </p>
+                    )}
+
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Your Name"
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
+                        required
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                      />
+                    </div>
+
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Your Email"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        required
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                      />
+                    </div>
+
+                    <div>
+                      <input
+                        type="tel"
+                        placeholder="Your Phone (optional)"
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                      />
+                    </div>
+
+                    <div>
+                      <textarea
+                        rows={4}
+                        placeholder="Your message"
+                        value={contactMessage !== "" ? contactMessage : `I'm interested in ${property.title}`}
+                        onChange={(e) => setContactMessage(e.target.value)}
+                        required
+                        className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={contactSending}
+                      className="ease-in-up shadow-btn hover:shadow-btn-hover w-full rounded-lg bg-black px-8 py-4 text-center text-base font-semibold text-white transition duration-300 hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary dark:hover:bg-primary/90"
+                    >
+                      {contactSending ? "Sending…" : "Send Email"}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </div>

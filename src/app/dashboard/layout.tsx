@@ -10,6 +10,86 @@ import ProfileDropdown from "@/components/Dashboard/ProfileDropdown";
 import { api } from "@/lib/api";
 import Image from "next/image";
 
+function SecuritySetupPrompt({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-dark">
+        {/* Top accent bar */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-blue-500 to-purple-500" />
+
+        <div className="p-8">
+          {/* Icon */}
+          <div className="mb-5 flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
+              <svg className="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Heading */}
+          <h2 className="mb-2 text-center text-2xl font-bold text-black dark:text-white">
+            Secure Your Account
+          </h2>
+          <p className="mb-6 text-center text-sm leading-relaxed text-body-color dark:text-body-color-dark">
+            To protect your investments and comply with <strong>anti-money laundering (AML)</strong> regulations,
+            please complete the following steps:
+          </p>
+
+          {/* Steps */}
+          <div className="mb-7 space-y-3">
+            <div className="flex items-start gap-3 rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-800">
+                <svg className="h-4 w-4 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Two-Factor Authentication (2FA)</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">Adds an extra layer of security to your login.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-xl bg-purple-50 p-4 dark:bg-purple-900/20">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-800">
+                <svg className="h-4 w-4 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">KYC Verification</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">Required by AML laws to verify your identity before investing.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <Link
+            href="/dashboard/security"
+            onClick={onDismiss}
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white transition hover:bg-primary/90"
+          >
+            Set Up Now
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+
+          <button
+            onClick={onDismiss}
+            className="w-full rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-body-color transition hover:bg-gray-50 dark:border-gray-700 dark:text-body-color-dark dark:hover:bg-gray-800"
+          >
+            Remind me later
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface DashboardLayoutProps {
   children: ReactNode;
 }
@@ -18,6 +98,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<'notification' | 'profile' | null>(null);
+  const [showSecurityPrompt, setShowSecurityPrompt] = useState(false);
   const router = useRouter();
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -34,6 +115,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       router.push("/signin");
     }
   }, [router, isLoggedIn]);
+
+  // Show security setup prompt on first login
+  useEffect(() => {
+    const seen = localStorage.getItem("securityPromptSeen");
+    if (!seen && isLoggedIn === "true") {
+      setShowSecurityPrompt(true);
+    }
+  }, [isLoggedIn]);
+
+  const dismissSecurityPrompt = () => {
+    localStorage.setItem("securityPromptSeen", "true");
+    setShowSecurityPrompt(false);
+  };
 
   // Poll to detect if session was revoked from another device
   useEffect(() => {
@@ -85,6 +179,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-1 dark:bg-black">
+      {/* Security Setup Prompt - shown once on first login */}
+      {showSecurityPrompt && <SecuritySetupPrompt onDismiss={dismissSecurityPrompt} />}
+
       {/* Sidebar */}
       <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

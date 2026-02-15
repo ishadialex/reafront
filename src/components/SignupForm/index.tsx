@@ -26,6 +26,7 @@ const SignupForm = () => {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+  const [formError, setFormError] = useState("");
 
   // Redirect if already logged in
   useEffect(() => {
@@ -153,42 +154,43 @@ const SignupForm = () => {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
 
     // Validate all fields
     if (!firstName.trim()) {
-      alert("Please enter your first name");
+      setFormError("Please enter your first name.");
       return;
     }
 
     if (!lastName.trim()) {
-      alert("Please enter your last name");
+      setFormError("Please enter your last name.");
       return;
     }
 
     if (!email || emailError) {
-      alert("Please enter a valid email address");
+      setFormError("Please enter a valid email address.");
       return;
     }
 
     if (!phone || phoneError) {
-      alert("Please enter a valid phone number");
+      setFormError("Please enter a valid phone number.");
       return;
     }
 
     if (!password || passwordStrengthError) {
-      alert("Please enter a valid password that meets all requirements");
+      setFormError("Please enter a valid password that meets all requirements.");
       return;
     }
 
     if (!confirmPassword || passwordError) {
-      alert("Please confirm your password");
+      setFormError("Please confirm your password.");
       return;
     }
 
     // Check if terms checkbox is checked
     const checkbox = document.getElementById("checkboxLabel") as HTMLInputElement;
     if (!checkbox?.checked) {
-      alert("Please agree to the Terms and Conditions");
+      setFormError("Please agree to the Terms and Conditions to continue.");
       return;
     }
 
@@ -499,6 +501,15 @@ const SignupForm = () => {
             </span>
           </label>
         </div>
+        {formError && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-900/20">
+            <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+          </div>
+        )}
+
         <div className="mb-6">
           <button
             type="submit"

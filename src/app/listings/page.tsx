@@ -17,6 +17,7 @@ interface Property {
   bathrooms: number;
   parking: number;
   status: string;
+  investmentType: "individual" | "pooled";
 }
 
 // Fallback mock properties data
@@ -35,6 +36,7 @@ const mockProperties: Property[] = [
     bathrooms: 3,
     parking: 2,
     status: "Available",
+    investmentType: "individual",
   },
   {
     id: "2",
@@ -50,6 +52,7 @@ const mockProperties: Property[] = [
     bathrooms: 2,
     parking: 1,
     status: "Available",
+    investmentType: "pooled",
   },
   {
     id: "3",
@@ -65,6 +68,7 @@ const mockProperties: Property[] = [
     bathrooms: 2,
     parking: 1,
     status: "Available",
+    investmentType: "individual",
   },
   {
     id: "4",
@@ -80,6 +84,7 @@ const mockProperties: Property[] = [
     bathrooms: 3,
     parking: 2,
     status: "Available",
+    investmentType: "pooled",
   },
   {
     id: "5",
@@ -95,6 +100,7 @@ const mockProperties: Property[] = [
     bathrooms: 2,
     parking: 2,
     status: "Available",
+    investmentType: "individual",
   },
   {
     id: "6",
@@ -110,6 +116,7 @@ const mockProperties: Property[] = [
     bathrooms: 3,
     parking: 1,
     status: "Available",
+    investmentType: "pooled",
   },
 ];
 
@@ -136,6 +143,7 @@ function mapPropertyData(apiProperty: InvestmentProperty): Property {
     bathrooms: apiProperty.bathrooms,
     parking: apiProperty.parking,
     status: statusMap[apiProperty.status] || "Available",
+    investmentType: apiProperty.investmentType,
   };
 }
 
@@ -179,9 +187,15 @@ function PropertyCard({ property }: { property: Property }) {
         <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-10" />
 
         {/* Status Badge */}
-        <div className="absolute right-4 top-4 z-10">
+        <div className="absolute right-4 top-4 z-10 flex flex-col gap-2">
           <span className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:bg-primary">
             {property.status}
+          </span>
+          {/* Investment Type Badge */}
+          <span className={`rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 group-hover:scale-105 ${
+            property.investmentType === "individual" ? "bg-green-600" : "bg-orange-600"
+          }`}>
+            {property.investmentType === "individual" ? "Individual" : "Pooled"}
           </span>
         </div>
 
@@ -280,7 +294,7 @@ function PropertyCard({ property }: { property: Property }) {
         <p className="mb-4 text-2xl font-bold text-black transition-all duration-300 group-hover:scale-105 dark:text-white">
           {property.price}
         </p>
-        <p className="mb-6 text-sm leading-relaxed text-body-color transition-colors duration-300 dark:text-body-color-dark">
+        <p className="mb-5 text-sm leading-relaxed text-body-color transition-colors duration-300 dark:text-body-color-dark">
           {property.description}
         </p>
 

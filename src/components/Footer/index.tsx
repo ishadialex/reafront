@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const Footer = () => {
   const pathname = usePathname();
   const hideCtaPages = ["/contact", "/signin", "/signup", "/forgot-password"];
-  const shouldHideCta = hideCtaPages.includes(pathname);
+  const shouldHideCta = hideCtaPages.includes(pathname) || pathname.startsWith("/listings/");
 
   return (
     <>
