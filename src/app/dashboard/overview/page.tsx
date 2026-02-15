@@ -325,21 +325,100 @@ export default function DashboardOverviewPage() {
     return () => clearInterval(pollInterval);
   }, [data.user?.kycStatus]); // Re-run when KYC status changes
 
-  // Generate dynamic greeting based on time of day and context
+  // Generate dynamic greeting based on time of day, context, and events
   const greeting = useMemo(() => {
     if (!data.user) return { message: "Welcome back!", subtitle: "Here's an overview of your investment portfolio" };
 
     const now = new Date();
     const hour = now.getHours();
+    const month = now.getMonth(); // 0-11
+    const dayOfMonth = now.getDate();
+    const dayOfWeek = now.getDay(); // 0 (Sunday) - 6 (Saturday)
     const firstName = data.user.name.split(" ")[0];
 
-    // Determine time period
-    let timeOfDay = "";
+    // Check for special events/holidays (highest priority)
+    const getEventGreeting = () => {
+      // New Year's Day
+      if (month === 0 && dayOfMonth === 1) {
+        return { isEvent: true, message: `🎉 Happy New Year, ${firstName}!`, subtitle: "Here's to a prosperous year ahead! Let's make your money work harder!" };
+      }
+      // New Year's Week
+      if (month === 0 && dayOfMonth <= 7) {
+        return { isEvent: true, message: `Happy New Year, ${firstName}!`, subtitle: "Start the year strong with smart investments!" };
+      }
+      // Valentine's Day
+      if (month === 1 && dayOfMonth === 14) {
+        return { isEvent: true, message: `💝 Happy Valentine's Day, ${firstName}!`, subtitle: "Love your investments as much as they love growing!" };
+      }
+      // St. Patrick's Day
+      if (month === 2 && dayOfMonth === 17) {
+        return { isEvent: true, message: `🍀 Happy St. Patrick's Day, ${firstName}!`, subtitle: "May luck be on your side with your investments!" };
+      }
+      // Easter (approximate - 3rd or 4th Sunday in March/April)
+      if ((month === 2 || month === 3) && dayOfWeek === 0 && (dayOfMonth >= 15 && dayOfMonth <= 25)) {
+        return { isEvent: true, message: `🐰 Happy Easter, ${firstName}!`, subtitle: "Watch your portfolio grow like Easter eggs!" };
+      }
+      // Earth Day
+      if (month === 3 && dayOfMonth === 22) {
+        return { isEvent: true, message: `🌍 Happy Earth Day, ${firstName}!`, subtitle: "Consider sustainable investments for a better tomorrow!" };
+      }
+      // Independence Day (US)
+      if (month === 6 && dayOfMonth === 4) {
+        return { isEvent: true, message: `🎆 Happy Independence Day, ${firstName}!`, subtitle: "Celebrate financial freedom with smart investments!" };
+      }
+      // Halloween
+      if (month === 9 && dayOfMonth === 31) {
+        return { isEvent: true, message: `🎃 Happy Halloween, ${firstName}!`, subtitle: "No tricks here, just treats for your portfolio!" };
+      }
+      // Black Friday
+      if (month === 10 && dayOfWeek === 5 && dayOfMonth >= 23 && dayOfMonth <= 29) {
+        return { isEvent: true, message: `🛍️ Happy Black Friday, ${firstName}!`, subtitle: "Great deals in the market - smart time to invest!" };
+      }
+      // Thanksgiving (US - 4th Thursday in November)
+      if (month === 10 && dayOfWeek === 4 && dayOfMonth >= 22 && dayOfMonth <= 28) {
+        return { isEvent: true, message: `🦃 Happy Thanksgiving, ${firstName}!`, subtitle: "Grateful for your trust in building wealth together!" };
+      }
+      // Christmas Eve
+      if (month === 11 && dayOfMonth === 24) {
+        return { isEvent: true, message: `🎄 Merry Christmas Eve, ${firstName}!`, subtitle: "Your investments are the gift that keeps giving!" };
+      }
+      // Christmas
+      if (month === 11 && dayOfMonth === 25) {
+        return { isEvent: true, message: `🎅 Merry Christmas, ${firstName}!`, subtitle: "Wishing you joy and prosperity this holiday season!" };
+      }
+      // Christmas Week
+      if (month === 11 && dayOfMonth >= 26 && dayOfMonth <= 31) {
+        return { isEvent: true, message: `Happy Holidays, ${firstName}!`, subtitle: "Year-end is perfect for reviewing your investment goals!" };
+      }
+      // New Year's Eve
+      if (month === 11 && dayOfMonth === 31) {
+        return { isEvent: true, message: `🎊 Happy New Year's Eve, ${firstName}!`, subtitle: "Reflect on your gains and plan for next year's success!" };
+      }
+
+      // Financial Calendar Events
+      // End of Quarter (March 31, June 30, Sept 30, Dec 31)
+      if ((month === 2 || month === 5 || month === 8 || month === 11) && dayOfMonth === 31) {
+        return { isEvent: true, message: `End of Quarter, ${firstName}!`, subtitle: "Time to review your quarterly investment performance!" };
+      }
+      // Tax Day (April 15 - approximate)
+      if (month === 3 && dayOfMonth === 15) {
+        return { isEvent: true, message: `Tax Day, ${firstName}!`, subtitle: "Don't forget to consider tax-efficient investments!" };
+      }
+
+      return { isEvent: false };
+    };
+
+    // Check for special events first
+    const eventGreeting = getEventGreeting();
+    if (eventGreeting.isEvent) {
+      return eventGreeting;
+    }
+
+    // Determine time period for regular greetings
     let greetingPrefix = "";
     let contextualMessage = "";
 
     if (hour >= 5 && hour < 12) {
-      timeOfDay = "morning";
       greetingPrefix = "Good morning";
       const morningMessages = [
         "Great to see you starting your day with us!",
@@ -350,7 +429,6 @@ export default function DashboardOverviewPage() {
       ];
       contextualMessage = morningMessages[Math.floor(Math.random() * morningMessages.length)];
     } else if (hour >= 12 && hour < 17) {
-      timeOfDay = "afternoon";
       greetingPrefix = "Good afternoon";
       const afternoonMessages = [
         "Hope your day is going well!",
@@ -361,7 +439,6 @@ export default function DashboardOverviewPage() {
       ];
       contextualMessage = afternoonMessages[Math.floor(Math.random() * afternoonMessages.length)];
     } else if (hour >= 17 && hour < 21) {
-      timeOfDay = "evening";
       greetingPrefix = "Good evening";
       const eveningMessages = [
         "Wrapping up the day? Check your portfolio!",
@@ -372,7 +449,6 @@ export default function DashboardOverviewPage() {
       ];
       contextualMessage = eveningMessages[Math.floor(Math.random() * eveningMessages.length)];
     } else {
-      timeOfDay = "night";
       greetingPrefix = "Good evening";
       const nightMessages = [
         "Working late? Your investments never sleep!",
@@ -384,8 +460,7 @@ export default function DashboardOverviewPage() {
       contextualMessage = nightMessages[Math.floor(Math.random() * nightMessages.length)];
     }
 
-    // Check day of week for weekend messages
-    const dayOfWeek = now.getDay();
+    // Weekend override
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       const weekendMessages = [
         "Enjoying the weekend? Your investments are still working!",
@@ -395,18 +470,31 @@ export default function DashboardOverviewPage() {
       contextualMessage = weekendMessages[Math.floor(Math.random() * weekendMessages.length)];
     }
 
-    // Check if it's the start of the month
-    const dayOfMonth = now.getDate();
+    // Start of month
     if (dayOfMonth === 1) {
       contextualMessage = "Happy new month! Time to review your investment goals!";
     } else if (dayOfMonth <= 3) {
       contextualMessage = "New month, new opportunities! Check your portfolio!";
     }
 
+    // Monday motivation
+    if (dayOfWeek === 1 && hour >= 5 && hour < 12) {
+      contextualMessage = "Happy Monday! Let's start the week with your investment goals in focus!";
+    }
+
+    // Friday celebration
+    if (dayOfWeek === 5 && hour >= 12) {
+      const fridayMessages = [
+        "Happy Friday! Your investments worked hard this week!",
+        "TGIF! Check out how your portfolio performed this week!",
+        "Friday feeling! Your money has been growing all week!",
+      ];
+      contextualMessage = fridayMessages[Math.floor(Math.random() * fridayMessages.length)];
+    }
+
     return {
       message: `${greetingPrefix}, ${firstName}!`,
       subtitle: contextualMessage,
-      timeOfDay
     };
   }, [data.user]);
 
