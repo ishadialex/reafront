@@ -7,10 +7,8 @@ import DashboardSidebar from "@/components/Dashboard/Sidebar";
 import ThemeToggler from "@/components/Header/ThemeToggler";
 import NotificationPanel from "@/components/Dashboard/NotificationPanel";
 import ProfileDropdown from "@/components/Dashboard/ProfileDropdown";
-import axios from "axios";
+import { api } from "@/lib/api";
 import Image from "next/image";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -38,47 +36,41 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Poll to detect if session was revoked from another device
   useEffect(() => {
-    let failureCount = 0;
-    const MAX_FAILURES = 3; // Allow 3 consecutive failures before logging out
+    let checkInterval = 5000; // Default to 5 seconds as specified by backend
 
     const checkSession = async () => {
-      // Session validation now uses httpOnly cookies automatically
       try {
-        await axios.post(
-          `${API_URL}/api/auth/validate-session`,
-          {},
-          { withCredentials: true }
-        );
-        // Reset failure count on success
-        failureCount = 0;
-      } catch (err: any) {
-        // Only logout if we get a 401 (unauthorized) response
-        // Network errors, 500 errors, etc. might be temporary (server restart)
-        if (err.response?.status === 401) {
-          failureCount++;
+        const response = await api.validateSession();
 
-          // Only logout after multiple consecutive failures
-          // This prevents logout during brief server restarts/deployments
-          if (failureCount >= MAX_FAILURES) {
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("user");
-            localStorage.removeItem("userEmail");
-            localStorage.removeItem("userName");
-            localStorage.removeItem("userProfilePicture");
-            // Use session_expired for polling timeout, not session_revoked
-            router.push("/signin?reason=session_expired");
-          }
-        } else {
-          // For network errors or server errors, don't increment failure count
-          // These are likely temporary issues (server restart, deployment)
-          console.log("Session validation failed (non-401), will retry...");
+        // Update interval if backend provides one
+        if (response.data?.checkInterval) {
+          checkInterval = response.data.checkInterval;
         }
+      } catch (err: any) {
+        // If we get a 401, session has been revoked - logout immediately
+        if (err.response?.status === 401) {
+          localStorage.removeItem("isLoggedIn");
+          localStorage.removeItem("user");
+          localStorage.removeItem("userEmail");
+          localStorage.removeItem("userName");
+          localStorage.removeItem("userProfilePicture");
+          window.dispatchEvent(new Event("authStateChanged"));
+          router.push("/signin?reason=session_revoked");
+        }
+        // For network errors or server errors, continue polling silently
       }
     };
 
-    // Check immediately on mount, then every 30 seconds (less aggressive)
+    // Start polling every 5 seconds (or checkInterval from backend)
+    const startPolling = () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      pollingRef.current = setInterval(checkSession, checkInterval);
+    };
+
+    // Check immediately on mount
     checkSession();
-    pollingRef.current = setInterval(checkSession, 30000);
+    // Start polling
+    startPolling();
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -197,7 +189,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Desktop Top Bar - Full Width */}
-        <div className="fixed left-64 right-0 top-0 z-30 hidden h-16 items-center justify-end gap-3 border-b border-gray-800 bg-black px-6 lg:flex">
+        <div className="fixed left-64 right-0 top-0 z-30 hidden h-16 items-center justify-end gap-3 border-b border-gray-200 bg-white px-6 shadow-sm dark:border-gray-800 dark:bg-black lg:flex">
           <ThemeToggler />
           <NotificationPanel />
           <ProfileDropdown />

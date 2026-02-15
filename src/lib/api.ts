@@ -11,6 +11,8 @@ interface ApiResponse<T> {
 
 export class ApiClient {
   private axiosInstance: AxiosInstance;
+  private isRefreshing = false;
+  private refreshQueue: Array<(retry: boolean) => void> = [];
 
   constructor(baseURL: string = API_URL) {
     this.axiosInstance = axios.create({
@@ -32,6 +34,7 @@ export class ApiClient {
           "/api/auth/login",
           "/api/auth/register",
           "/api/auth/force-login",              // Wrong password during force login
+          "/api/auth/validate-session",         // Session revoked - logout immediately
           "/api/2fa/enable",                    // Wrong 2FA code during setup
           "/api/2fa/disable",                   // Wrong password when disabling
           "/api/2fa/backup-codes/regenerate",   // Wrong 2FA code when regenerating
@@ -42,32 +45,64 @@ export class ApiClient {
         const requestUrl = error.config?.url || "";
         const shouldSkipRefresh = skipRefreshUrls.some(url => requestUrl.includes(url));
 
-        if (error.response?.status === 401 && !shouldSkipRefresh) {
-          // Token expired, try to refresh (refresh token is in httpOnly cookie)
-          try {
-            await axios.post(
-              `${baseURL}/api/auth/refresh-token`,
-              {},
-              { withCredentials: true } // Send httpOnly cookies
-            );
+        // Only handle TOKEN_EXPIRED (or generic 401) for non-skip URLs
+        const errorCode = (error.response?.data as any)?.code;
+        const isTokenExpired =
+          error.response?.status === 401 &&
+          !shouldSkipRefresh &&
+          errorCode !== "INVALID_TOKEN";
 
-            // Refresh successful, retry the original request
-            if (error.config) {
-              return this.axiosInstance.request(error.config);
-            }
-          } catch (refreshError) {
-            // Refresh failed, clear login flag and redirect to login
-            if (typeof window !== "undefined") {
-              localStorage.removeItem("isLoggedIn");
-              localStorage.removeItem("userName");
-              localStorage.removeItem("userEmail");
-              localStorage.removeItem("userProfilePicture");
-              // Dispatch custom event to notify Header of auth state change
-              window.dispatchEvent(new Event("authStateChanged"));
-              window.location.href = "/signin?reason=session_expired";
-            }
-          }
+        if (!isTokenExpired) {
+          return Promise.reject(error);
         }
+
+        // If a refresh is already in flight, queue this request
+        if (this.isRefreshing) {
+          return new Promise((resolve, reject) => {
+            this.refreshQueue.push((success: boolean) => {
+              if (success && error.config) {
+                resolve(this.axiosInstance.request(error.config));
+              } else {
+                reject(error);
+              }
+            });
+          });
+        }
+
+        // This request is the one doing the refresh
+        this.isRefreshing = true;
+        try {
+          await axios.post(
+            `${baseURL}/api/auth/refresh-token`,
+            {},
+            { withCredentials: true }
+          );
+
+          // Flush the queue — all waiting requests can retry
+          this.refreshQueue.forEach(cb => cb(true));
+          this.refreshQueue = [];
+
+          // Retry the original request that triggered the refresh
+          if (error.config) {
+            return this.axiosInstance.request(error.config);
+          }
+        } catch (refreshError) {
+          // Refresh failed — reject all queued requests and redirect
+          this.refreshQueue.forEach(cb => cb(false));
+          this.refreshQueue = [];
+
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userProfilePicture");
+            window.dispatchEvent(new Event("authStateChanged"));
+            window.location.href = "/signin?reason=session_expired";
+          }
+        } finally {
+          this.isRefreshing = false;
+        }
+
         return Promise.reject(error);
       }
     );
@@ -157,6 +192,13 @@ export class ApiClient {
     const response = await this.axiosInstance.post<ApiResponse<{ message: string }>>(
       "/api/auth/refresh-token",
       {}
+    );
+    return response.data;
+  }
+
+  async validateSession() {
+    const response = await this.axiosInstance.get<ApiResponse<{ valid: boolean; checkInterval: number }>>(
+      "/api/auth/validate-session"
     );
     return response.data;
   }
@@ -393,6 +435,11 @@ export class ApiClient {
 
   async regenerateBackupCodes(code: string) {
     const response = await this.axiosInstance.post<ApiResponse<{ backupCodes: string[] }>>("/api/2fa/backup-codes/regenerate", { code });
+    return response.data;
+  }
+
+  async setRequire2FALogin(require: boolean) {
+    const response = await this.axiosInstance.post<ApiResponse<{ requireTwoFactorLogin: boolean }>>("/api/2fa/require-login", { require });
     return response.data;
   }
 

@@ -311,7 +311,7 @@ function SigninContent() {
                       </svg>
                       <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
                         {searchParams.get('reason') === 'session_revoked'
-                          ? 'You were logged out because someone signed in from another device.'
+                          ? 'Your session was revoked from another device.'
                           : searchParams.get('reason') === 'account_deleted'
                           ? 'Your account has been deactivated. Contact support to restore access.'
                           : searchParams.get('reason') === 'session_expired'

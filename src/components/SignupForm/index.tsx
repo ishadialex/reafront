@@ -418,9 +418,11 @@ const SignupForm = () => {
                 : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
             }`}
           />
-          <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-            Min 8 characters, uppercase, lowercase, number, special character
-          </p>
+          {passwordTouched && (
+            <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+              Min 8 characters, uppercase, lowercase, number, special character
+            </p>
+          )}
           {passwordTouched && passwordStrengthError && (
             <p className="mt-2 text-sm text-red-500 dark:text-red-400">
               {passwordStrengthError}

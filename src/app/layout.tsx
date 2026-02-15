@@ -23,6 +23,7 @@ export default function RootLayout({
   const pathname = usePathname();
   const isPDFViewer = pathname?.startsWith("/pdf-viewer");
   const isDashboard = pathname?.startsWith("/dashboard");
+  const isAuthPage = pathname === "/signin" || pathname === "/signup";
   const [showNewsletterPopup, setShowNewsletterPopup] = useState(false);
   const hasShownPopupRef = useRef(false);
 
@@ -64,9 +65,9 @@ export default function RootLayout({
           <div className="isolate">
             {!isPDFViewer && !isDashboard && <Header />}
             {children}
-            {!isPDFViewer && !isDashboard && <Footer />}
+            {!isPDFViewer && !isDashboard && !isAuthPage && <Footer />}
           </div>
-          {!isPDFViewer && !isDashboard && <ScrollToTop />}
+          {!isPDFViewer && !isDashboard && !isAuthPage && <ScrollToTop />}
           <NewsletterPopup
             isOpen={showNewsletterPopup}
             onClose={handleClosePopup}

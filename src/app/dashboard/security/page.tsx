@@ -6,6 +6,8 @@ import { api } from "@/lib/api";
 
 const SecuritySettingsPage = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [require2FALogin, setRequire2FALogin] = useState(false);
+  const [require2FALoading, setRequire2FALoading] = useState(false);
   const [kycStatus, setKycStatus] = useState<"not_started" | "in_progress" | "documents_uploaded" | "pending_review" | "verified" | "rejected" | null>(null);
   const [kycCurrentStep, setKycCurrentStep] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,6 +19,7 @@ const SecuritySettingsPage = () => {
         const profileResponse = await api.getProfile();
         if (profileResponse.success && profileResponse.data) {
           setTwoFactorEnabled(profileResponse.data.twoFactorEnabled || false);
+          setRequire2FALogin(profileResponse.data.requireTwoFactorLogin || false);
           // Use KYC status from profile as fallback
           if (profileResponse.data.kycStatus) {
             setKycStatus(profileResponse.data.kycStatus);
@@ -49,6 +52,20 @@ const SecuritySettingsPage = () => {
 
     fetchUserData();
   }, []);
+
+  const handleRequire2FAToggle = async () => {
+    if (!twoFactorEnabled) return;
+    setRequire2FALoading(true);
+    try {
+      const newValue = !require2FALogin;
+      await api.setRequire2FALogin(newValue);
+      setRequire2FALogin(newValue);
+    } catch (error) {
+      console.error("Failed to update require 2FA setting:", error);
+    } finally {
+      setRequire2FALoading(false);
+    }
+  };
 
   // Helper function to get KYC badge details
   const getKYCBadgeDetails = () => {
@@ -232,6 +249,47 @@ const SecuritySettingsPage = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Require 2FA to Login Toggle */}
+      <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-dark">
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 text-primary">
+                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-black dark:text-white">
+                  Require 2FA to Login
+                </h3>
+                <p className="mt-1 text-sm text-body-color dark:text-body-color-dark">
+                  {twoFactorEnabled
+                    ? "Require two-factor authentication every time you sign in."
+                    : "You must enable 2FA before turning on this setting."}
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle */}
+            <button
+              onClick={handleRequire2FAToggle}
+              disabled={!twoFactorEnabled || require2FALoading}
+              className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 ${
+                require2FALogin ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
+              }`}
+              aria-label="Toggle require 2FA to login"
+            >
+              <span
+                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  require2FALogin ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Security Tips */}

@@ -71,7 +71,7 @@ const Hero = () => {
       >
         {/* Hero Background Image */}
         <Image
-          src="/images/hero/home-1.jpeg"
+          src="/images/hero/background.svg"
           alt="Hero background"
           fill
           className="z-0 object-cover"
@@ -96,7 +96,7 @@ const Hero = () => {
                     <span className="animate-pulse">|</span>
                   </span>
                 </h1>
-                <p className="mb-12 text-base leading-relaxed! text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
+                <p className="mb-12 text-base leading-relaxed text-white sm:text-lg md:text-xl">
                 Join the ranks of savvy entrepreneurs and seize the chance to turn vacant properties into thriving income streams.
                 </p>
                 <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
