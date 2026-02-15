@@ -34,6 +34,9 @@ function SigninContent() {
     if (reason === 'session_timeout' || reason === 'session_expired' || reason === 'session_revoked' || reason === 'account_deleted') {
       setSessionTimeoutWarning(true);
       setTimeout(() => setSessionTimeoutWarning(false), 10000);
+
+      // Remove the reason parameter from URL to prevent showing warning on refresh
+      router.replace("/signin", { scroll: false });
       return;
     }
 
