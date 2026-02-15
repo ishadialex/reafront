@@ -29,9 +29,16 @@ const SecuritySettingsPage = () => {
         // Fetch detailed KYC status
         try {
           const kycResponse = await api.getKYCStatus();
-          if (kycResponse.success && kycResponse.data) {
-            setKycStatus(kycResponse.data.status);
-            setKycCurrentStep(kycResponse.data.currentStep || null);
+          if (kycResponse.success && kycResponse.data && kycResponse.data.kyc) {
+            // Map backend status to frontend status
+            const backendStatus = kycResponse.data.kyc.status;
+            const statusMap: Record<string, typeof kycStatus> = {
+              "not_submitted": "not_started",
+              "pending": "pending_review",
+              "approved": "verified",
+              "rejected": "rejected"
+            };
+            setKycStatus(statusMap[backendStatus] || "not_started");
           }
         } catch (kycError) {
           console.log("KYC API not available, checking localStorage");
@@ -58,12 +65,20 @@ const SecuritySettingsPage = () => {
     const pollKYCStatus = async () => {
       try {
         const kycResponse = await api.getKYCStatus();
-        if (kycResponse.success && kycResponse.data) {
-          const newStatus = kycResponse.data.status;
+        if (kycResponse.success && kycResponse.data && kycResponse.data.kyc) {
+          // Map backend status to frontend status
+          const backendStatus = kycResponse.data.kyc.status;
+          const statusMap: Record<string, typeof kycStatus> = {
+            "not_submitted": "not_started",
+            "pending": "pending_review",
+            "approved": "verified",
+            "rejected": "rejected"
+          };
+          const newStatus = statusMap[backendStatus] || "not_started";
+
           if (newStatus !== kycStatus) {
             console.log("🔄 Security page KYC status updated:", kycStatus, "→", newStatus);
             setKycStatus(newStatus);
-            setKycCurrentStep(kycResponse.data.currentStep || null);
           }
         }
       } catch (error) {
