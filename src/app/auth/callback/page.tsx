@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense, useState } from "react";
+import { useEffect, Suspense, useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthCallbackSkeleton from "@/components/AuthCallbackSkeleton";
 import axios from "axios";
@@ -14,6 +14,11 @@ function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [oauthToken, setOauthToken] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const processCallback = async () => {
@@ -61,6 +66,29 @@ function AuthCallbackContent() {
           { withCredentials: true }
         );
 
+        console.log("OAuth token exchange response:", response.data);
+
+        // Check if 2FA is required
+        const responseData = response.data;
+        const requires2FACheck =
+          responseData?.requires2FA ||
+          responseData?.requiresTwoFactor ||
+          responseData?.require2FA ||
+          responseData?.code === "REQUIRE_2FA" ||
+          responseData?.code === "TWO_FACTOR_REQUIRED" ||
+          responseData?.data?.requires2FA ||
+          responseData?.data?.requiresTwoFactor ||
+          responseData?.message?.toLowerCase().includes("2fa") ||
+          responseData?.message?.toLowerCase().includes("two-factor");
+
+        if (requires2FACheck) {
+          console.log("2FA is required for OAuth login, showing 2FA input");
+          setOauthToken(token);
+          setRequires2FA(true);
+          setIsProcessing(false);
+          return;
+        }
+
         if (response.data.success) {
           const user = response.data.data.user;
 
@@ -86,8 +114,27 @@ function AuthCallbackContent() {
         } else {
           throw new Error("Token exchange failed");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("OAuth callback error:", err);
+
+        // Check if 2FA is required in error response
+        const responseData = err.response?.data;
+        const requires2FACheck =
+          responseData?.requires2FA ||
+          responseData?.requiresTwoFactor ||
+          responseData?.require2FA ||
+          responseData?.code === "REQUIRE_2FA" ||
+          responseData?.code === "TWO_FACTOR_REQUIRED" ||
+          (err.response?.status === 403 && responseData?.message?.toLowerCase().includes("2fa"));
+
+        if (requires2FACheck) {
+          console.log("2FA is required (from error response), showing 2FA input");
+          setOauthToken(token);
+          setRequires2FA(true);
+          setIsProcessing(false);
+          return;
+        }
+
         // Clear any partial state and redirect to signin
         localStorage.removeItem("isLoggedIn");
         router.replace("/signin?error=oauth_failed");
@@ -97,6 +144,124 @@ function AuthCallbackContent() {
     processCallback();
   }, [searchParams, router, isProcessing]);
 
+  const handle2FAVerification = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/auth/exchange-oauth-token`,
+        { token: oauthToken, twoFactorCode },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const user = response.data.data.user;
+
+        // Store user data in localStorage
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("user", JSON.stringify(user));
+
+        if (user.email) {
+          localStorage.setItem("userEmail", user.email);
+        }
+
+        if (user.firstName || user.lastName) {
+          const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+          localStorage.setItem("userName", userName);
+        }
+
+        if (user.profilePhoto) {
+          localStorage.setItem("userProfilePicture", user.profilePhoto);
+        }
+
+        // Redirect to dashboard
+        router.replace("/dashboard");
+      } else {
+        setError("2FA verification failed. Please try again.");
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || "Invalid 2FA code. Please try again.";
+      setError(errorMessage);
+      setIsLoading(false);
+    }
+  };
+
+  // Show 2FA form if required
+  if (requires2FA) {
+    return (
+      <section className="relative z-10 overflow-hidden pt-36 pb-16 md:pb-20 lg:pt-[180px] lg:pb-28">
+        <div className="container">
+          <div className="-mx-4 flex flex-wrap">
+            <div className="w-full px-4">
+              <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-sm bg-white px-6 py-10 sm:p-[60px]">
+                <h3 className="mb-2 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
+                  Two-Factor Authentication
+                </h3>
+                <p className="text-body-color mb-6 text-center text-base font-medium">
+                  Complete your Google sign-in with 2FA
+                </p>
+
+                <form onSubmit={handle2FAVerification}>
+                  {error && (
+                    <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                      <p>{error}</p>
+                    </div>
+                  )}
+                  <div className="mb-6 rounded-lg bg-blue-100 p-4 dark:bg-blue-900/30">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                      Two-factor authentication is required. Please enter your 6-digit code from your authenticator app.
+                    </p>
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="twoFactorCode"
+                      className="text-dark mb-3 block text-sm dark:text-white"
+                    >
+                      Authentication Code
+                    </label>
+                    <input
+                      type="text"
+                      id="twoFactorCode"
+                      name="twoFactorCode"
+                      value={twoFactorCode}
+                      onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="Enter 6-digit code"
+                      required
+                      maxLength={6}
+                      autoFocus
+                      className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base text-center tracking-widest outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
+                    />
+                  </div>
+                  <div className="mb-6">
+                    <button
+                      type="submit"
+                      disabled={isLoading || twoFactorCode.length !== 6}
+                      className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex w-full items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isLoading ? "Verifying..." : "Verify & Sign In"}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.replace("/signin")}
+                    className="text-primary text-sm hover:underline"
+                  >
+                    ← Back to sign in
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show loading screen while processing OAuth callback
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-black dark:via-gray-900 dark:to-black">
       <div className="relative flex flex-col items-center justify-center px-4">
