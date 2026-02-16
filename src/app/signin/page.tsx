@@ -18,6 +18,7 @@ function SigninContent() {
   const [requiresVerification, setRequiresVerification] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
   const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false);
+  const [sessionReason, setSessionReason] = useState<string | null>(null);
   const [showExistingSessionModal, setShowExistingSessionModal] = useState(false);
   const [existingSessionData, setExistingSessionData] = useState<any>(null);
   const [requires2FA, setRequires2FA] = useState(false);
@@ -32,6 +33,7 @@ function SigninContent() {
 
     // Show warning for session timeout, expiration, revocation, or account deletion
     if (reason === 'session_timeout' || reason === 'session_expired' || reason === 'session_revoked' || reason === 'account_deleted') {
+      setSessionReason(reason);
       setSessionTimeoutWarning(true);
       setTimeout(() => setSessionTimeoutWarning(false), 10000);
 
@@ -429,11 +431,11 @@ function SigninContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                        {searchParams.get('reason') === 'session_revoked'
-                          ? 'Your session was revoked from another device.'
-                          : searchParams.get('reason') === 'account_deleted'
+                        {sessionReason === 'session_revoked'
+                          ? 'Your session was revoked from another device. Please sign in again.'
+                          : sessionReason === 'account_deleted'
                           ? 'Your account has been deactivated. Contact support to restore access.'
-                          : searchParams.get('reason') === 'session_expired'
+                          : sessionReason === 'session_expired'
                           ? 'Your session expired. Please sign in again.'
                           : 'Your session expired due to inactivity. Please sign in again.'}
                       </p>

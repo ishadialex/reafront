@@ -97,7 +97,7 @@ export class ApiClient {
             localStorage.removeItem("userEmail");
             localStorage.removeItem("userProfilePicture");
             window.dispatchEvent(new Event("authStateChanged"));
-            window.location.href = "/signin?reason=session_expired";
+            window.location.href = "/signin?reason=session_revoked";
           }
         } finally {
           this.isRefreshing = false;

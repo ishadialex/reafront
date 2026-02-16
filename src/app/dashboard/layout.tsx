@@ -116,16 +116,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [router, isLoggedIn]);
 
-  // Show security setup prompt on first login
+  // Show security prompt only if 2FA is disabled OR KYC is not yet submitted/verified
   useEffect(() => {
-    const seen = localStorage.getItem("securityPromptSeen");
-    if (!seen && isLoggedIn === "true") {
-      setShowSecurityPrompt(true);
-    }
+    if (isLoggedIn !== "true") return;
+
+    api.getProfile()
+      .then((res) => {
+        const { twoFactorEnabled, kycStatus } = res.data || {};
+        const kycComplete = kycStatus === "verified" || kycStatus === "approved" || kycStatus === "pending_review" || kycStatus === "pending";
+        if (!twoFactorEnabled || !kycComplete) {
+          setShowSecurityPrompt(true);
+        }
+      })
+      .catch(() => {
+        // silently fail
+      });
   }, [isLoggedIn]);
 
   const dismissSecurityPrompt = () => {
-    localStorage.setItem("securityPromptSeen", "true");
     setShowSecurityPrompt(false);
   };
 
