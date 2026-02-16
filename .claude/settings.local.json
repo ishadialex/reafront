@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate header and contact page design\n\n- Make header fixed with solid background \\(no transparency\\)\n- Remove shadow/border from header bottom\n- Add contact header section with neutral background\n- Update About and Contact pages with proper padding for fixed header\n- Ensure content doesn''t hide under fixed header on mobile\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(curl:*)"
-    ]
-  }
-}

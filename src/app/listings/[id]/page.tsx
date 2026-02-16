@@ -643,45 +643,68 @@ export default function PropertyDetailsPage({
             )}
           </div>
 
-          {/* Thumbnail strip — max 3 on mobile, max 4 on desktop */}
+          {/* Thumbnail strip — sliding window, 3 on mobile, 4 on desktop */}
           {property.images.length > 1 && (() => {
-            const mobileCount = Math.min(property.images.length, 3);
-            const desktopCount = Math.min(property.images.length, 4);
+            const totalImages = property.images.length;
+
+            // Calculate visible window start based on current image
+            const getWindowStart = (visible: number) => {
+              if (totalImages <= visible) return 0;
+              let start = currentImageIndex - Math.floor(visible / 2);
+              start = Math.max(0, start);
+              start = Math.min(totalImages - visible, start);
+              return start;
+            };
+
+            const mobileVisible = Math.min(totalImages, 3);
+            const desktopVisible = Math.min(totalImages, 4);
+            const mobileStart = getWindowStart(mobileVisible);
+            const desktopStart = getWindowStart(desktopVisible);
+
+            const mobileSlice = property.images.slice(mobileStart, mobileStart + mobileVisible);
+            const desktopSlice = property.images.slice(desktopStart, desktopStart + desktopVisible);
+
             return (
               <div className="border-t border-gray-200 px-4 py-4 dark:border-gray-700 md:px-6 md:py-5">
-                {/* Mobile: show up to 3 */}
+                {/* Mobile: show 3 */}
                 <div className="flex items-center justify-center gap-2 md:hidden">
-                  {property.images.slice(0, mobileCount).map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => selectImage(index)}
-                      style={{ width: `${Math.floor(100 / mobileCount) - 2}%` }}
-                      className={`relative aspect-video flex-shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${
-                        currentImageIndex === index
-                          ? "ring-[3px] ring-primary"
-                          : "opacity-60 hover:opacity-100"
-                      }`}
-                    >
-                      <Image src={image} alt={`Thumbnail ${index + 1}`} fill className="object-cover" sizes="33vw" />
-                    </button>
-                  ))}
+                  {mobileSlice.map((image, i) => {
+                    const realIndex = mobileStart + i;
+                    return (
+                      <button
+                        key={realIndex}
+                        onClick={() => selectImage(realIndex)}
+                        style={{ width: `${Math.floor(100 / mobileVisible) - 2}%` }}
+                        className={`relative aspect-video flex-shrink-0 overflow-hidden rounded-xl transition-all duration-500 ${
+                          currentImageIndex === realIndex
+                            ? "ring-[3px] ring-primary"
+                            : "opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <Image src={image} alt={`Thumbnail ${realIndex + 1}`} fill className="object-cover" sizes="33vw" />
+                      </button>
+                    );
+                  })}
                 </div>
-                {/* Desktop: show up to 4 */}
+                {/* Desktop: show 4 */}
                 <div className="hidden items-center justify-center gap-3 md:flex">
-                  {property.images.slice(0, desktopCount).map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => selectImage(index)}
-                      style={{ width: `${Math.floor(100 / desktopCount) - 2}%` }}
-                      className={`relative aspect-video flex-shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${
-                        currentImageIndex === index
-                          ? "ring-4 ring-primary"
-                          : "opacity-60 hover:opacity-100"
-                      }`}
-                    >
-                      <Image src={image} alt={`Thumbnail ${index + 1}`} fill className="object-cover" sizes="25vw" />
-                    </button>
-                  ))}
+                  {desktopSlice.map((image, i) => {
+                    const realIndex = desktopStart + i;
+                    return (
+                      <button
+                        key={realIndex}
+                        onClick={() => selectImage(realIndex)}
+                        style={{ width: `${Math.floor(100 / desktopVisible) - 2}%` }}
+                        className={`relative aspect-video flex-shrink-0 overflow-hidden rounded-xl transition-all duration-500 ${
+                          currentImageIndex === realIndex
+                            ? "ring-4 ring-primary"
+                            : "opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <Image src={image} alt={`Thumbnail ${realIndex + 1}`} fill className="object-cover" sizes="25vw" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             );
