@@ -8,6 +8,16 @@ const FETCH_TIMEOUT = 10000; // 10 seconds
 const MAX_RETRIES = 2; // Number of retry attempts
 
 /**
+ * Extended fetch options that support both standard RequestInit and Next.js-specific options
+ */
+type FetchOptions = RequestInit & {
+  next?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+};
+
+/**
  * Fetch with timeout support
  * @param url - URL to fetch
  * @param options - Fetch options (can include Next.js specific options like 'next')
@@ -17,7 +27,7 @@ const MAX_RETRIES = 2; // Number of retry attempts
  */
 export async function fetchWithTimeout(
   url: string,
-  options: any = {},
+  options: FetchOptions = {},
   timeout: number = FETCH_TIMEOUT
 ): Promise<Response> {
   const controller = new AbortController();
@@ -41,7 +51,7 @@ export async function fetchWithTimeout(
 
 /**
  * Fetch with retry logic for transient failures (5xx errors, timeouts, network errors)
- * Uses exponential backoff strategy: 1s, 2s, 4s between retries
+ * Uses exponential backoff strategy: 1s, 2s between retries (with MAX_RETRIES = 2)
  * 
  * @param url - URL to fetch
  * @param options - Fetch options (can include Next.js specific options like 'next')
@@ -51,7 +61,7 @@ export async function fetchWithTimeout(
  */
 export async function fetchWithRetry(
   url: string,
-  options: any = {},
+  options: FetchOptions = {},
   retries: number = MAX_RETRIES
 ): Promise<Response> {
   let lastError: Error | null = null;
@@ -69,7 +79,7 @@ export async function fetchWithRetry(
         console.warn(
           `Server error (${response.status}) on attempt ${attempt + 1}, retrying...`
         );
-        // Exponential backoff: wait 1s, then 2s, then 4s, etc.
+        // Exponential backoff: wait 1s, then 2s
         await new Promise((resolve) =>
           setTimeout(resolve, Math.pow(2, attempt) * 1000)
         );
@@ -86,7 +96,7 @@ export async function fetchWithRetry(
           `Request failed on attempt ${attempt + 1}:`,
           error.message
         );
-        // Exponential backoff
+        // Exponential backoff: wait 1s, then 2s
         await new Promise((resolve) =>
           setTimeout(resolve, Math.pow(2, attempt) * 1000)
         );
