@@ -153,8 +153,11 @@ function AuthCallbackContent() {
           // Dispatch custom event to notify Header of auth state change
           window.dispatchEvent(new Event("authStateChanged"));
 
-          // Redirect to dashboard
-          router.replace("/dashboard");
+          // Wait for cookies to be fully stored before navigating
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          // Full page navigation ensures cookies are attached on first dashboard request
+          window.location.href = "/dashboard";
         } else {
           throw new Error("Token exchange failed");
         }

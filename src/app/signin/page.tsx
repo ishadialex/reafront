@@ -54,7 +54,7 @@ function SigninContent() {
     window.location.href = `${API_URL}/api/auth/google`;
   };
 
-  const storeSessionAndRedirect = (data: { user: any }) => {
+  const storeSessionAndRedirect = async (data: { user: any }) => {
     // Tokens are now in httpOnly cookies - just set login flag
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("user", JSON.stringify(data.user));
@@ -76,8 +76,11 @@ function SigninContent() {
     // Dispatch custom event to notify Header of auth state change
     window.dispatchEvent(new Event("authStateChanged"));
 
+    // Wait briefly for cookies to be fully stored by the browser before navigating
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     const redirectTo = searchParams.get("redirect");
-    router.push(redirectTo || "/dashboard");
+    window.location.href = redirectTo || "/dashboard";
   };
 
   const handleForceLogin = async () => {
