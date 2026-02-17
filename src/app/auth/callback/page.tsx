@@ -70,12 +70,22 @@ function AuthCallbackContent() {
       }
 
       try {
-        // Exchange temporary OAuth token for httpOnly cookies
-        // This request goes through the rewrite proxy, making cookies first-party
-        const response = await axios.post(`${API_URL}/api/auth/exchange-oauth-token`,
-          { token },
-          { withCredentials: true }
-        );
+        // Exchange temporary OAuth token for httpOnly cookies with retry for slow networks
+        let response;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            response = await axios.post(`${API_URL}/api/auth/exchange-oauth-token`,
+              { token },
+              { withCredentials: true, timeout: 15000 }
+            );
+            break;
+          } catch (retryErr: any) {
+            if (attempt === 3) throw retryErr;
+            // Only retry on network/timeout errors, not 4xx/5xx
+            if (retryErr.response && retryErr.response.status < 500) throw retryErr;
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+          }
+        }
 
         console.log("OAuth token exchange response:", response.data);
 

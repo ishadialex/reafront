@@ -218,8 +218,11 @@ export function useSessionTimeout(isAuthPage: boolean = false) {
         }
       } catch (error) {
         console.error('❌ Failed to fetch session timeout:', error);
-        // Don't set up timer on error to prevent issues on signin page
-        console.log('⚠️ Skipping timer setup due to error');
+        // Use default timeout instead of failing — avoids triggering refresh cascade
+        sessionTimeoutMinutes.current = 15;
+        if (isActive.current) {
+          resetTimerFunc();
+        }
       }
     };
 

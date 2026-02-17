@@ -71,6 +71,8 @@ export class ApiClient {
 
         // This request is the one doing the refresh
         this.isRefreshing = true;
+        let refreshSuccess = false;
+
         try {
           await axios.post(
             `${baseURL}/api/auth/refresh-token`,
@@ -78,18 +80,13 @@ export class ApiClient {
             { withCredentials: true }
           );
 
-          // Flush the queue — all waiting requests can retry
-          this.refreshQueue.forEach(cb => cb(true));
-          this.refreshQueue = [];
+          refreshSuccess = true;
 
-          // Retry the original request that triggered the refresh
-          if (error.config) {
-            return this.axiosInstance.request(error.config);
-          }
+          // Wait for browser to process Set-Cookie headers before retrying
+          await new Promise(resolve => setTimeout(resolve, 150));
+
         } catch (refreshError) {
-          // Refresh failed — reject all queued requests and redirect
-          this.refreshQueue.forEach(cb => cb(false));
-          this.refreshQueue = [];
+          refreshSuccess = false;
 
           if (typeof window !== "undefined") {
             localStorage.removeItem("isLoggedIn");
@@ -101,6 +98,15 @@ export class ApiClient {
           }
         } finally {
           this.isRefreshing = false;
+
+          // Process queue AFTER cookies are set
+          this.refreshQueue.forEach(cb => cb(refreshSuccess));
+          this.refreshQueue = [];
+        }
+
+        // Retry the original request if refresh succeeded
+        if (refreshSuccess && error.config) {
+          return this.axiosInstance.request(error.config);
         }
 
         return Promise.reject(error);
