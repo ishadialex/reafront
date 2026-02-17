@@ -255,7 +255,7 @@ const Header = () => {
             </div>
 
             {/* Desktop Layout: Logo on Left */}
-            <div className="hidden w-60 max-w-full px-4 xlg:block xl:mr-12">
+            <div className="hidden w-60 max-w-full px-4 xlg:block xl:mr-6 -ml-2">
               <Link
                 href="/"
                 className={`header-logo block w-full ${
