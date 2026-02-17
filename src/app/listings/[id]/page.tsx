@@ -54,6 +54,72 @@ interface Property {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
+// Timeout configuration (in milliseconds)
+const FETCH_TIMEOUT = 10000; // 10 seconds
+const MAX_RETRIES = 2; // Number of retry attempts
+
+/**
+ * Fetch with timeout support for client-side requests
+ */
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = FETCH_TIMEOUT): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeout}ms`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Fetch with retry logic for transient failures
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  retries: number = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options);
+      
+      // If we get a 5xx error and have retries left, try again
+      if (response.status >= 500 && response.status < 600 && attempt < retries) {
+        console.warn(`Server error (${response.status}) on attempt ${attempt + 1}, retrying...`);
+        // Exponential backoff: wait 1s, then 2s, then 4s, etc.
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        continue;
+      }
+      
+      return response;
+    } catch (error: any) {
+      lastError = error;
+      
+      // If it's a timeout or network error and we have retries left, try again
+      if (attempt < retries) {
+        console.warn(`Request failed on attempt ${attempt + 1}:`, error.message);
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        continue;
+      }
+    }
+  }
+
+  throw lastError || new Error('Request failed after all retries');
+}
+
 interface Review {
   id: string;
   rating: number;
@@ -317,8 +383,11 @@ export default function PropertyDetailsPage({
     const fetchProperty = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/public/properties/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch");
+        const res = await fetchWithRetry(`${API_URL}/api/public/properties/${id}`);
+        if (!res.ok) {
+          console.error(`Failed to fetch property: ${res.status} ${res.statusText}`);
+          throw new Error(`Failed to fetch: ${res.status}`);
+        }
         const data = await res.json();
         const apiProperty = data.data ?? data;
         if (apiProperty && apiProperty.id) {
@@ -326,7 +395,8 @@ export default function PropertyDetailsPage({
         } else {
           setProperty(propertyData[propertyId] || null);
         }
-      } catch {
+      } catch (error: any) {
+        console.error("Failed to fetch property, using fallback data:", error.message || error);
         setProperty(propertyData[propertyId] || null);
       } finally {
         setLoading(false);
@@ -342,12 +412,16 @@ export default function PropertyDetailsPage({
 
     const fetchReviews = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/public/properties/${id}/reviews`);
-        if (!res.ok) throw new Error("Failed");
+        const res = await fetchWithRetry(`${API_URL}/api/public/properties/${id}/reviews`);
+        if (!res.ok) {
+          console.error(`Failed to fetch reviews: ${res.status} ${res.statusText}`);
+          throw new Error(`Failed: ${res.status}`);
+        }
         const data = await res.json();
         const list = data?.data?.reviews ?? data.data ?? data.reviews ?? [];
         setReviews(Array.isArray(list) ? list : []);
-      } catch {
+      } catch (error: any) {
+        console.error("Failed to fetch reviews:", error.message || error);
         setReviews([]);
       } finally {
         setReviewsLoading(false);
@@ -363,7 +437,7 @@ export default function PropertyDetailsPage({
     setReviewSubmitting(true);
     setReviewError(null);
     try {
-      const res = await fetch(`${API_URL}/api/reviews/${id}`, {
+      const res = await fetchWithRetry(`${API_URL}/api/reviews/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -1458,7 +1532,7 @@ export default function PropertyDetailsPage({
                       }
                       setContactSending(true);
                       try {
-                        const res = await fetch(`${API_URL}/api/contact`, {
+                        const res = await fetchWithRetry(`${API_URL}/api/contact`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
