@@ -5,6 +5,7 @@ import Link from "next/link";
 import { use, useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { InvestmentProperty } from "@/types/investment";
+import { fetchWithRetry } from "@/utils/fetchWithRetry";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -53,72 +54,6 @@ interface Property {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-
-// Timeout configuration (in milliseconds)
-const FETCH_TIMEOUT = 10000; // 10 seconds
-const MAX_RETRIES = 2; // Number of retry attempts
-
-/**
- * Fetch with timeout support for client-side requests
- */
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number = FETCH_TIMEOUT): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error(`Request timeout after ${timeout}ms`);
-    }
-    throw error;
-  }
-}
-
-/**
- * Fetch with retry logic for transient failures
- */
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit = {},
-  retries: number = MAX_RETRIES
-): Promise<Response> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const response = await fetchWithTimeout(url, options);
-      
-      // If we get a 5xx error and have retries left, try again
-      if (response.status >= 500 && response.status < 600 && attempt < retries) {
-        console.warn(`Server error (${response.status}) on attempt ${attempt + 1}, retrying...`);
-        // Exponential backoff: wait 1s, then 2s, then 4s, etc.
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        continue;
-      }
-      
-      return response;
-    } catch (error: any) {
-      lastError = error;
-      
-      // If it's a timeout or network error and we have retries left, try again
-      if (attempt < retries) {
-        console.warn(`Request failed on attempt ${attempt + 1}:`, error.message);
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        continue;
-      }
-    }
-  }
-
-  throw lastError || new Error('Request failed after all retries');
-}
 
 interface Review {
   id: string;
