@@ -91,7 +91,7 @@ const PasscodeModal = ({
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
-      <div className="relative w-full max-w-md rounded-lg bg-white p-8 shadow-2xl dark:bg-gray-dark">
+      <div className="relative w-full max-w-md rounded-lg bg-white p-5 shadow-2xl dark:bg-gray-dark sm:p-8">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -114,10 +114,10 @@ const PasscodeModal = ({
         </button>
 
         {/* Lock Icon */}
-        <div className="mb-6 flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+        <div className="mb-3 flex justify-center sm:mb-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 sm:h-16 sm:w-16">
             <svg
-              className="h-8 w-8 text-primary"
+              className="h-6 w-6 text-primary sm:h-8 sm:w-8"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -133,21 +133,21 @@ const PasscodeModal = ({
         </div>
 
         {/* Title */}
-        <h3 className="mb-2 text-center text-2xl font-bold text-black dark:text-white">
+        <h3 className="mb-1 text-center text-xl font-bold text-black dark:text-white sm:mb-2 sm:text-2xl">
           Document Access Required
         </h3>
 
         {/* Document Name */}
-        <p className="mb-6 text-center text-sm text-body-color dark:text-body-color-dark">
+        <p className="mb-3 text-center text-sm text-body-color dark:text-body-color-dark sm:mb-6">
           {documentTitle}
         </p>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <label
               htmlFor="passcode"
-              className="mb-3 block text-sm font-medium text-black dark:text-white"
+              className="mb-2 block text-sm font-medium text-black dark:text-white sm:mb-3"
             >
               Enter Access Code
             </label>
@@ -173,18 +173,18 @@ const PasscodeModal = ({
           <button
             type="submit"
             disabled={isLoading || !passcode.trim()}
-            className="mb-4 w-full rounded-lg bg-primary px-6 py-3 text-base font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mb-3 w-full rounded-lg bg-primary px-6 py-2.5 text-base font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:mb-4 sm:py-3"
           >
             {isLoading ? "Verifying..." : "Access Document"}
           </button>
         </form>
 
         {/* Support Info */}
-        <div className="rounded-lg bg-gray-2 p-4 dark:bg-black">
-          <p className="mb-2 text-center text-sm font-medium text-black dark:text-white">
+        <div className="rounded-lg bg-gray-2 p-3 dark:bg-black sm:p-4">
+          <p className="mb-1 text-center text-sm font-medium text-black dark:text-white sm:mb-2">
             Don't have an access code?
           </p>
-          <p className="mb-3 text-center text-xs text-body-color dark:text-body-color-dark">
+          <p className="mb-2 text-center text-xs text-body-color dark:text-body-color-dark sm:mb-3">
             {SUPPORT_INFO.message}
           </p>
           <div className="flex flex-col items-center gap-2 text-xs">
