@@ -257,7 +257,7 @@ const Header = () => {
             </div>
 
             {/* Desktop Layout: Logo on Left */}
-            <div className="hidden w-60 max-w-full px-4 xlg:block xl:mr-6 -ml-2">
+            <div className="hidden w-60 max-w-full px-4 xlg:block xl:mr-6 -ml-12">
               <Link
                 href="/"
                 className={`header-logo block w-full ${
@@ -469,7 +469,7 @@ const Header = () => {
                   </ul>
                 </nav>
               </div>
-              <div className="flex items-center justify-end gap-3 pr-16 xlg:pr-0">
+              <div className="flex items-center justify-end gap-3 pr-16 xlg:pr-0 xlg:-mr-12">
                 {isAuthChecked && (
                   isLoggedIn ? (
                     <>

@@ -1,19 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Testimonial } from "@/types/testimonial";
 import SectionTitle from "../Common/SectionTitle";
 import SingleTestimonial from "./SingleTestimonial";
 import TestimonialsSkeleton from "./TestimonialsSkeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const DISPLAY_COUNT = 5;
+const ROTATION_INTERVAL = 10000; // rotate set every 10 seconds
 
+function getRandomSubset(list: Testimonial[], count: number): Testimonial[] {
+  if (list.length <= count) return [...list];
+  const shuffled = [...list].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [displayedTestimonials, setDisplayedTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const [isGridFading, setIsGridFading] = useState(false);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -27,32 +36,32 @@ const Testimonials = () => {
           setTestimonials([]);
           return;
         }
-        setTestimonials(
-          list.map((r: any) => {
-            const firstName = r.user?.firstName ?? "";
-            const lastName = r.user?.lastName ?? "";
-            const name =
-              r.user?.name ||
-              [firstName, lastName].filter(Boolean).join(" ") ||
-              "Anonymous";
-            const image =
-              r.user?.profilePicture ||
-              r.user?.avatar ||
-              r.user?.photo ||
-              r.user?.picture ||
-              r.user?.profilePhoto ||
-              r.user?.imageUrl ||
-              "/images/testimonials/auth-01.png";
-            return {
-              id: String(r.id ?? r._id ?? Math.random()),
-              name,
-              designation: r.user?.role ?? "Verified Investor",
-              content: r.body ?? r.comment ?? "",
-              image,
-              star: r.rating ?? 5,
-            };
-          }),
-        );
+        const mapped = list.map((r: any) => {
+          const firstName = r.user?.firstName ?? "";
+          const lastName = r.user?.lastName ?? "";
+          const name =
+            r.user?.name ||
+            [firstName, lastName].filter(Boolean).join(" ") ||
+            "Anonymous";
+          const image =
+            r.user?.profilePicture ||
+            r.user?.avatar ||
+            r.user?.photo ||
+            r.user?.picture ||
+            r.user?.profilePhoto ||
+            r.user?.imageUrl ||
+            "/images/testimonials/auth-01.png";
+          return {
+            id: String(r.id ?? r._id ?? Math.random()),
+            name,
+            designation: r.user?.role ?? "Verified Investor",
+            content: r.body ?? r.comment ?? "",
+            image,
+            star: r.rating ?? 5,
+          };
+        });
+        setTestimonials(mapped);
+        setDisplayedTestimonials(getRandomSubset(mapped, DISPLAY_COUNT));
       } catch {
         setTestimonials([]);
       } finally {
@@ -62,28 +71,45 @@ const Testimonials = () => {
     fetchReviews();
   }, []);
 
-  // Auto-slide for mobile carousel
+  // Rotate the displayed set every ROTATION_INTERVAL ms (only if more than DISPLAY_COUNT exist)
+  const rotateSet = useCallback((list: Testimonial[]) => {
+    setIsGridFading(true);
+    setIsFading(true);
+    setTimeout(() => {
+      setDisplayedTestimonials(getRandomSubset(list, DISPLAY_COUNT));
+      setCurrentIndex(0);
+      setIsGridFading(false);
+      setIsFading(false);
+    }, 500);
+  }, []);
+
   useEffect(() => {
-    if (testimonials.length > 1) {
+    if (testimonials.length <= DISPLAY_COUNT) return;
+    const interval = setInterval(() => rotateSet(testimonials), ROTATION_INTERVAL);
+    return () => clearInterval(interval);
+  }, [testimonials, rotateSet]);
+
+  // Auto-slide for mobile carousel (cycles through displayed 5)
+  useEffect(() => {
+    if (displayedTestimonials.length > 1) {
       const interval = setInterval(() => {
         setIsFading(true);
         setTimeout(() => {
           setCurrentIndex((prev) =>
-            prev === testimonials.length - 1 ? 0 : prev + 1
+            prev === displayedTestimonials.length - 1 ? 0 : prev + 1
           );
           setIsFading(false);
         }, 500);
-      }, 5000); // 5 seconds between slides
-
+      }, 4000);
       return () => clearInterval(interval);
     }
-  }, [testimonials.length]);
+  }, [displayedTestimonials.length]);
 
   const nextTestimonial = () => {
     setIsFading(true);
     setTimeout(() => {
       setCurrentIndex((prev) =>
-        prev === testimonials.length - 1 ? 0 : prev + 1
+        prev === displayedTestimonials.length - 1 ? 0 : prev + 1
       );
       setIsFading(false);
     }, 500);
@@ -93,7 +119,7 @@ const Testimonials = () => {
     setIsFading(true);
     setTimeout(() => {
       setCurrentIndex((prev) =>
-        prev === 0 ? testimonials.length - 1 : prev - 1
+        prev === 0 ? displayedTestimonials.length - 1 : prev - 1
       );
       setIsFading(false);
     }, 500);
@@ -101,6 +127,9 @@ const Testimonials = () => {
 
   if (loading) return <TestimonialsSkeleton />;
   if (testimonials.length === 0) return null;
+
+  const row1 = displayedTestimonials.slice(0, 3);
+  const row2 = displayedTestimonials.slice(3, 5);
 
   return (
     <section className="dark:bg-bg-color-dark bg-gray-light relative z-10 py-8 md:py-10 lg:py-12">
@@ -115,15 +144,17 @@ const Testimonials = () => {
         {/* Mobile Carousel View */}
         <div className="relative px-4 md:hidden">
           <div
-            className={`transition-opacity duration-[2000ms] ${
+            className={`transition-opacity duration-500 ${
               isFading ? "opacity-0" : "opacity-100"
             }`}
           >
-            <SingleTestimonial testimonial={testimonials[currentIndex]} />
+            {displayedTestimonials[currentIndex] && (
+              <SingleTestimonial testimonial={displayedTestimonials[currentIndex]} />
+            )}
           </div>
 
-          {/* Navigation Arrows - Top Left & Bottom Right */}
-          {testimonials.length > 1 && (
+          {/* Navigation Arrows */}
+          {displayedTestimonials.length > 1 && (
             <>
               <button
                 onClick={prevTestimonial}
@@ -167,9 +198,9 @@ const Testimonials = () => {
           )}
 
           {/* Dots Indicator */}
-          {testimonials.length > 1 && (
+          {displayedTestimonials.length > 1 && (
             <div className="mt-6 flex justify-center gap-2">
-              {testimonials.map((_, index) => (
+              {displayedTestimonials.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => {
@@ -191,11 +222,32 @@ const Testimonials = () => {
           )}
         </div>
 
-        {/* Desktop Grid View */}
-        <div className="hidden grid-cols-1 gap-x-8 gap-y-10 md:grid md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <SingleTestimonial key={testimonial.id} testimonial={testimonial} />
-          ))}
+        {/* Desktop Grid View — 5 cards: row of 3 + row of 2 centered */}
+        <div
+          className={`hidden md:block transition-opacity duration-500 ${
+            isGridFading ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          {/* Row 1: up to 3 cards */}
+          <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+            {row1.map((testimonial) => (
+              <SingleTestimonial key={testimonial.id} testimonial={testimonial} />
+            ))}
+          </div>
+
+          {/* Row 2: remaining cards centered */}
+          {row2.length > 0 && (
+            <div className="mt-10 flex justify-center gap-8">
+              {row2.map((testimonial) => (
+                <div
+                  key={testimonial.id}
+                  className="w-full lg:w-[calc((100%-4rem)/3)]"
+                >
+                  <SingleTestimonial testimonial={testimonial} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <div className="absolute right-0 top-5 z-[-1]">
