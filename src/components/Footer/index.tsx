@@ -96,7 +96,7 @@ const Footer = () => {
           {/* Social Media Icons */}
           <div className="mb-6 flex items-center justify-center gap-6">
             <a
-              href="/"
+              href="https://www.facebook.com"
               aria-label="Facebook"
               target="_blank"
               rel="noopener noreferrer"
@@ -112,7 +112,7 @@ const Footer = () => {
               </svg>
             </a>
             <a
-              href="/"
+              href="https://www.linkedin.com"
               aria-label="LinkedIn"
               target="_blank"
               rel="noopener noreferrer"
@@ -128,7 +128,7 @@ const Footer = () => {
               </svg>
             </a>
             <a
-              href="/"
+              href="https://www.instagram.com"
               aria-label="Instagram"
               target="_blank"
               rel="noopener noreferrer"
@@ -175,20 +175,20 @@ const Footer = () => {
             </Link>
             <span>•</span>
             <Link
-              href="/"
+              href="/terms-of-use"
               className="transition hover:text-white"
             >
               Terms of Use
             </Link>
             <span>•</span>
             <Link
-              href="/"
+              href="/privacy-policy"
               className="transition hover:text-white"
             >
               Privacy Policy
             </Link>
             <span>•</span>
-            <span>© 2025 Alvarado Associates. All Rights Reserved.</span>
+            <span>© 2026 Alvarado Associates. All Rights Reserved.</span>
           </div>
         </div>
       </footer>

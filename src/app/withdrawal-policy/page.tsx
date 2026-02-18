@@ -80,28 +80,28 @@ export default function WithdrawalPolicyPage() {
               <p className="mt-6">However, this policy refinement is a strategic step toward ensuring:</p>
 
               <ul className="ml-6 mt-4 space-y-2">
-                <li className="flex items-start">
-                  <span className="mr-2 mt-1 text-primary">■</span>
+                <li className="flex items-center">
+                  <span className="mr-2 text-primary">■</span>
                   <span>Higher fund security</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2 mt-1 text-primary">■</span>
+                <li className="flex items-center">
+                  <span className="mr-2 text-primary">■</span>
                   <span>Stronger transparency</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2 mt-1 text-primary">■</span>
+                <li className="flex items-center">
+                  <span className="mr-2 text-primary">■</span>
                   <span>Improved operational efficiency</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2 mt-1 text-primary">■</span>
+                <li className="flex items-center">
+                  <span className="mr-2 text-primary">■</span>
                   <span>Protection of investor accounts</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2 mt-1 text-primary">■</span>
+                <li className="flex items-center">
+                  <span className="mr-2 text-primary">■</span>
                   <span>Sustained growth and reliability of the rental arbitrage model</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2 mt-1 text-primary">■</span>
+                <li className="flex items-center">
+                  <span className="mr-2 text-primary">■</span>
                   <span>Your safety and trust remain our highest priority.</span>
                 </li>
               </ul>
