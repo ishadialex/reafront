@@ -20,6 +20,11 @@ function AuthCallbackContent() {
   const [oauthToken, setOauthToken] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionConflict, setSessionConflict] = useState<{
+    existingSession: any;
+    newDevice: any;
+    token: string;
+  } | null>(null);
 
   useEffect(() => {
     const processCallback = async () => {
@@ -171,8 +176,21 @@ function AuthCallbackContent() {
       } catch (err: any) {
         console.error("OAuth callback error:", err);
 
-        // Check if 2FA is required in error response
         const responseData = err.response?.data;
+
+        // Check if session conflict (409) — user logged in on another device
+        if (err.response?.status === 409 && responseData?.requiresForceLogin) {
+          console.log("⚠️ Session conflict detected for OAuth login");
+          setSessionConflict({
+            existingSession: responseData.existingSession,
+            newDevice: responseData.newDevice,
+            token: token!,
+          });
+          setIsProcessing(false);
+          return;
+        }
+
+        // Check if 2FA is required in error response
         const requires2FACheck =
           responseData?.requires2FA ||
           responseData?.requiresTwoFactor ||
@@ -183,9 +201,7 @@ function AuthCallbackContent() {
 
         if (requires2FACheck) {
           console.log("2FA is required (from error response), showing 2FA input");
-          // Store the oauthToken from backend response (permanent token, not temporary one)
           const permanentOAuthToken = responseData.oauthToken || responseData.data?.oauthToken;
-          console.log("📝 Storing permanent oauthToken (from error):", permanentOAuthToken);
           setOauthToken(permanentOAuthToken);
           setRequires2FA(true);
           setIsProcessing(false);
@@ -200,6 +216,44 @@ function AuthCallbackContent() {
 
     processCallback();
   }, [searchParams, router, isProcessing]);
+
+  const handleForceLogin = async () => {
+    if (!sessionConflict) return;
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/auth/exchange-oauth-token`,
+        { token: sessionConflict.token, forceLogin: true },
+        { withCredentials: true, timeout: 15000 }
+      );
+
+      if (response.data.success) {
+        const data = response.data.data;
+        const user = data.user;
+
+        if (data.accessToken && data.refreshToken) {
+          api.setTokens(data.accessToken, data.refreshToken);
+        }
+
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("user", JSON.stringify(user));
+        if (user.email) localStorage.setItem("userEmail", user.email);
+        if (user.firstName || user.lastName) {
+          localStorage.setItem("userName", `${user.firstName || ''} ${user.lastName || ''}`.trim());
+        }
+        if (user.profilePhoto) localStorage.setItem("userProfilePicture", user.profilePhoto);
+
+        window.dispatchEvent(new Event("authStateChanged"));
+        await new Promise(resolve => setTimeout(resolve, 200));
+        window.location.href = "/dashboard";
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Force login failed. Please try again.");
+      setIsLoading(false);
+    }
+  };
 
   const handle2FAVerification = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -315,6 +369,67 @@ function AuthCallbackContent() {
       // Do NOT redirect or change the form state
     }
   };
+
+  // Show session conflict modal
+  if (sessionConflict) {
+    const session = sessionConflict.existingSession;
+    return (
+      <section className="relative z-10 overflow-hidden pt-36 pb-16 md:pb-20 lg:pt-[180px] lg:pb-28">
+        <div className="container">
+          <div className="-mx-4 flex flex-wrap">
+            <div className="w-full px-4">
+              <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-sm bg-white px-6 py-10 sm:p-[60px]">
+                <h3 className="mb-2 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
+                  Active Session Detected
+                </h3>
+                <p className="text-body-color mb-6 text-center text-base font-medium">
+                  You are already logged in on another device
+                </p>
+
+                {error && (
+                  <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    <p>{error}</p>
+                  </div>
+                )}
+
+                {session && (
+                  <div className="mb-6 rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
+                    <p className="mb-2 text-sm font-semibold text-amber-800 dark:text-amber-300">Current session:</p>
+                    <div className="space-y-1 text-sm text-amber-700 dark:text-amber-400">
+                      {session.device && <p>Device: {session.device}</p>}
+                      {session.browser && <p>Browser: {session.browser}</p>}
+                      {session.location && <p>Location: {session.location}</p>}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-body-color mb-6 text-sm dark:text-gray-400">
+                  Continuing will log you out of the other device.
+                </p>
+
+                <div className="mb-4">
+                  <button
+                    onClick={handleForceLogin}
+                    disabled={isLoading}
+                    className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex w-full items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isLoading ? "Signing in..." : "Continue & Log Out Other Device"}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.replace("/signin")}
+                  className="text-primary text-sm hover:underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // Show 2FA form if required
   if (requires2FA) {
