@@ -25,7 +25,7 @@ export default function Video() {
               <div className="mx-auto max-w-[770px] overflow-hidden rounded-md">
                 <div className="relative aspect-77/40 items-center justify-center">
                   <Image
-                    src="/images/video/image.png"
+                    src="/images/investment/entire-ownership.jpg"
                     alt="video image"
                     className="object-cover"
                     fill
@@ -62,7 +62,7 @@ export default function Video() {
         isOpen={isOpen}
         onClose={() => setOpen(false)}
         channel="youtube"
-        videoId="L61p2uyiMSo"
+        videoId="WaxUJeHSBVU"
       />
     </>
   );
