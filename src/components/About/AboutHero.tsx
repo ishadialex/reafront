@@ -51,7 +51,7 @@ const AboutHero = () => {
         {/* Top Section - Centered Heading and Description */}
         <div
           ref={headerRef}
-          className={`mx-auto mb-16 max-w-[900px] text-center transition-all duration-1000 delay-[500ms] ${
+          className={`mx-auto mb-16 max-w-[900px] text-center transition-all duration-500 delay-[200ms] ${
             isVisible.header
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-8"
@@ -68,7 +68,7 @@ const AboutHero = () => {
         {/* Why Us Section */}
         <div
           ref={whyUsRef}
-          className={`mx-auto mb-16 max-w-[1100px] text-center transition-all duration-1000 delay-[500ms] ${
+          className={`mx-auto mb-16 max-w-[1100px] text-center transition-all duration-500 delay-[200ms] ${
             isVisible.whyUs
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-8"
@@ -97,7 +97,7 @@ const AboutHero = () => {
         {/* Property Image */}
         <div
           ref={imageRef}
-          className={`mx-auto max-w-[1200px] transition-all duration-1000 delay-[500ms] ${
+          className={`mx-auto max-w-[1200px] transition-all duration-500 delay-[200ms] ${
             isVisible.image
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-8"
