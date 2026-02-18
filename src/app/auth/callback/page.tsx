@@ -34,9 +34,9 @@ function AuthCallbackContent() {
         return;
       }
 
-      // Don't process callback again if we're already on the 2FA form
-      if (requires2FA) {
-        console.log("⏭️ Skipping OAuth callback - already on 2FA form");
+      // Don't process callback again if we're already on the 2FA form or session conflict
+      if (requires2FA || sessionConflict) {
+        console.log("⏭️ Skipping OAuth callback - already on 2FA/conflict form");
         return;
       }
 
@@ -215,7 +215,7 @@ function AuthCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, router, isProcessing]);
+  }, [searchParams, router, isProcessing, requires2FA, sessionConflict]);
 
   const handleForceLogin = async () => {
     if (!sessionConflict) return;
@@ -370,64 +370,89 @@ function AuthCallbackContent() {
     }
   };
 
-  // Show session conflict modal
+  // Show session conflict modal (same design as signin page)
   if (sessionConflict) {
     const session = sessionConflict.existingSession;
+
+    const formatLastActive = (date: string) => {
+      return new Date(date).toLocaleString("en-US", {
+        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+      });
+    };
+
     return (
-      <section className="relative z-10 overflow-hidden pt-36 pb-16 md:pb-20 lg:pt-[180px] lg:pb-28">
-        <div className="container">
-          <div className="-mx-4 flex flex-wrap">
-            <div className="w-full px-4">
-              <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-sm bg-white px-6 py-10 sm:p-[60px]">
-                <h3 className="mb-2 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
-                  Active Session Detected
-                </h3>
-                <p className="text-body-color mb-6 text-center text-base font-medium">
-                  You are already logged in on another device
-                </p>
-
-                {error && (
-                  <div className="mb-6 rounded-lg bg-red-100 p-4 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                    <p>{error}</p>
-                  </div>
-                )}
-
-                {session && (
-                  <div className="mb-6 rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
-                    <p className="mb-2 text-sm font-semibold text-amber-800 dark:text-amber-300">Current session:</p>
-                    <div className="space-y-1 text-sm text-amber-700 dark:text-amber-400">
-                      {session.device && <p>Device: {session.device}</p>}
-                      {session.browser && <p>Browser: {session.browser}</p>}
-                      {session.location && <p>Location: {session.location}</p>}
-                    </div>
-                  </div>
-                )}
-
-                <p className="text-body-color mb-6 text-sm dark:text-gray-400">
-                  Continuing will log you out of the other device.
-                </p>
-
-                <div className="mb-4">
-                  <button
-                    onClick={handleForceLogin}
-                    disabled={isLoading}
-                    className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex w-full items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isLoading ? "Signing in..." : "Continue & Log Out Other Device"}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => router.replace("/signin")}
-                  className="text-primary text-sm hover:underline"
-                >
-                  Cancel
-                </button>
+      <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-dark w-full max-w-md rounded-xl shadow-2xl p-8">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                <svg className="h-6 w-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
               </div>
+              <div>
+                <h3 className="text-lg font-bold text-black dark:text-white">Already Logged In</h3>
+                <p className="text-sm text-body-color">Active session detected on another device</p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-5 rounded-lg bg-red-100 p-4 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                <p>{error}</p>
+              </div>
+            )}
+
+            {session && (
+              <div className="mb-5 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-body-color">Current Active Session</p>
+                <div className="flex items-center gap-2 text-sm text-dark dark:text-white">
+                  <svg className="h-4 w-4 text-body-color shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span>{session.device} · {session.browser}</span>
+                </div>
+                {session.location && (
+                  <div className="flex items-center gap-2 text-sm text-dark dark:text-white">
+                    <svg className="h-4 w-4 text-body-color shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>{session.location}</span>
+                  </div>
+                )}
+                {session.lastActive && (
+                  <div className="flex items-center gap-2 text-sm text-body-color">
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Last active: {formatLastActive(session.lastActive)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <p className="mb-6 text-sm text-body-color">
+              Continuing will log out the other device immediately. Only one active session is allowed at a time.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.replace("/signin")}
+                className="flex-1 rounded-xs border border-stroke bg-transparent px-6 py-3 text-sm font-medium text-dark transition hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleForceLogin}
+                disabled={isLoading}
+                className="flex-1 rounded-xs bg-primary px-6 py-3 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isLoading ? "Signing in..." : "Continue on This Device"}
+              </button>
             </div>
           </div>
         </div>
-      </section>
+      </>
     );
   }
 
