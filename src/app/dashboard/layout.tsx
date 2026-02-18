@@ -152,6 +152,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       } catch (err: any) {
         // If we get a 401, session has been revoked - logout immediately
         if (err.response?.status === 401) {
+          api.clearTokens();
           localStorage.removeItem("isLoggedIn");
           localStorage.removeItem("user");
           localStorage.removeItem("userEmail");

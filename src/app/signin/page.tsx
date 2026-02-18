@@ -54,8 +54,11 @@ function SigninContent() {
     window.location.href = `${API_URL}/api/auth/google`;
   };
 
-  const storeSessionAndRedirect = async (data: { user: any }) => {
-    // Tokens are now in httpOnly cookies - just set login flag
+  const storeSessionAndRedirect = async (data: { user: any; accessToken?: string; refreshToken?: string }) => {
+    // Store tokens in API client for Bearer header auth
+    if (data.accessToken && data.refreshToken) {
+      api.setTokens(data.accessToken, data.refreshToken);
+    }
     localStorage.setItem("isLoggedIn", "true");
     localStorage.setItem("user", JSON.stringify(data.user));
 

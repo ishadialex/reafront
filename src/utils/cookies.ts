@@ -59,7 +59,7 @@ const getAuthTokens = (req: RequestLike): ParsedAuthTokens => {
 const cookieConfig = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
+  sameSite: "lax" as const,
   path: "/",
 };
 

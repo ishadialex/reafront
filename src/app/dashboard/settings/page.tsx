@@ -296,8 +296,7 @@ function SettingsContent() {
       const result = await api.deleteAccount(deletePassword);
 
       if (result.success) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        api.clearTokens();
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("user");
         localStorage.removeItem("userEmail");

@@ -181,12 +181,6 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
           localStorage.setItem("userProfilePicture", result.data.url);
         }
 
-        // Store new access token if provided
-        if (result.data.accessToken) {
-          localStorage.setItem("accessToken", result.data.accessToken);
-          api.setToken(result.data.accessToken);
-        }
-
         // Emit event to notify other components
         window.dispatchEvent(new CustomEvent('profilePhotoUpdated', {
           detail: { profilePhoto: result.data!.url }
@@ -260,14 +254,6 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
         // Store the full user object
         localStorage.setItem("user", JSON.stringify(result.data));
 
-        // Store new tokens if provided by backend
-        if (result.data.accessToken) {
-          localStorage.setItem("accessToken", result.data.accessToken);
-          api.setToken(result.data.accessToken);
-        }
-        if (result.data.refreshToken) {
-          localStorage.setItem("refreshToken", result.data.refreshToken);
-        }
         // Emit event to notify ProfileDropdown
         window.dispatchEvent(new CustomEvent('profileUpdated', {
           detail: { profile: result.data }

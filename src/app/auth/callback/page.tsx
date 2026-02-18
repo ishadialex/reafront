@@ -4,6 +4,7 @@ import { useEffect, Suspense, useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthCallbackSkeleton from "@/components/AuthCallbackSkeleton";
 import axios from "axios";
+import { api } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -131,7 +132,13 @@ function AuthCallbackContent() {
         console.log("❌ 2FA not required, proceeding with normal login");
 
         if (response.data.success) {
-          const user = response.data.data.user;
+          const data = response.data.data;
+          const user = data.user;
+
+          // Store tokens in API client for Bearer header auth
+          if (data.accessToken && data.refreshToken) {
+            api.setTokens(data.accessToken, data.refreshToken);
+          }
 
           // Store user data in localStorage
           localStorage.setItem("isLoggedIn", "true");
@@ -249,6 +256,11 @@ function AuthCallbackContent() {
         // Check if we have valid user data (must at least have email or id)
         if (user && (user.email || user.id || user._id)) {
           console.log("✅ Valid user data found, storing and redirecting");
+
+          // Store tokens in API client for Bearer header auth
+          if (userData.accessToken && userData.refreshToken) {
+            api.setTokens(userData.accessToken, userData.refreshToken);
+          }
 
           // Store user data in localStorage
           localStorage.setItem("isLoggedIn", "true");

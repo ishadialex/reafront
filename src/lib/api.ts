@@ -13,14 +13,32 @@ export class ApiClient {
   private axiosInstance: AxiosInstance;
   private isRefreshing = false;
   private refreshQueue: Array<(retry: boolean) => void> = [];
+  private accessToken: string | null = null;
+  private refreshTokenValue: string | null = null;
+
+  private loadTokensFromStorage() {
+    if (typeof window !== "undefined") {
+      this.accessToken = localStorage.getItem("_at") || null;
+      this.refreshTokenValue = localStorage.getItem("_rt") || null;
+    }
+  }
 
   constructor(baseURL: string = API_URL) {
+    this.loadTokensFromStorage();
     this.axiosInstance = axios.create({
       baseURL,
       headers: {
         "Content-Type": "application/json",
       },
-      withCredentials: true, // CRITICAL: Send httpOnly cookies with every request
+      withCredentials: true, // Still send cookies as fallback
+    });
+
+    // Request interceptor: attach Bearer token to every request
+    this.axiosInstance.interceptors.request.use((config) => {
+      if (this.accessToken) {
+        config.headers.Authorization = `Bearer ${this.accessToken}`;
+      }
+      return config;
     });
 
     // Response interceptor for error handling
@@ -74,19 +92,26 @@ export class ApiClient {
         let refreshSuccess = false;
 
         try {
-          await axios.post(
+          const refreshRes = await axios.post(
             `${baseURL}/api/auth/refresh-token`,
-            {},
+            { refreshToken: this.refreshTokenValue || undefined },
             { withCredentials: true }
           );
 
-          refreshSuccess = true;
+          // Store new tokens from response body
+          const newTokens = refreshRes.data?.data;
+          if (newTokens?.accessToken && newTokens?.refreshToken) {
+            this.setTokens(newTokens.accessToken, newTokens.refreshToken);
+          } else if (newTokens?.accessToken) {
+            this.accessToken = newTokens.accessToken;
+            if (typeof window !== "undefined") localStorage.setItem("_at", newTokens.accessToken);
+          }
 
-          // Wait for browser to process Set-Cookie headers before retrying
-          await new Promise(resolve => setTimeout(resolve, 150));
+          refreshSuccess = true;
 
         } catch (refreshError) {
           refreshSuccess = false;
+          this.clearTokens();
 
           if (typeof window !== "undefined") {
             localStorage.removeItem("isLoggedIn");
@@ -114,14 +139,27 @@ export class ApiClient {
     );
   }
 
-  // Tokens are now stored in httpOnly cookies - no need for manual token management
-  // These methods are kept for backwards compatibility but do nothing
-  setToken(token: string) {
-    // No-op: Tokens are now in httpOnly cookies managed by the server
+  /**
+   * Store tokens in memory for Bearer header authentication.
+   * Cookies are still set as fallback, but Bearer header is the primary auth method
+   * to avoid issues with proxy cookie forwarding.
+   */
+  setTokens(accessToken: string, refreshToken: string) {
+    this.accessToken = accessToken;
+    this.refreshTokenValue = refreshToken;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("_at", accessToken);
+      localStorage.setItem("_rt", refreshToken);
+    }
   }
 
-  clearToken() {
-    // No-op: Cookies are cleared by the server on logout
+  clearTokens() {
+    this.accessToken = null;
+    this.refreshTokenValue = null;
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("_at");
+      localStorage.removeItem("_rt");
+    }
   }
 
   // Public endpoints
@@ -188,8 +226,10 @@ export class ApiClient {
   }
 
   async logout() {
-    // Refresh token is in httpOnly cookie, sent automatically
-    const response = await this.axiosInstance.post<ApiResponse<void>>("/api/auth/logout", {});
+    const response = await this.axiosInstance.post<ApiResponse<void>>("/api/auth/logout", {
+      refreshToken: this.refreshTokenValue || undefined,
+    });
+    this.clearTokens();
     return response.data;
   }
 
@@ -204,7 +244,8 @@ export class ApiClient {
 
   async validateSession() {
     const response = await this.axiosInstance.post<ApiResponse<{ valid: boolean; checkInterval: number }>>(
-      "/api/auth/validate-session"
+      "/api/auth/validate-session",
+      { refreshToken: this.refreshTokenValue || undefined }
     );
     return response.data;
   }

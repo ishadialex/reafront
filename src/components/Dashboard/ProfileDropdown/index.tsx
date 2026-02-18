@@ -132,7 +132,7 @@ const ProfileDropdown = ({ isOpen: controlledIsOpen, onToggle }: ProfileDropdown
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
-    api.clearToken();
+    api.clearTokens();
     router.push("/signin");
   };
 

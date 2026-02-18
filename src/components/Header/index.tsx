@@ -9,6 +9,7 @@ import menuData from "./menuData";
 import PasscodeModal from "@/components/PasscodeModal";
 import { hasVerifiedAccess, getAccessToken } from "@/utils/passcode";
 import axios from "axios";
+import { api } from "@/lib/api";
 import { Menu } from "@/types/menu";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -53,7 +54,8 @@ const Header = () => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Clear localStorage regardless of API call success
+      // Clear localStorage and tokens regardless of API call success
+      api.clearTokens();
       localStorage.removeItem("isLoggedIn");
       localStorage.removeItem("user");
       localStorage.removeItem("userEmail");
