@@ -218,7 +218,7 @@ const WhyInvest = () => {
             <div
               key={index}
               ref={(el) => { cardRefs.current[index] = el; }}
-              className={`rounded-lg bg-white p-6 shadow-lg transition-all duration-[3000ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-2 ${
+              className={`rounded-3xl bg-white p-6 shadow-lg transition-all duration-[3000ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-2 ${
                 visibleCards.has(index)
                   ? 'opacity-100 translate-x-0 translate-y-0'
                   : 'opacity-0 translate-x-0 sm:translate-y-8'
@@ -246,7 +246,7 @@ const WhyInvest = () => {
             <div
               key={index + 3}
               ref={(el) => { cardRefs.current[index + 3] = el; }}
-              className={`rounded-lg bg-white p-6 shadow-lg transition-all duration-[3000ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-3 ${
+              className={`rounded-3xl bg-white p-6 shadow-lg transition-all duration-[3000ms] ease-out hover:shadow-xl dark:bg-gray-dark dark:shadow-two sm:p-8 lg:col-span-3 ${
                 visibleCards.has(index + 3)
                   ? 'opacity-100 translate-x-0 translate-y-0'
                   : 'opacity-0 translate-x-0 sm:translate-y-8'

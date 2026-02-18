@@ -134,7 +134,7 @@ const Team = () => {
   };
 
   const TeamMemberCard = ({ member, priority }: { member: TeamMember; priority?: boolean }) => (
-    <div className="group w-full max-w-[300px] rounded-lg bg-black p-5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,108,247,0.6)] dark:bg-gray-900 cursor-pointer sm:max-w-[330px] md:p-6">
+    <div className="group w-full max-w-[300px] rounded-3xl bg-black p-5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,108,247,0.6)] dark:bg-gray-900 cursor-pointer sm:max-w-[330px] md:p-6">
       {/* Profile Image */}
       <div className="mb-5 flex justify-center">
         <div className="relative h-36 w-36 overflow-hidden rounded-full bg-white transition-transform duration-300 group-hover:scale-110 sm:h-40 sm:w-40">
