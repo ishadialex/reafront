@@ -234,7 +234,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link href="/" className="block">
                 {/* Light mode logo */}
                 <Image
-                  src="/images/logo/A-logobbb.jpg"
+                  src="/images/logo/A-LogoB.png"
                   alt="Logo"
                   width={120}
                   height={40}

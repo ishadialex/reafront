@@ -237,15 +237,15 @@ const Header = () => {
                   sticky ? "py-4 lg:py-2" : "py-6"
                 } `}
               >
-                {/* Light mode logo (with black text) */}
+                {/* Light mode logo */}
                 <Image
-                  src="/images/logo/A-logobbb.jpg"
+                  src="/images/logo/A-LogoB.png"
                   alt="logo"
                   width={140}
                   height={30}
                   className="block dark:hidden"
                 />
-                {/* Dark mode logo (with white text) */}
+                {/* Dark mode logo */}
                 <Image
                   src="/images/logo/A-Logo.png"
                   alt="logo"
@@ -264,15 +264,15 @@ const Header = () => {
                   sticky ? "py-4 lg:py-2" : "py-6"
                 } `}
               >
-                {/* Light mode logo (with black text) */}
+                {/* Light mode logo */}
                 <Image
-                  src="/images/logo/A-logobbb.jpg"
+                  src="/images/logo/A-LogoB.png"
                   alt="logo"
                   width={140}
                   height={30}
                   className="w-full block dark:hidden"
                 />
-                {/* Dark mode logo (with white text) */}
+                {/* Dark mode logo */}
                 <Image
                   src="/images/logo/A-Logo.png"
                   alt="logo"
