@@ -1,29 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-
-// Fix for default marker icon in react-leaflet
-const icon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-// Helper to re-center the map when coords change
-function MapRecenter({ lat, lng }: { lat: number; lng: number }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([lat, lng], 15);
-  }, [lat, lng, map]);
-  return null;
-}
+import { useEffect, useRef, useState } from "react";
+import "maplibre-gl/dist/maplibre-gl.css";
+import maplibregl from "maplibre-gl";
 
 interface PropertyMapProps {
   title: string;
@@ -33,7 +12,7 @@ interface PropertyMapProps {
   image?: string;
   latitude?: number;
   longitude?: number;
-  locationName?: string; // location string used for geocoding
+  locationName?: string;
 }
 
 export default function PropertyMap({
@@ -41,28 +20,27 @@ export default function PropertyMap({
   price,
   bedrooms,
   bathrooms,
-  image,
   latitude,
   longitude,
   locationName,
 }: PropertyMapProps) {
-  const [mounted, setMounted] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markerRef = useRef<maplibregl.Marker | null>(null);
+
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     latitude != null && longitude != null ? { lat: latitude, lng: longitude } : null
   );
   const [geocoding, setGeocoding] = useState(false);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Geocode whenever locationName changes and we don't have explicit coords
+  // Geocode from location name if no explicit coords
   useEffect(() => {
     if (latitude != null && longitude != null) {
       setCoords({ lat: latitude, lng: longitude });
       return;
     }
-    if (!locationName) return;
+    if (!locationName) { setError(true); return; }
 
     let cancelled = false;
     setGeocoding(true);
@@ -76,64 +54,103 @@ export default function PropertyMap({
         if (cancelled) return;
         if (data && data.length > 0) {
           setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+        } else {
+          setError(true);
         }
       })
-      .catch(() => {/* silently fail */})
+      .catch(() => { if (!cancelled) setError(true); })
       .finally(() => { if (!cancelled) setGeocoding(false); });
 
     return () => { cancelled = true; };
-  }, [locationName, latitude, longitude]);
+  }, [latitude, longitude, locationName]);
 
-  if (!mounted) {
+  // Initialise map once coords are available
+  useEffect(() => {
+    if (!coords || !mapContainerRef.current) return;
+
+    // Destroy any existing map instance before creating a new one
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: "© <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
+          },
+        },
+        layers: [
+          {
+            id: "osm-tiles",
+            type: "raster",
+            source: "osm",
+            minzoom: 0,
+            maxzoom: 19,
+          },
+        ],
+      },
+      center: [coords.lng, coords.lat],
+      zoom: 14,
+      scrollZoom: false,
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+    // Popup content
+    const popupHtml = `
+      <div style="min-width:180px; font-family:inherit;">
+        <p style="margin:0 0 4px; font-size:13px; font-weight:700; color:#111;">${title}</p>
+        <p style="margin:0 0 6px; font-size:15px; font-weight:700; color:#4a6cf7;">${price}</p>
+        <p style="margin:0; font-size:12px; color:#6b7280;">${bedrooms} bd · ${bathrooms} ba</p>
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
+      .setHTML(popupHtml);
+
+    const marker = new maplibregl.Marker({ color: "#4a6cf7" })
+      .setLngLat([coords.lng, coords.lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    marker.togglePopup(); // open popup by default
+
+    mapRef.current = map;
+    markerRef.current = marker;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [coords, title, price, bedrooms, bathrooms]);
+
+  if (geocoding) {
     return (
-      <div className="h-[400px] w-full animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-700" />
+      <div className="flex h-[400px] w-full items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
+        <p className="text-sm text-body-color dark:text-body-color-dark">Loading map…</p>
+      </div>
     );
   }
 
-  if (geocoding || !coords) {
+  if (error || !coords) {
     return (
       <div className="flex h-[400px] w-full items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
-        <p className="text-sm text-body-color dark:text-body-color-dark">
-          {geocoding ? "Loading map…" : "Location unavailable"}
-        </p>
+        <p className="text-sm text-body-color dark:text-body-color-dark">Location unavailable</p>
       </div>
     );
   }
 
   return (
-    <div className="h-[400px] w-full overflow-hidden rounded-2xl shadow-lg">
-      <MapContainer
-        center={[coords.lat, coords.lng]}
-        zoom={15}
-        scrollWheelZoom={false}
-        style={{ height: "100%", width: "100%" }}
-        className="z-0"
-      >
-        <MapRecenter lat={coords.lat} lng={coords.lng} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={[coords.lat, coords.lng]} icon={icon}>
-          <Popup>
-            <div className="min-w-[200px]">
-              {image && (
-                <img
-                  src={image}
-                  alt={title}
-                  className="mb-2 h-24 w-full rounded object-cover"
-                />
-              )}
-              <h3 className="mb-1 font-bold text-black">{title}</h3>
-              <p className="mb-2 text-lg font-bold text-primary">{price}</p>
-              <div className="flex gap-4 text-sm text-gray-600">
-                <span>{bedrooms} BD</span>
-                <span>{bathrooms} BA</span>
-              </div>
-            </div>
-          </Popup>
-        </Marker>
-      </MapContainer>
-    </div>
+    <div
+      ref={mapContainerRef}
+      className="h-[400px] w-full overflow-hidden rounded-2xl shadow-lg"
+    />
   );
 }
