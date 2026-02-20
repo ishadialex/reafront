@@ -292,7 +292,7 @@ function PropertyCard({ property }: { property: Property }) {
         <p className="mb-4 text-2xl font-bold text-black transition-all duration-300 group-hover:scale-105 dark:text-white">
           {property.price}
         </p>
-        <p className="mb-5 text-sm leading-relaxed text-body-color transition-colors duration-300 dark:text-body-color-dark">
+        <p className="mb-5 line-clamp-4 text-sm leading-relaxed text-body-color transition-colors duration-300 dark:text-body-color-dark">
           {property.description}
         </p>
 
