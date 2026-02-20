@@ -271,6 +271,10 @@ export default function PropertyDetailPage() {
                     <span className="text-sm text-body-color dark:text-body-color-dark">Max Investment</span>
                     <span className="font-semibold text-black dark:text-white">${property.maxInvestment.toLocaleString()}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-body-color dark:text-body-color-dark">Target</span>
+                    <span className="font-semibold text-black dark:text-white">${property.targetAmount.toLocaleString()}</span>
+                  </div>
                 </>
               )}
             </div>
@@ -334,13 +338,13 @@ export default function PropertyDetailPage() {
 
             <button
               onClick={() => setShowInvestmentModal(true)}
-              disabled={property.status !== "available" || amount < property.minInvestment}
+              disabled={property.status.toLowerCase() !== "available" || amount < property.minInvestment}
               className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {property.status === "available" ? (existingInvestment ? "Top Up Investment" : "Invest Now") : property.status === "fully-funded" ? "Fully Funded" : "Coming Soon"}
+              {property.status.toLowerCase() === "available" ? (existingInvestment ? "Top Up Investment" : "Invest Now") : property.status.toLowerCase() === "fully-funded" ? "Fully Funded" : property.status.toLowerCase() === "closed" ? "Closed" : "Coming Soon"}
             </button>
 
-            {property.status === "available" && amount < property.minInvestment && amount > 0 && (
+            {property.status.toLowerCase() === "available" && amount < property.minInvestment && amount > 0 && (
               <p className="mt-2 text-xs text-red-600 dark:text-red-400">
                 Minimum investment is ${property.minInvestment.toLocaleString()}
               </p>

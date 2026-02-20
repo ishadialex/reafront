@@ -122,12 +122,10 @@ const mockProperties: Property[] = [
 
 // Helper function to map API property data to component format
 function mapPropertyData(apiProperty: InvestmentProperty): Property {
-  const statusMap: Record<string, string> = {
-    available: "Available",
-    "fully-funded": "Fully Funded",
-    "coming-soon": "Coming Soon",
-    closed: "Closed",
-  };
+  const rawStatus = apiProperty.status || "";
+  const formattedStatus = rawStatus
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return {
     id: apiProperty.id,
@@ -142,7 +140,7 @@ function mapPropertyData(apiProperty: InvestmentProperty): Property {
     bedrooms: apiProperty.bedrooms,
     bathrooms: apiProperty.bathrooms,
     parking: apiProperty.parking,
-    status: statusMap[apiProperty.status] || "Available",
+    status: formattedStatus || "N/A",
     investmentType: apiProperty.investmentType,
   };
 }
@@ -187,7 +185,7 @@ function PropertyCard({ property }: { property: Property }) {
         <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-10" />
 
         {/* Status Badge */}
-        <div className="absolute right-4 top-4 z-10 flex flex-col gap-2">
+        <div className="absolute right-4 top-4 z-10 flex flex-col items-end gap-2">
           <span className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:bg-primary">
             {property.status}
           </span>

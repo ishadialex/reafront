@@ -8,6 +8,33 @@ import "react-international-phone/style.css";
 import "./phoneInput.css";
 import { api } from "@/lib/api";
 import Toast from "@/components/Toast";
+import { z } from "zod";
+
+const signupSchema = z
+  .object({
+    firstName: z.string().min(1, "Please enter your first name."),
+    lastName: z.string().min(1, "Please enter your last name."),
+    email: z.string().min(1, "Please enter a valid email address.").refine(
+      (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+      "Please enter a valid email address."
+    ),
+    phone: z.string().refine(
+      (val) => val.replace(/[^\d]/g, "").length >= 10,
+      "Please enter a valid phone number."
+    ),
+    password: z
+      .string()
+      .min(8, "Password must contain at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain one uppercase letter")
+      .regex(/[a-z]/, "Password must contain one lowercase letter")
+      .regex(/[0-9]/, "Password must contain one number")
+      .regex(/[^A-Za-z0-9]/, "Password must contain one special character"),
+    confirmPassword: z.string().min(1, "Please confirm your password."),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 const SignupForm = () => {
   const router = useRouter();
@@ -23,7 +50,6 @@ const SignupForm = () => {
   const [passwordStrengthError, setPasswordStrengthError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [tempPhoneError, setTempPhoneError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [passwordTouched, setPasswordTouched] = useState(false);
@@ -131,12 +157,10 @@ const SignupForm = () => {
       !e.ctrlKey &&
       !e.metaKey
     ) {
-      setTempPhoneError(true);
       setPhoneError("Phone number can only contain numbers");
 
       // Clear temp error after 2 seconds
       setTimeout(() => {
-        setTempPhoneError(false);
         // Only clear if it's still showing the temp error message
         if (phoneError === "Phone number can only contain numbers") {
           // Re-run validation
@@ -158,41 +182,23 @@ const SignupForm = () => {
     e.preventDefault();
     setFormError("");
 
-    // Validate all fields
-    if (!firstName.trim()) {
-      setFormError("Please enter your first name.");
-      return;
-    }
-
-    if (!lastName.trim()) {
-      setFormError("Please enter your last name.");
-      return;
-    }
-
-    if (!email || emailError) {
-      setFormError("Please enter a valid email address.");
-      return;
-    }
-
-    if (!phone || phoneError) {
-      setFormError("Please enter a valid phone number.");
-      return;
-    }
-
-    if (!password || passwordStrengthError) {
-      setFormError("Please enter a valid password that meets all requirements.");
-      return;
-    }
-
-    if (!confirmPassword || passwordError) {
-      setFormError("Please confirm your password.");
-      return;
-    }
-
     // Check if terms checkbox is checked
     const checkbox = document.getElementById("checkboxLabel") as HTMLInputElement;
     if (!checkbox?.checked) {
       setFormError("Please agree to the Terms and Conditions to continue.");
+      return;
+    }
+
+    // Zod validation
+    const parsed = signupSchema.safeParse({ firstName, lastName, email, phone, password, confirmPassword });
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0];
+      if (firstIssue.path[0] === "confirmPassword") {
+        setPasswordError(firstIssue.message);
+        setConfirmPasswordTouched(true);
+      } else {
+        setFormError(firstIssue.message);
+      }
       return;
     }
 

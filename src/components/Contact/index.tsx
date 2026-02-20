@@ -6,6 +6,20 @@ import { api } from "@/lib/api";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import "@/components/SignupForm/phoneInput.css";
+import { z } from "zod";
+
+const contactSchema = z.object({
+  name: z.string().min(1, "Please fill in all fields"),
+  email: z.string().min(1, "Please fill in all fields").refine(
+    (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+    "Please enter a valid email address"
+  ),
+  phone: z.string().refine(
+    (val) => val.replace(/[^\d]/g, "").length >= 10,
+    "Please enter a valid phone number"
+  ),
+  message: z.string().min(1, "Please fill in all fields"),
+});
 
 const Contact = () => {
   const [name, setName] = useState("");
@@ -21,8 +35,9 @@ const Contact = () => {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!name.trim() || !email.trim() || !phone.trim() || !message.trim()) {
-      setErrorMessage("Please fill in all fields");
+    const parsed = contactSchema.safeParse({ name, email, phone, message });
+    if (!parsed.success) {
+      setErrorMessage(parsed.error.issues[0].message);
       return;
     }
 

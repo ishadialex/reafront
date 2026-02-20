@@ -8,6 +8,16 @@ import { InvestmentProperty } from "@/types/investment";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import "@/components/SignupForm/phoneInput.css";
+import { z } from "zod";
+
+const propertyContactSchema = z.object({
+  contactName: z.string().min(1, "Name is required."),
+  contactEmail: z.string().min(1, "Email is required.").refine(
+    (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+    "Please enter a valid email."
+  ),
+  message: z.string().min(5, "Message must be at least 5 characters."),
+});
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -49,6 +59,7 @@ interface Property {
   latitude?: number;
   longitude?: number;
   investmentType?: "individual" | "pooled";
+  investmentStatus?: string;
   managerName?: string;
   managerRole?: string;
   managerPhone?: string;
@@ -73,12 +84,10 @@ interface Review {
 
 // Helper function to map API response to Property interface
 function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
-  const statusMap: Record<string, string> = {
-    available: "For Sale",
-    "fully-funded": "Sold Out",
-    "coming-soon": "Coming Soon",
-    closed: "Closed",
-  };
+  const rawStatus = (apiProperty as any).status || "";
+  const formattedStatus = rawStatus
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
   return {
     id: parseInt(apiProperty.id) || 1,
@@ -94,7 +103,7 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
     bedrooms: apiProperty.bedrooms,
     bathrooms: apiProperty.bathrooms,
     parking: apiProperty.parking,
-    status: statusMap[apiProperty.status] || "For Sale",
+    status: formattedStatus || "N/A",
     area: apiProperty.area,
     type: apiProperty.category ? apiProperty.category.charAt(0).toUpperCase() + apiProperty.category.slice(1) : "Property",
     lotSize: apiProperty.area,
@@ -103,6 +112,7 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
     available: apiProperty.status === "available" ? "Yes" : "No",
     floors: 1,
     investmentType: apiProperty.investmentType,
+    investmentStatus: (apiProperty as any).investmentStatus || "",
     managerName: (apiProperty as any).managerName || "",
     managerRole: (apiProperty as any).managerRole || "",
     managerPhone: (apiProperty as any).managerPhone || "",
@@ -1451,12 +1461,13 @@ export default function PropertyDetailsPage({
                       e.preventDefault();
                       setContactError(null);
                       const resolvedMessage = contactMessage.trim() || `I'm interested in ${property.title}`;
-                      if (!contactName.trim() || !contactEmail.trim() || !resolvedMessage) {
-                        setContactError("Name, email and message are required.");
-                        return;
-                      }
-                      if (resolvedMessage.length < 5) {
-                        setContactError("Message must be at least 5 characters.");
+                      const parsed = propertyContactSchema.safeParse({
+                        contactName: contactName.trim(),
+                        contactEmail: contactEmail.trim(),
+                        message: resolvedMessage,
+                      });
+                      if (!parsed.success) {
+                        setContactError(parsed.error.issues[0].message);
                         return;
                       }
                       setContactSending(true);

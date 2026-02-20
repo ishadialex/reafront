@@ -9,6 +9,16 @@ import DatePicker from "@/components/DatePicker";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import "@/components/SignupForm/phoneInput.css";
+import { z } from "zod";
+
+const editProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().refine(
+    (val) => val.replace(/[^\d]/g, "").length >= 10,
+    "Please enter a valid phone number"
+  ),
+});
 
 const getImageUrl = (path: string | null | undefined) => {
   if (!path) return null;
@@ -215,27 +225,22 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
     }));
   };
 
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (!formData.firstName?.trim()) {
-      errors.firstName = "First name is required";
-    }
-    if (!formData.lastName?.trim()) {
-      errors.lastName = "Last name is required";
-    }
-    if (!formData.phone?.trim()) {
-      errors.phone = "Phone number is required";
-    }
-
-    setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    const parsed = editProfileSchema.safeParse({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phone: formData.phone,
+    });
+    if (!parsed.success) {
+      const errors: Record<string, string> = {};
+      parsed.error.issues.forEach((issue) => {
+        if (issue.path[0]) errors[issue.path[0] as string] = issue.message;
+      });
+      setFieldErrors(errors);
+      return;
+    }
 
     try {
       setIsSaving(true);
