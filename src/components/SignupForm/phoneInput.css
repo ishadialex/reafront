@@ -87,6 +87,56 @@
   color: #959cb1;
 }
 
+/* Compact variant for dashboard / modal forms */
+.phone-input-compact .react-international-phone-country-selector-button {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  padding: 8px 10px;
+  height: 40px;
+}
+
+.phone-input-compact .react-international-phone-input-container .react-international-phone-input {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  padding: 8px 12px;
+  font-size: 14px;
+  height: 40px;
+  color: #111827;
+}
+
+.phone-input-compact .react-international-phone-country-selector-button:hover {
+  border-color: #4a6cf7;
+  background: rgba(74, 108, 247, 0.05);
+}
+
+.phone-input-compact .react-international-phone-input-container .react-international-phone-input:focus {
+  border-color: #4a6cf7;
+}
+
+.phone-input-compact.phone-input-error .react-international-phone-country-selector-button,
+.phone-input-compact.phone-input-error .react-international-phone-input {
+  border-color: #ef4444 !important;
+}
+
+.dark .phone-input-compact .react-international-phone-country-selector-button {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark .phone-input-compact .react-international-phone-input-container .react-international-phone-input {
+  background: #1f2937;
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+.dark .phone-input-compact .react-international-phone-country-selector-button:hover {
+  border-color: #4a6cf7;
+  background: rgba(74, 108, 247, 0.1);
+}
+
 /* Dropdown styling - matching theme */
 .react-international-phone-country-selector-dropdown {
   border-radius: 2px;

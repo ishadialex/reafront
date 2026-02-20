@@ -3,6 +3,9 @@
 import { useState, FormEvent } from "react";
 import NewsLatterBox from "./NewsLatterBox";
 import { api } from "@/lib/api";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
+import "@/components/SignupForm/phoneInput.css";
 
 const Contact = () => {
   const [name, setName] = useState("");
@@ -129,15 +132,13 @@ const Contact = () => {
                       >
                         Phone Number
                       </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Enter your phone number"
-                        disabled={loading}
-                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-                      />
+                      <div className={loading ? "pointer-events-none opacity-50" : ""}>
+                        <PhoneInput
+                          defaultCountry="us"
+                          value={phone}
+                          onChange={(value) => setPhone(value)}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="w-full px-4">

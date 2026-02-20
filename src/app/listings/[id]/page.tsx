@@ -5,6 +5,9 @@ import Link from "next/link";
 import { use, useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { InvestmentProperty } from "@/types/investment";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
+import "@/components/SignupForm/phoneInput.css";
 
 // Dynamically import the map component with SSR disabled
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -1508,13 +1511,11 @@ export default function PropertyDetailsPage({
                       />
                     </div>
 
-                    <div>
-                      <input
-                        type="tel"
-                        placeholder="Your Phone (optional)"
+                    <div className="phone-input-compact">
+                      <PhoneInput
+                        defaultCountry="us"
                         value={contactPhone}
-                        onChange={(e) => setContactPhone(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base text-black placeholder-gray-500 transition focus:border-primary focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                        onChange={(value) => setContactPhone(value)}
                       />
                     </div>
 

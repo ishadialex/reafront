@@ -6,6 +6,9 @@ import axios from "axios";
 import { UserProfile, UpdateProfileRequest, ApiResponse } from "@/types/user";
 import { api } from "@/lib/api";
 import DatePicker from "@/components/DatePicker";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
+import "@/components/SignupForm/phoneInput.css";
 
 const getImageUrl = (path: string | null | undefined) => {
   if (!path) return null;
@@ -419,15 +422,18 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                 <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                   Phone Number *
                 </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:bg-gray-800 dark:text-white ${
-                    fieldErrors.phone ? "border-red-500" : "border-gray-200 dark:border-gray-700"
-                  }`}
-                  placeholder="+1 (555) 123-4567"
-                />
+                <div className={fieldErrors.phone ? "phone-input-compact phone-input-error" : "phone-input-compact"}>
+                  <PhoneInput
+                    defaultCountry="us"
+                    value={formData.phone || ""}
+                    onChange={(phone) => {
+                      setFormData((prev) => ({ ...prev, phone }));
+                      if (fieldErrors.phone) {
+                        setFieldErrors((prev) => { const n = { ...prev }; delete n.phone; return n; });
+                      }
+                    }}
+                  />
+                </div>
                 {fieldErrors.phone && (
                   <p className="mt-0.5 text-[10px] text-red-500">{fieldErrors.phone}</p>
                 )}
