@@ -111,7 +111,7 @@ export default function InvestmentsPage() {
 
   const stats = useMemo(() => {
     const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
-    const totalExpectedReturns = investments.reduce((sum, inv) => sum + inv.expectedReturn, 0);
+    const totalExpectedReturns = investments.reduce((sum, inv) => sum + inv.expectedTotal, 0);
     const monthlyIncome = investments.reduce((sum, inv) => sum + inv.monthlyReturn, 0);
     const activeCount = investments.filter((inv) => inv.status === "active").length;
 
