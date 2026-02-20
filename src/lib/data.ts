@@ -124,7 +124,7 @@ export async function getTestimonials() {
 export async function getInvestmentOptions() {
   try {
     const response = await fetch(`${API_URL}/api/public/investments`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 30 },
     });
 
     if (!response.ok) {

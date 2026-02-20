@@ -12,79 +12,74 @@ import Image from "next/image";
 
 function SecuritySetupPrompt({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-dark">
-        {/* Top accent bar */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-primary via-blue-500 to-purple-500" />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-dark">
 
-        <div className="p-8">
-          {/* Icon */}
-          <div className="mb-5 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
-              <svg className="h-8 w-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        {/* Icon */}
+        <div className="mb-6 flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <svg className="h-7 w-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Heading */}
+        <h2 className="mb-2 text-center text-xl font-bold text-black dark:text-white">
+          Complete Your Profile
+        </h2>
+        <p className="mb-7 text-center text-sm leading-relaxed text-body-color dark:text-body-color-dark">
+          Two quick steps to secure your account and start investing.
+        </p>
+
+        {/* Steps */}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 dark:border-primary/20 dark:bg-primary/10">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+              <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-          </div>
-
-          {/* Heading */}
-          <h2 className="mb-2 text-center text-2xl font-bold text-black dark:text-white">
-            Secure Your Account
-          </h2>
-          <p className="mb-6 text-center text-sm leading-relaxed text-body-color dark:text-body-color-dark">
-            To protect your investments and comply with <strong>anti-money laundering (AML)</strong> regulations,
-            please complete the following steps:
-          </p>
-
-          {/* Steps */}
-          <div className="mb-7 space-y-3">
-            <div className="flex items-start gap-3 rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-800">
-                <svg className="h-4 w-4 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Two-Factor Authentication (2FA)</p>
-                <p className="text-xs text-blue-600 dark:text-blue-400">Adds an extra layer of security to your login.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 rounded-xl bg-purple-50 p-4 dark:bg-purple-900/20">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-800">
-                <svg className="h-4 w-4 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">KYC Verification</p>
-                <p className="text-xs text-purple-600 dark:text-purple-400">Required by AML laws to verify your identity before investing.</p>
-              </div>
+            <div>
+              <p className="text-sm font-semibold text-black dark:text-white">Two-Factor Authentication</p>
+              <p className="text-xs text-body-color dark:text-body-color-dark">Extra layer of security on your login</p>
             </div>
           </div>
 
-          {/* Actions */}
-          <Link
-            href="/dashboard/security"
-            onClick={onDismiss}
-            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white transition hover:bg-primary/90"
-          >
-            Set Up Now
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-
-          <button
-            onClick={onDismiss}
-            className="w-full rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-body-color transition hover:bg-gray-50 dark:border-gray-700 dark:text-body-color-dark dark:hover:bg-gray-800"
-          >
-            Remind me later
-          </button>
+          <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 dark:border-primary/20 dark:bg-primary/10">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+              <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-black dark:text-white">Identity Verification (KYC)</p>
+              <p className="text-xs text-body-color dark:text-body-color-dark">Required to activate your investment account</p>
+            </div>
+          </div>
         </div>
+
+        {/* Actions */}
+        <Link
+          href="/dashboard/security"
+          onClick={onDismiss}
+          className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-primary/90"
+        >
+          Get Started
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+
+        <button
+          onClick={onDismiss}
+          className="w-full rounded-xl py-3 text-sm text-body-color transition hover:text-black dark:text-body-color-dark dark:hover:text-white"
+        >
+          Remind me later
+        </button>
       </div>
     </div>
   );
