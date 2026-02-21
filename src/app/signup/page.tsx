@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import SignupForm from "@/components/SignupForm";
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ const SignupPage = () => {
         <div className="container">
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
-              <SignupForm />
+              <Suspense fallback={null}>
+                <SignupForm />
+              </Suspense>
             </div>
           </div>
         </div>
