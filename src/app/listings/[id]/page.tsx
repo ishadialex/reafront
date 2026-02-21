@@ -64,6 +64,9 @@ interface Property {
   managerRole?: string;
   managerPhone?: string;
   managerPhoto?: string | null;
+  targetAmount?: number;
+  minInvestmentAmount?: number;
+  currentFunded?: number;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -92,7 +95,9 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
   return {
     id: parseInt(apiProperty.id) || 1,
     title: apiProperty.title,
-    price: `$${apiProperty.minInvestment.toLocaleString()}`,
+    price: apiProperty.investmentType === "pooled"
+      ? (apiProperty.minInvestment > 0 ? `$${apiProperty.minInvestment.toLocaleString()}` : (apiProperty.targetAmount > 0 ? `$${apiProperty.targetAmount.toLocaleString()}` : "N/A"))
+      : `$${(apiProperty.minInvestment || apiProperty.price || 0).toLocaleString()}`,
     location: apiProperty.location,
     description: apiProperty.description,
     images: apiProperty.images && apiProperty.images.length > 0 ? apiProperty.images : [
@@ -113,6 +118,9 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
     floors: 1,
     investmentType: apiProperty.investmentType,
     investmentStatus: (apiProperty as any).investmentStatus || "",
+    targetAmount: apiProperty.targetAmount || 0,
+    minInvestmentAmount: apiProperty.minInvestment || 0,
+    currentFunded: apiProperty.currentFunded || 0,
     managerName: (apiProperty as any).managerName || "",
     managerRole: (apiProperty as any).managerRole || "",
     managerPhone: (apiProperty as any).managerPhone || "",
@@ -568,8 +576,13 @@ export default function PropertyDetailsPage({
 
             {/* Price Badge */}
             <div className="rounded-xl bg-primary px-4 py-2 shadow-lg">
-              <p className="text-xs font-medium text-white opacity-90">Starts from</p>
+              <p className="text-xs font-medium text-white opacity-90">
+                {property.investmentType === "pooled" ? "Min Investment" : "Starts from"}
+              </p>
               <p className="text-lg font-bold text-white md:text-xl">{property.price}</p>
+              {property.investmentType === "pooled" && property.targetAmount ? (
+                <p className="text-xs text-white opacity-80">Target: ${property.targetAmount.toLocaleString()}</p>
+              ) : null}
             </div>
           </div>
 
@@ -1006,12 +1019,36 @@ export default function PropertyDetailsPage({
                       {/* Price */}
                       <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
                         <span className="font-semibold text-black dark:text-white">
-                          Starts from:
+                          {property.investmentType === "pooled" ? "Min Investment:" : "Starts from:"}
                         </span>
                         <span className="text-body-color dark:text-body-color-dark">
                           {property.price}
                         </span>
                       </div>
+
+                      {/* Target Amount - pooled only */}
+                      {property.investmentType === "pooled" && property.targetAmount ? (
+                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+                          <span className="font-semibold text-black dark:text-white">
+                            Target Amount:
+                          </span>
+                          <span className="text-body-color dark:text-body-color-dark">
+                            ${property.targetAmount.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {/* Current Funded - pooled only */}
+                      {property.investmentType === "pooled" && property.currentFunded ? (
+                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+                          <span className="font-semibold text-black dark:text-white">
+                            Funded So Far:
+                          </span>
+                          <span className="text-body-color dark:text-body-color-dark">
+                            ${property.currentFunded.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : null}
 
                       {/* Rooms */}
                       {property.rooms && (
