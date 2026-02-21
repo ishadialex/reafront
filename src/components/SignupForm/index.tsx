@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import "./phoneInput.css";
@@ -38,6 +38,7 @@ const signupSchema = z
 
 const SignupForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -67,7 +68,11 @@ const SignupForm = () => {
   // Handle Google OAuth sign up
   const handleGoogleSignup = () => {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-    window.location.href = `${API_URL}/api/auth/google`;
+    const ref = searchParams.get("ref");
+    const url = ref
+      ? `${API_URL}/api/auth/google?referralCode=${encodeURIComponent(ref)}`
+      : `${API_URL}/api/auth/google`;
+    window.location.href = url;
   };
 
   // Real-time email validation
@@ -206,12 +211,14 @@ const SignupForm = () => {
 
     try {
       // Call backend register API using the API client
+      const ref = searchParams.get("ref");
       const response = await api.register({
         email,
         password,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         phone,
+        ...(ref ? { referralCode: ref } : {}),
       });
 
       if (response.success) {

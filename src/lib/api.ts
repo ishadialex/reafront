@@ -201,6 +201,7 @@ export class ApiClient {
     firstName: string;
     lastName: string;
     phone: string;
+    referralCode?: string;
   }) {
     const response = await this.axiosInstance.post<ApiResponse<{ user: any }>>(
       "/api/auth/register",
