@@ -32,7 +32,7 @@ const NewsletterPopup = ({ isOpen, onClose }: NewsletterPopupProps) => {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/20 p-4 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
       <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-dark sm:p-8 md:p-10">
