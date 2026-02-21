@@ -733,7 +733,7 @@ export default function PropertyDetailsPage({
               <h2 className="mb-3 text-lg font-bold text-black dark:text-white md:mb-6 md:text-2xl">
                 Overview
               </h2>
-              <div className="grid grid-cols-5 gap-2 md:gap-6">
+              <div className={`grid gap-2 md:gap-6 ${property.status.toLowerCase() === "for sale" ? "grid-cols-5" : "grid-cols-4"}`}>
                 {/* Bedrooms */}
                 <div className="flex flex-col items-center text-center">
                   <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
@@ -815,24 +815,26 @@ export default function PropertyDetailsPage({
                   </span>
                 </div>
 
-                {/* Area */}
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
-                    <svg
-                      className="h-4 w-4 text-primary md:h-7 md:w-7"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                    </svg>
+                {/* Area — only shown for "For Sale" properties */}
+                {property.status.toLowerCase() === "for sale" && (
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
+                      <svg
+                        className="h-4 w-4 text-primary md:h-7 md:w-7"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                      </svg>
+                    </div>
+                    <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">
+                      {property.area.split(" ")[0]}
+                    </span>
+                    <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">
+                      {property.area.split(" ").slice(1).join(" ")}
+                    </span>
                   </div>
-                  <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">
-                    {property.area.split(" ")[0]}
-                  </span>
-                  <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">
-                    {property.area.split(" ").slice(1).join(" ")}
-                  </span>
-                </div>
+                )}
               </div>
             </div>
 
