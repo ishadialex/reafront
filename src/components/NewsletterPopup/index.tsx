@@ -59,27 +59,35 @@ const NewsletterPopup = ({ isOpen, onClose }: NewsletterPopupProps) => {
 
         {/* Content */}
         <div className="text-center">
+          {/* Shield Icon */}
+          <div className="mb-4 flex justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+              <svg className="h-7 w-7 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+          </div>
+
           {/* Title */}
-          <h2 className="mb-4 text-xl font-bold leading-tight text-black dark:text-white sm:text-2xl md:text-3xl">
-            Earn passive returns with Airbnb Arbitrage
+          <h2 className="mb-3 text-xl font-bold leading-tight text-black dark:text-white sm:text-2xl">
+            Security Notice
           </h2>
 
           {/* Description */}
-          <p className="mb-6 text-sm leading-relaxed text-body-color dark:text-body-color-dark sm:text-base">
-            Be the first to access new short-term rental opportunities, deal
-            breakdowns, cash-flow updates and proven strategies to earn from
-            Airbnb without owning property.
+          <p className="mb-4 text-sm leading-relaxed text-body-color dark:text-body-color-dark sm:text-base">
+            Before proceeding, please verify you are on our official and secured website. Due to the rise in online account hijacking and phishing attacks, always confirm the URL in your browser matches our official domain exactly.
           </p>
 
-          {/* Register Button */}
+          <p className="mb-6 rounded-lg bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+            We will never ask for your password via email, phone, or chat. If in doubt, do not proceed.
+          </p>
+
+          {/* Confirm Button */}
           <button
-            onClick={() => {
-              // Navigate to signup page or open registration form
-              window.location.href = "/signup";
-            }}
+            onClick={onClose}
             className="inline-block w-full rounded-lg bg-black px-8 py-3 text-sm font-semibold uppercase tracking-wider text-white transition hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 sm:w-auto sm:px-10 sm:py-3.5 sm:text-base"
           >
-            Register
+            I Understand, Continue
           </button>
         </div>
       </div>
