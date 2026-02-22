@@ -462,7 +462,7 @@ function SigninContent() {
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={isGoogleLoading || isLoading}
-                  className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary flex min-w-[340px] items-center justify-center rounded-xl border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+                  className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary flex w-full sm:w-auto sm:min-w-[340px] items-center justify-center rounded-xl border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span className="mr-3">
                     {isGoogleLoading ? (
@@ -566,7 +566,7 @@ function SigninContent() {
                       <button
                         type="submit"
                         disabled={isLoading || twoFactorCode.length !== 6}
-                        className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex min-w-[340px] items-center justify-center gap-2 rounded-xl px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex w-full sm:w-auto sm:min-w-[340px] items-center justify-center gap-2 rounded-xl px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isLoading && (
                           <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -708,7 +708,7 @@ function SigninContent() {
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex min-w-[340px] items-center justify-center gap-2 rounded-xl px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 flex w-full sm:w-auto sm:min-w-[340px] items-center justify-center gap-2 rounded-xl px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isLoading && (
                         <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
