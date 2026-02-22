@@ -74,7 +74,7 @@ const Contact = () => {
         <div className="-mx-4 flex flex-wrap">
           <div className="w-full px-4 lg:w-7/12 xl:w-8/12">
             <div
-              className="mb-8 rounded-xs bg-white px-6 py-8 shadow-three dark:bg-gray-dark sm:px-8 sm:py-10 lg:mb-5 lg:px-8 xl:px-10 xl:py-12"
+              className="mb-8 rounded-lg bg-white px-6 py-8 shadow-three dark:bg-gray-dark sm:px-8 sm:py-10 lg:mb-5 lg:px-8 xl:px-10 xl:py-12"
               data-wow-delay=".15s
               "
             >
@@ -87,14 +87,14 @@ const Contact = () => {
 
               {/* Success Message */}
               {successMessage && (
-                <div className="mb-6 rounded-xs bg-green-100 p-4 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                <div className="mb-6 rounded-lg bg-green-100 p-4 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                   <p className="text-sm font-medium">{successMessage}</p>
                 </div>
               )}
 
               {/* Error Message */}
               {errorMessage && (
-                <div className="mb-6 rounded-xs bg-red-100 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                <div className="mb-6 rounded-lg bg-red-100 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
                   <p className="text-sm font-medium">{errorMessage}</p>
                 </div>
               )}
@@ -116,7 +116,7 @@ const Contact = () => {
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Enter your name"
                         disabled={loading}
-                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                        className="border-stroke w-full rounded-lg border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -135,7 +135,7 @@ const Contact = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Enter your email"
                         disabled={loading}
-                        className="border-stroke w-full rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                        className="border-stroke w-full rounded-lg border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -171,7 +171,7 @@ const Contact = () => {
                         rows={4}
                         placeholder="Enter your Message"
                         disabled={loading}
-                        className="border-stroke w-full resize-none rounded-xs border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+                        className="border-stroke w-full resize-none rounded-lg border bg-[#f8f8f8] px-4 py-2.5 text-sm text-body-color outline-hidden focus:border-primary sm:px-5 sm:py-3 sm:text-base dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
                       ></textarea>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ const Contact = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="rounded-xs bg-primary px-6 py-3 text-sm font-medium text-white shadow-submit duration-300 hover:bg-primary/90 sm:px-8 sm:py-3.5 sm:text-base dark:shadow-submit-dark disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white shadow-submit duration-300 hover:bg-primary/90 sm:px-8 sm:py-3.5 sm:text-base dark:shadow-submit-dark disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {loading ? "Sending..." : "Send Message"}
                     </button>

@@ -48,7 +48,7 @@ const NewsLatterBox = () => {
   };
 
   return (
-    <div className="shadow-three dark:bg-gray-dark relative z-10 rounded-xs bg-white p-8 sm:p-11 lg:p-8 xl:p-11">
+    <div className="shadow-three dark:bg-gray-dark relative z-10 rounded-lg bg-white p-8 sm:p-11 lg:p-8 xl:p-11">
       <h3 className="mb-4 text-2xl leading-tight font-bold text-black dark:text-white">
         Subscribe to receive future updates
       </h3>
@@ -58,14 +58,14 @@ const NewsLatterBox = () => {
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-4 rounded-xs bg-green-100 p-4 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+        <div className="mb-4 rounded-lg bg-green-100 p-4 text-green-800 dark:bg-green-900/30 dark:text-green-400">
           <p className="text-sm font-medium">{successMessage}</p>
         </div>
       )}
 
       {/* Error Message */}
       {errorMessage && (
-        <div className="mb-4 rounded-xs bg-red-100 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+        <div className="mb-4 rounded-lg bg-red-100 p-4 text-red-800 dark:bg-red-900/30 dark:text-red-400">
           <p className="text-sm font-medium">{errorMessage}</p>
         </div>
       )}
@@ -78,7 +78,7 @@ const NewsLatterBox = () => {
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter your name"
           disabled={loading}
-          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-lg border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
         />
         <input
           type="email"
@@ -87,12 +87,12 @@ const NewsLatterBox = () => {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"
           disabled={loading}
-          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="border-stroke text-body-color focus:border-primary dark:text-body-color-dark dark:shadow-two dark:focus:border-primary mb-4 w-full rounded-lg border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={loading}
-          className="bg-primary shadow-submit hover:bg-primary/90 dark:shadow-submit-dark mb-5 flex w-full cursor-pointer items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-primary shadow-submit hover:bg-primary/90 dark:shadow-submit-dark mb-5 flex w-full cursor-pointer items-center justify-center rounded-lg px-9 py-4 text-base font-medium text-white duration-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Subscribing..." : "Subscribe"}
         </button>

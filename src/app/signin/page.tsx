@@ -423,7 +423,13 @@ function SigninContent() {
         <div className="container">
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">
-              <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-2xl bg-white px-6 py-10 sm:p-[60px]">
+              <div className="relative shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-2xl bg-white px-6 py-10 sm:p-[60px]">
+                <Link href="/" className="absolute top-4 left-4 flex items-center gap-1.5 text-sm font-medium text-body-color hover:text-primary transition-colors duration-200 dark:text-body-color-dark dark:hover:text-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5M12 5l-7 7 7 7"/>
+                  </svg>
+                  Home
+                </Link>
                 <div className="mb-8 flex justify-center">
                   <a href="/">
                     <img src="/images/logo/A-LogoB.png" alt="Alvarado Associates" className="h-12 dark:hidden" />

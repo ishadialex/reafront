@@ -312,6 +312,8 @@ export default function PropertyDetailsPage({
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [isFading, setIsFading] = useState(false);
   const [slideDir, setSlideDir] = useState<"left" | "right">("left");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Contact form state
   const [contactName, setContactName] = useState("");
@@ -431,6 +433,22 @@ export default function PropertyDetailsPage({
     }
   }, [property]);
 
+  // Lightbox keyboard navigation
+  useEffect(() => {
+    if (!lightboxOpen || !property) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+      if (e.key === "ArrowLeft") setLightboxIndex(prev => (prev - 1 + property.images.length) % property.images.length);
+      if (e.key === "ArrowRight") setLightboxIndex(prev => (prev + 1) % property.images.length);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
+  }, [lightboxOpen, property]);
+
   // Loading skeleton
   if (loading) {
     return (
@@ -530,6 +548,7 @@ export default function PropertyDetailsPage({
   };
 
   return (
+    <>
     <section className="relative z-10 bg-white pb-12 pt-36 dark:bg-gray-dark md:pb-20 lg:pb-28 lg:pt-40">
       <div className="container mx-auto">
         {/* Back Button */}
@@ -608,7 +627,10 @@ export default function PropertyDetailsPage({
         {/* Main Image Gallery */}
         <div className="mb-8 overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-dark">
           {/* Main Image */}
-          <div className="relative h-[260px] w-full overflow-hidden sm:h-[360px] md:h-[460px] lg:h-[540px]">
+          <div
+            className="relative h-[260px] w-full overflow-hidden sm:h-[360px] md:h-[460px] lg:h-[540px] cursor-zoom-in"
+            onClick={() => { setLightboxOpen(true); setLightboxIndex(currentImageIndex); }}
+          >
             {property.images[currentImageIndex] ? (
               <Image
                 src={property.images[currentImageIndex]}
@@ -639,7 +661,7 @@ export default function PropertyDetailsPage({
             {property.images.length > 1 && (
               <>
                 <button
-                  onClick={prevImage}
+                  onClick={(e) => { e.stopPropagation(); prevImage(); }}
                   className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2.5 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-white active:scale-95 md:left-5 md:p-3"
                   aria-label="Previous image"
                 >
@@ -648,7 +670,7 @@ export default function PropertyDetailsPage({
                   </svg>
                 </button>
                 <button
-                  onClick={nextImage}
+                  onClick={(e) => { e.stopPropagation(); nextImage(); }}
                   className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2.5 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-white active:scale-95 md:right-5 md:p-3"
                   aria-label="Next image"
                 >
@@ -1594,6 +1616,97 @@ export default function PropertyDetailsPage({
           </div>
         </div>
       </div>
+
     </section>
+
+    {/* Lightbox — outside section so it escapes the z-10 stacking context */}
+    {lightboxOpen && property.images.length > 0 && (
+      <div
+        className="fixed inset-0 z-[99999] flex flex-col bg-black"
+        onClick={() => setLightboxOpen(false)}
+      >
+        {/* X close button — always visible top-right */}
+        <button
+          onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
+          className="absolute top-4 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-lg transition-all hover:bg-gray-100 active:scale-95"
+          aria-label="Close lightbox"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Counter — top left */}
+        <div className="flex-shrink-0 px-4 pt-5 pb-2" onClick={(e) => e.stopPropagation()}>
+          <span className="text-sm font-medium text-white/60">
+            {lightboxIndex + 1} / {property.images.length}
+          </span>
+        </div>
+
+        {/* Main image — dark sides are clickable to close */}
+        <div className="relative flex flex-1 items-center justify-center">
+          {/* Image itself — stopPropagation so clicking it does NOT close */}
+          <div
+            className="relative h-[70vh] w-[80vw] md:w-[70vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={property.images[lightboxIndex]}
+              alt={`${property.title} - Image ${lightboxIndex + 1}`}
+              fill
+              className="object-contain"
+              sizes="100vw"
+            />
+          </div>
+
+          {/* Prev / Next arrows */}
+          {property.images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev - 1 + property.images.length) % property.images.length); }}
+                className="absolute left-2 z-10 rounded-full bg-white/20 p-3 text-white backdrop-blur-sm transition-all hover:bg-white/40 active:scale-95 md:left-6"
+                aria-label="Previous image"
+              >
+                <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev + 1) % property.images.length); }}
+                className="absolute right-2 z-10 rounded-full bg-white/20 p-3 text-white backdrop-blur-sm transition-all hover:bg-white/40 active:scale-95 md:right-6"
+                aria-label="Next image"
+              >
+                <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Thumbnail strip */}
+        {property.images.length > 1 && (
+          <div
+            className="flex flex-shrink-0 items-center justify-start gap-2 overflow-x-auto px-4 py-4 md:justify-center md:gap-3 md:px-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {property.images.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setLightboxIndex(i)}
+                className={`relative h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg transition-all duration-200 md:h-16 md:w-24 ${
+                  lightboxIndex === i
+                    ? "scale-105 opacity-100 ring-2 ring-primary"
+                    : "opacity-40 hover:opacity-80"
+                }`}
+              >
+                <Image src={img} alt={`Thumbnail ${i + 1}`} fill className="object-cover" sizes="96px" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+    </>
   );
 }
