@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const SignupPage = () => {
   return (
     <>
-      <section className="relative z-10 overflow-hidden pt-25 pb-16 md:pt-28 md:pb-20 lg:pt-[180px] lg:pb-28">
+      <section className="relative z-10 overflow-hidden pt-16 pb-16 md:pt-20 md:pb-20 lg:pt-24 lg:pb-28">
         <div className="container">
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">

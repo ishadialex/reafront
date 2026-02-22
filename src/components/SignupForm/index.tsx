@@ -56,6 +56,7 @@ const SignupForm = () => {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [formError, setFormError] = useState("");
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -67,6 +68,7 @@ const SignupForm = () => {
 
   // Handle Google OAuth sign up
   const handleGoogleSignup = () => {
+    setIsGoogleLoading(true);
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
     const ref = searchParams.get("ref");
     const url = ref
@@ -258,54 +260,70 @@ const SignupForm = () => {
           onClose={() => setToast(null)}
         />
       )}
-    <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] rounded-sm bg-white px-6 py-10 sm:p-[60px]">
+    <div className="shadow-three dark:bg-dark mx-auto max-w-[500px] lg:max-w-[800px] rounded-2xl bg-white px-6 py-10 sm:p-[60px]">
+      <div className="mb-8 flex justify-center">
+        <a href="/">
+          <img src="/images/logo/A-LogoB.png" alt="Alvarado Associates" className="h-12 dark:hidden" />
+          <img src="/images/logo/A-Logo.png" alt="Alvarado Associates" className="hidden h-12 dark:block" />
+        </a>
+      </div>
       <h3 className="mb-2 text-center text-2xl font-bold text-black sm:text-3xl dark:text-white">
         Create your account
       </h3>
       <p className="text-body-color mb-6 text-center text-base font-medium">
         It's totally free and super easy
       </p>
+      <div className="mb-4 flex justify-center">
       <button
         type="button"
         onClick={handleGoogleSignup}
-        className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-4 flex w-full items-center justify-center rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none">
+        disabled={isGoogleLoading || isLoading}
+        className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary flex min-w-[340px] items-center justify-center rounded-xl border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none disabled:cursor-not-allowed disabled:opacity-60">
         <span className="mr-3">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <g clipPath="url(#clip0_95:967)">
-              <path
-                d="M20.0001 10.2216C20.0122 9.53416 19.9397 8.84776 19.7844 8.17725H10.2042V11.8883H15.8277C15.7211 12.539 15.4814 13.1618 15.1229 13.7194C14.7644 14.2769 14.2946 14.7577 13.7416 15.1327L13.722 15.257L16.7512 17.5567L16.961 17.5772C18.8883 15.8328 19.9997 13.266 19.9997 10.2216"
-                fill="#4285F4"
-              />
-              <path
-                d="M10.2042 20.0001C12.9592 20.0001 15.2721 19.1111 16.9616 17.5778L13.7416 15.1332C12.88 15.7223 11.7235 16.1334 10.2042 16.1334C8.91385 16.126 7.65863 15.7206 6.61663 14.9747C5.57464 14.2287 4.79879 13.1802 4.39915 11.9778L4.27957 11.9878L1.12973 14.3766L1.08856 14.4888C1.93689 16.1457 3.23879 17.5387 4.84869 18.512C6.45859 19.4852 8.31301 20.0005 10.2046 20.0001"
-                fill="#34A853"
-              />
-              <path
-                d="M4.39911 11.9777C4.17592 11.3411 4.06075 10.673 4.05819 9.99996C4.0623 9.32799 4.17322 8.66075 4.38696 8.02225L4.38127 7.88968L1.19282 5.4624L1.08852 5.51101C0.372885 6.90343 0.00012207 8.4408 0.00012207 9.99987C0.00012207 11.5589 0.372885 13.0963 1.08852 14.4887L4.39911 11.9777Z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M10.2042 3.86663C11.6663 3.84438 13.0804 4.37803 14.1498 5.35558L17.0296 2.59996C15.1826 0.901848 12.7366 -0.0298855 10.2042 -3.6784e-05C8.3126 -0.000477834 6.45819 0.514732 4.8483 1.48798C3.2384 2.46124 1.93649 3.85416 1.08813 5.51101L4.38775 8.02225C4.79132 6.82005 5.56974 5.77231 6.61327 5.02675C7.6568 4.28118 8.91279 3.87541 10.2042 3.86663Z"
-                fill="#EB4335"
-              />
-            </g>
-            <defs>
-              <clipPath id="clip0_95:967">
-                <rect width="20" height="20" fill="white" />
-              </clipPath>
-            </defs>
-          </svg>
+          {isGoogleLoading ? (
+            <svg className="h-5 w-5 animate-spin text-current" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g clipPath="url(#clip0_95:967)">
+                <path
+                  d="M20.0001 10.2216C20.0122 9.53416 19.9397 8.84776 19.7844 8.17725H10.2042V11.8883H15.8277C15.7211 12.539 15.4814 13.1618 15.1229 13.7194C14.7644 14.2769 14.2946 14.7577 13.7416 15.1327L13.722 15.257L16.7512 17.5567L16.961 17.5772C18.8883 15.8328 19.9997 13.266 19.9997 10.2216"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M10.2042 20.0001C12.9592 20.0001 15.2721 19.1111 16.9616 17.5778L13.7416 15.1332C12.88 15.7223 11.7235 16.1334 10.2042 16.1334C8.91385 16.126 7.65863 15.7206 6.61663 14.9747C5.57464 14.2287 4.79879 13.1802 4.39915 11.9778L4.27957 11.9878L1.12973 14.3766L1.08856 14.4888C1.93689 16.1457 3.23879 17.5387 4.84869 18.512C6.45859 19.4852 8.31301 20.0005 10.2046 20.0001"
+                  fill="#34A853"
+                />
+                <path
+                  d="M4.39911 11.9777C4.17592 11.3411 4.06075 10.673 4.05819 9.99996C4.0623 9.32799 4.17322 8.66075 4.38696 8.02225L4.38127 7.88968L1.19282 5.4624L1.08852 5.51101C0.372885 6.90343 0.00012207 8.4408 0.00012207 9.99987C0.00012207 11.5589 0.372885 13.0963 1.08852 14.4887L4.39911 11.9777Z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M10.2042 3.86663C11.6663 3.84438 13.0804 4.37803 14.1498 5.35558L17.0296 2.59996C15.1826 0.901848 12.7366 -0.0298855 10.2042 -3.6784e-05C8.3126 -0.000477834 6.45819 0.514732 4.8483 1.48798C3.2384 2.46124 1.93649 3.85416 1.08813 5.51101L4.38775 8.02225C4.79132 6.82005 5.56974 5.77231 6.61327 5.02675C7.6568 4.28118 8.91279 3.87541 10.2042 3.86663Z"
+                  fill="#EB4335"
+                />
+              </g>
+              <defs>
+                <clipPath id="clip0_95:967">
+                  <rect width="20" height="20" fill="white" />
+                </clipPath>
+              </defs>
+            </svg>
+          )}
         </span>
-        Sign up with Google
+        {isGoogleLoading ? "Redirecting to Google..." : "Sign up with Google"}
       </button>
+      </div>
 
-      {/* <button className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-6 flex w-full items-center justify-center rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none">
+      {/* <button className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color hover:border-primary hover:bg-primary/5 hover:text-primary dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary mb-6 flex w-full items-center justify-center rounded-xl border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:hover:shadow-none">
         <span className="mr-3">
           <svg
             fill="currentColor"
@@ -319,200 +337,206 @@ const SignupForm = () => {
         </span>
         Sign in with Github
       </button> */}
-      <div className="mb-5 flex items-center justify-center">
-        <span className="bg-body-color/50 hidden h-[1px] w-full max-w-[60px] sm:block"></span>
-        <p className="text-body-color w-full px-5 text-center text-base font-medium">
+      <div className="mb-5 flex items-center">
+        <span className="bg-body-color/50 block h-[1px] flex-1"></span>
+        <p className="text-body-color shrink-0 px-3 text-center text-sm sm:px-5 sm:text-base font-medium">
           Or, register with your email
         </p>
-        <span className="bg-body-color/50 hidden h-[1px] w-full max-w-[60px] sm:block"></span>
+        <span className="bg-body-color/50 block h-[1px] flex-1"></span>
       </div>
       <form onSubmit={handleSubmit}>
-        <div className="mb-5">
-          <label
-            htmlFor="firstName"
-            className="text-dark mb-3 block text-sm dark:text-white"
-          >
-            {" "}
-            First Name{" "}
-          </label>
-          <input
-            type="text"
-            name="firstName"
-            placeholder="Enter your first name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
-          />
-        </div>
-        <div className="mb-5">
-          <label
-            htmlFor="lastName"
-            className="text-dark mb-3 block text-sm dark:text-white"
-          >
-            {" "}
-            Last Name{" "}
-          </label>
-          <input
-            type="text"
-            name="lastName"
-            placeholder="Enter your last name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
-          />
-        </div>
-        <div className="mb-5">
-          <label
-            htmlFor="email"
-            className="text-dark mb-3 block text-sm dark:text-white"
-          >
-            {" "}
-            Work Email{" "}
-          </label>
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={`w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
-              emailError
-                ? "border-red-500 focus:border-red-500 dark:border-red-500"
-                : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
-            }`}
-          />
-          {emailError && (
-            <p className="mt-2 text-sm text-red-500 dark:text-red-400">
-              {emailError}
-            </p>
-          )}
-        </div>
-        <div className="mb-5">
-          <label
-            htmlFor="phone"
-            className="text-dark mb-3 block text-sm dark:text-white"
-          >
-            {" "}
-            Phone Number{" "}
-          </label>
-          <div
-            className={phoneError ? "phone-input-error" : ""}
-            onKeyDown={handlePhoneKeyDown}
-          >
-            <PhoneInput
-              defaultCountry="us"
-              value={phone}
-              onChange={(phone) => setPhone(phone)}
+        <div className="lg:grid lg:grid-cols-2 lg:gap-x-5">
+          <div className="mb-5">
+            <label
+              htmlFor="firstName"
+              className="text-dark mb-3 block text-sm dark:text-white"
+            >
+              {" "}
+              First Name{" "}
+            </label>
+            <input
+              type="text"
+              name="firstName"
+              placeholder="Enter your first name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xl border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
             />
           </div>
-          {phoneError && (
-            <p className="mt-2 text-sm text-red-500 dark:text-red-400">
-              {phoneError}
-            </p>
-          )}
-        </div>
-        <div className="mb-5">
-          <label
-            htmlFor="password"
-            className="text-dark mb-3 block text-sm dark:text-white"
-          >
-            {" "}
-            Your Password{" "}
-          </label>
-          <div className="relative">
+          <div className="mb-5">
+            <label
+              htmlFor="lastName"
+              className="text-dark mb-3 block text-sm dark:text-white"
+            >
+              {" "}
+              Last Name{" "}
+            </label>
             <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Enter your Password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordTouched(true);
-              }}
-              onBlur={() => setPasswordTouched(true)}
-              className={`w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 pr-12 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
-                passwordTouched && passwordStrengthError
+              type="text"
+              name="lastName"
+              placeholder="Enter your last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary w-full rounded-xl border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:border-transparent dark:bg-[#2C303B] dark:focus:shadow-none"
+            />
+          </div>
+        </div>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-x-5">
+          <div className="mb-5">
+            <label
+              htmlFor="email"
+              className="text-dark mb-3 block text-sm dark:text-white"
+            >
+              {" "}
+              Work Email{" "}
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`w-full rounded-xl border bg-[#f8f8f8] px-6 py-3 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
+                emailError
                   ? "border-red-500 focus:border-red-500 dark:border-red-500"
                   : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
               }`}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
-              )}
-            </button>
+            {emailError && (
+              <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+                {emailError}
+              </p>
+            )}
           </div>
-          {passwordTouched && (
-            <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-              Min 8 characters, uppercase, lowercase, number, special character
-            </p>
-          )}
-          {passwordTouched && passwordStrengthError && (
-            <p className="mt-2 text-sm text-red-500 dark:text-red-400">
-              {passwordStrengthError}
-            </p>
-          )}
+          <div className="mb-5">
+            <label
+              htmlFor="phone"
+              className="text-dark mb-3 block text-sm dark:text-white"
+            >
+              {" "}
+              Phone Number{" "}
+            </label>
+            <div
+              className={phoneError ? "phone-input-error" : ""}
+              onKeyDown={handlePhoneKeyDown}
+            >
+              <PhoneInput
+                defaultCountry="us"
+                value={phone}
+                onChange={(phone) => setPhone(phone)}
+              />
+            </div>
+            {phoneError && (
+              <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+                {phoneError}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="mb-5">
-          <label
-            htmlFor="confirmPassword"
-            className="text-dark mb-3 block text-sm dark:text-white"
-          >
-            {" "}
-            Confirm Password{" "}
-          </label>
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              placeholder="Confirm your Password"
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                setConfirmPasswordTouched(true);
-              }}
-              onBlur={() => setConfirmPasswordTouched(true)}
-              className={`w-full rounded-xs border bg-[#f8f8f8] px-6 py-3 pr-12 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
-                confirmPasswordTouched && passwordError
-                  ? "border-red-500 focus:border-red-500 dark:border-red-500"
-                  : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+        <div className="lg:grid lg:grid-cols-2 lg:gap-x-5">
+          <div className="mb-5">
+            <label
+              htmlFor="password"
+              className="text-dark mb-3 block text-sm dark:text-white"
             >
-              {showConfirmPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
-              )}
-            </button>
+              {" "}
+              Your Password{" "}
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter your Password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordTouched(true);
+                }}
+                onBlur={() => setPasswordTouched(true)}
+                className={`w-full rounded-xl border bg-[#f8f8f8] px-6 py-3 pr-12 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
+                  passwordTouched && passwordStrengthError
+                    ? "border-red-500 focus:border-red-500 dark:border-red-500"
+                    : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {passwordTouched && (
+              <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
+                Min 8 characters, uppercase, lowercase, number, special character
+              </p>
+            )}
+            {passwordTouched && passwordStrengthError && (
+              <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+                {passwordStrengthError}
+              </p>
+            )}
           </div>
-          {confirmPasswordTouched && passwordError && (
-            <p className="mt-2 text-sm text-red-500 dark:text-red-400">
-              {passwordError}
-            </p>
-          )}
+          <div className="mb-5">
+            <label
+              htmlFor="confirmPassword"
+              className="text-dark mb-3 block text-sm dark:text-white"
+            >
+              {" "}
+              Confirm Password{" "}
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Confirm your Password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setConfirmPasswordTouched(true);
+                }}
+                onBlur={() => setConfirmPasswordTouched(true)}
+                className={`w-full rounded-xl border bg-[#f8f8f8] px-6 py-3 pr-12 text-base outline-hidden transition-all duration-300 dark:bg-[#2C303B] ${
+                  confirmPasswordTouched && passwordError
+                    ? "border-red-500 focus:border-red-500 dark:border-red-500"
+                    : "border-stroke dark:text-body-color-dark dark:shadow-two text-body-color focus:border-primary dark:focus:border-primary dark:border-transparent dark:focus:shadow-none"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {confirmPasswordTouched && passwordError && (
+              <p className="mt-2 text-sm text-red-500 dark:text-red-400">
+                {passwordError}
+              </p>
+            )}
+          </div>
         </div>
         <div className="mb-8 flex">
           <label
@@ -563,18 +587,24 @@ const SignupForm = () => {
           </div>
         )}
 
-        <div className="mb-6">
+        <div className="mb-6 flex justify-center">
           <button
             type="submit"
             disabled={isLoading}
-            className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed flex w-full items-center justify-center rounded-xs px-9 py-4 text-base font-medium text-white duration-300"
+            className="shadow-submit dark:shadow-submit-dark bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed flex min-w-[340px] items-center justify-center gap-2 rounded-xl px-9 py-4 text-base font-medium text-white duration-300"
           >
+            {isLoading && (
+              <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
             {isLoading ? "Creating account..." : "Sign up"}
           </button>
         </div>
       </form>
       <p className="text-body-color text-center text-base font-medium">
-        Already using Startup?{" "}
+        Already have an account?{" "}
         <Link href="/signin" className="text-primary hover:underline">
           Sign in
         </Link>

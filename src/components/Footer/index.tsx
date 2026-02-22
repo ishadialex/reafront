@@ -112,7 +112,7 @@ const Footer = () => {
               </svg>
             </a>
             <a
-              href="https://www.linkedin.com"
+              href="https://www.linkedin.com/company/raymond-chase/"
               aria-label="LinkedIn"
               target="_blank"
               rel="noopener noreferrer"
@@ -128,7 +128,7 @@ const Footer = () => {
               </svg>
             </a>
             <a
-              href="https://www.instagram.com"
+              href="https://www.instagram.com/alvaradoassociates?igsh=eDR3ZDgwcGo1OWJ0"
               aria-label="Instagram"
               target="_blank"
               rel="noopener noreferrer"

@@ -120,7 +120,7 @@ export default function RootLayout({
       <body className={`bg-[#FCFCFC] dark:bg-black ${inter.className}`}>
         <Providers>
           <div className="isolate">
-            {!isPDFViewer && !isDashboard && <Header />}
+            {!isPDFViewer && !isDashboard && !isAuthPage && <Header />}
             {children}
             {!isPDFViewer && !isDashboard && !isAuthPage && <Footer />}
           </div>
