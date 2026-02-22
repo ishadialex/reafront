@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Testimonial } from "@/types/testimonial";
-import SectionTitle from "../Common/SectionTitle";
+
 import SingleTestimonial from "./SingleTestimonial";
 import TestimonialsSkeleton from "./TestimonialsSkeleton";
 
@@ -134,12 +134,12 @@ const Testimonials = () => {
   return (
     <section className="dark:bg-bg-color-dark bg-gray-light relative z-10 py-8 md:py-10 lg:py-12">
       <div className="container">
-        <SectionTitle
-          title="What Our Investors Say"
-          paragraph="Testimonials"
-          center
-          mb="50px"
-        />
+        <div className="mx-auto mb-12 text-center">
+          <p className="mb-2 text-base text-body-color md:text-lg">Testimonials</p>
+          <h2 className="text-2xl font-bold leading-tight text-black dark:text-white sm:text-3xl md:text-[34px]">
+            Don&apos;t Take Our Word for It
+          </h2>
+        </div>
 
         {/* Mobile Carousel View */}
         <div className="relative px-4 md:hidden">

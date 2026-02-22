@@ -58,35 +58,55 @@ const OurMission = () => {
                 Our Mission
               </p>
               <h2 className="mb-8 text-3xl font-bold !leading-tight text-black dark:text-white sm:text-4xl md:text-[45px] lg:text-[42px] xl:text-[45px]">
-                Capitalizing on <span className="text-primary">prime opportunities</span> within the Airbnb Arbitrage system
+                Smarter Investing Starts With the <span className="text-primary">Right System</span>
               </h2>
 
               <p className="mb-6 text-base leading-relaxed text-body-color dark:text-body-color-dark">
-                At ALVARADO Associates, we are committed to revolutionizing the landscape of real estate investment through innovative Airbnb arbitrage solutions. With a mission to empower investors and unlock the full potential of short-term rentals, we offer a comprehensive platform designed to streamline the process of property acquisition, management, and revenue optimization.
+              At Alvarado Associates, we are on a mission to revolutionize real estate investment by making the power of Airbnb arbitrage and Airbnb mortgage strategies accessible to every investor, not just the privileged few.
+              </p>
+
+              <p className="mb-6 text-base leading-relaxed text-body-color dark:text-body-color-dark">
+              We built this platform with one clear vision: to democratize real estate investing by giving individuals and businesses access to high-yield opportunities that were once reserved for large-scale institutional investors. We recognized early that the short-term rental market represented one of the most underutilized wealth-building opportunities of our generation, and we built Alvarado Associates to bridge that gap.
+              </p>
+
+              <p className="mb-6 text-base leading-relaxed text-body-color dark:text-body-color-dark">
+              Today, we offer a comprehensive, end-to-end investment platform that handles everything from property acquisition and mortgage securing to furnishing, listing, and full operational management. Our investors enjoy consistent monthly returns, long-term asset growth, and complete peace of mind knowing that every detail is handled by a team of seasoned real estate and hospitality professionals.
               </p>
 
               <p className="text-base leading-relaxed text-body-color dark:text-body-color-dark">
-                Our journey began with a vision to democratize real estate investing, providing individuals and businesses with access to lucrative opportunities traditionally reserved for large-scale investors. Recognizing the untapped potential of short-term rentals in the sharing economy era, we set out to create a platform that bridges the gap between property owners, investors, and guests.
+              This is not just a real estate company. This is your gateway to smarter, stress-free wealth building.
               </p>
             </div>
           </div>
 
-          {/* Right Column - Image */}
+          {/* Right Column - Overlapping Images */}
           <div
             ref={imageRef}
-            className={`w-full lg:w-[calc(50%-1.5rem)] flex justify-center transition-all duration-1000 delay-[500ms] ${
+            className={`w-full lg:w-[calc(50%-1.5rem)] flex justify-center overflow-hidden lg:overflow-visible transition-all duration-1000 delay-[500ms] ${
               isVisible.image
                 ? "opacity-100 translate-x-0"
                 : "opacity-0 translate-x-8"
             }`}
           >
-            <div className="relative w-full max-w-[394px] overflow-hidden rounded-lg" style={{ aspectRatio: '394/525' }}>
-              <Image
-                src="/images/about/about-mission.jpg"
-                alt="Property building"
-                fill
-                className="object-contain"
-              />
+            <div className="relative w-full max-w-[460px] h-[360px] min-[430px]:h-[500px] sm:h-[540px] lg:h-[680px]">
+              {/* Image 1 - upper left */}
+              <div className="absolute top-0 left-0 w-[75%] overflow-hidden rounded-lg shadow-2xl z-10" style={{ aspectRatio: '394/525' }}>
+                <Image
+                  src="/images/about/about-mission.jpg"
+                  alt="Property building"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              {/* Image 2 - lower right */}
+              <div className="absolute bottom-0 right-0 lg:-right-10 w-[75%] overflow-hidden rounded-lg shadow-2xl z-20" style={{ aspectRatio: '394/525' }}>
+                <Image
+                  src="/images/about/about-mission.jpg"
+                  alt="Property building"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             </div>
           </div>
         </div>

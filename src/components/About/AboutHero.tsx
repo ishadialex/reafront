@@ -58,10 +58,10 @@ const AboutHero = () => {
           }`}
         >
           <h1 className="mb-6 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl md:text-[45px]">
-            About ALVARADO Associates
+          Who We Are and Why It Matters
           </h1>
           <p className="text-base leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
-            With a mission to empower investors and unlock the full potential of short-term rentals, we offer a comprehensive platform designed to streamline the process of property acquisition, management, and revenue optimization.
+          At Alvarado Associates, our mission is to empower investors and unlock the full potential of short-term rental investments. Through our comprehensive platform, we streamline every aspect of property acquisition, management, and revenue optimization, combining Airbnb arbitrage and Airbnb mortgage strategies to deliver consistent, hands-free returns for our investors.
           </p>
         </div>
 
@@ -78,18 +78,21 @@ const AboutHero = () => {
             Why Us?
           </p>
           <h2 className="mb-8 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl md:text-[42px]">
-            What is Airbnb Arbitrage and why is Airbnb Arbitrage a{" "}
-            <span className="text-red-600">Gold Mine</span>, you ask?
+          What Is Airbnb Arbitrage and Why Is It a{" "}
+            <span className="text-primary">Gold Mine?</span>
           </h2>
           <div className="space-y-4 text-base leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg">
             <p>
-              The greatest advantage lies in the fact that you can profit from property without having to purchase it. No hefty deposits or mortgages are necessary to begin! We're accustomed to the concept of major corporations managing assets rather than possessing them outright, resulting in highly lucrative enterprises.
+            The greatest advantage of Airbnb arbitrage is simple: you profit from property without ever having to own it. No hefty deposits. No mortgage obligations. Just smart, strategic control over high-performing assets.
             </p>
             <p>
-              Consider Uber, the leading taxi service globally, which doesn't own any vehicles. Or Facebook, the most prominent social media platform, which generates no content of its own. Similarly, Airbnb, the largest accommodation provider worldwide, doesn't own any real estate.
+            This is not a new concept. The world's most powerful companies have built empires on control rather than ownership. Uber is the world's largest taxi service and owns no vehicles. Facebook is the world's most dominant social platform and creates no content. Airbnb is the world's biggest accommodation provider and owns no real estate.
             </p>
             <p>
-              This strategy operates on the principle of control rather than ownership.
+            At Alvarado Associates, we apply this same principle to your investment. We secure the lease, furnish the property, manage the operations, and generate short-term rental income that delivers consistent monthly returns directly to you.
+            </p>
+            <p>
+            You do not need to own the asset to profit from it. You just need the right partner.
             </p>
           </div>
         </div>
