@@ -97,7 +97,7 @@ const Hero = () => {
                   </span>
                 </h1>
                 <p className="mb-12 text-base leading-relaxed text-white sm:text-lg md:text-xl">
-                Join the ranks of savvy entrepreneurs and seize the chance to turn vacant properties into thriving income streams.
+                Whether through Airbnb arbitrage or Airbnb mortgage, our investors are turning vacant properties into thriving income streams every day. Join a proven community and let Alvarado Associates put your capital to work.
                 </p>
                 <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
                   <Link

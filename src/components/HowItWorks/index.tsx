@@ -51,31 +51,30 @@ const HowItWorks = () => {
 
               <div className="mb-8 text-base leading-relaxed text-body-color-dark md:text-lg">
                 <p className="mb-6">
-                  Most wealthy individuals build and grow their wealth through real estate and for good reason.
-                  Studies show that 90% of today's millionaires got rich by investing in property. Why? Because
-                  real estate is stable, profitable, and one of the smartest ways to grow long term wealth.
+                  Studies show that 90% of today's millionaires built their wealth through real estate. It is
+                  stable, profitable, and one of the smartest long-term investments you can make. That is exactly
+                  why Alvarado Associates was founded.
                 </p>
 
                 <p className="mb-6">
-                  That's exactly why Golden Units was founded.
+                  We help everyday investors, including those with no prior experience, access high-performing
+                  short-term rental properties worldwide through two powerful strategies: Airbnb arbitrage and
+                  Airbnb mortgage.
                 </p>
 
                 <p className="mb-6">
-                  We're not just another real estate company. We specialize in helping everyday people, even
-                  those with no prior experience, invest in high performing short term rental properties across the
-                  globe.
+                  With our mortgage-backed model, you can get started with just 10% to 30% of the property value.
+                  We secure the financing, furnish the property, manage everything, and use guest income to pay
+                  down the mortgage while you earn monthly profits.
                 </p>
 
                 <p className="mb-6">
-                  Through our mortgage backed Airbnb arbitrage model, investors can get started with as little as
-                  10% to 30% of the property value. We secure favorable mortgage terms to cover the rest, and
-                  then fully furnish, list, and manage the property. The income from guests is used to pay down
-                  the mortgage while investors earn monthly profits.
+                  With our Airbnb arbitrage model, we lease entire properties, list them on short-term rental
+                  platforms, and generate strong returns without you needing to own a thing.
                 </p>
 
-                <p>
-                  It's a simple, hands free way to tap into real estate wealth without needing to manage
-                  anything yourself.
+                <p className="font-bold text-white">
+                  Two proven strategies. One trusted partner. Zero stress.
                 </p>
               </div>
 
@@ -94,7 +93,7 @@ const HowItWorks = () => {
               {/* Large image on left */}
               <div className="w-full sm:w-[calc(50%-8px)]">
                 <div
-                  className={`relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
+                  className={`relative h-[300px] sm:h-[400px] lg:h-[480px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
                     isVisible
                       ? 'opacity-100 translate-x-0 translate-y-0'
                       : 'opacity-0 translate-x-0 sm:translate-y-8'
@@ -114,7 +113,7 @@ const HowItWorks = () => {
               {/* Two stacked images on right */}
               <div className="flex w-full flex-col gap-4 sm:w-[calc(50%-8px)]">
                 <div
-                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
+                  className={`relative h-[140px] sm:h-[192px] lg:h-[230px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
                     isVisible
                       ? 'opacity-100 translate-x-0 translate-y-0'
                       : 'opacity-0 translate-x-0 sm:translate-y-8'
@@ -130,7 +129,7 @@ const HowItWorks = () => {
                   />
                 </div>
                 <div
-                  className={`relative h-[140px] sm:h-[192px] md:h-[242px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
+                  className={`relative h-[140px] sm:h-[192px] lg:h-[230px] overflow-hidden rounded-lg bg-gray-800 transition-all duration-[2000ms] ease-out ${
                     isVisible
                       ? 'opacity-100 translate-x-0 translate-y-0'
                       : 'opacity-0 translate-x-0 sm:translate-y-8'

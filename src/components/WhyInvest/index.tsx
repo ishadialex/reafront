@@ -200,14 +200,12 @@ const WhyInvest = () => {
 
       <div className="container relative z-10">
         {/* Header */}
-        <div className="mx-auto mb-12 max-w-[900px] text-center md:mb-16 lg:mb-20">
-          <h2 className="mb-4 text-3xl font-bold leading-tight text-white sm:text-4xl sm:leading-tight md:text-[45px] md:leading-tight">
-            Why Invest In Mortgage-Backed
-            <br />
-            Airbnb Arbitrage?
+        <div className="mx-auto mb-12 max-w-[1000px] text-center md:mb-16 lg:mb-20">
+          <h2 className="mb-6 text-2xl font-bold leading-tight text-white sm:text-3xl sm:leading-tight md:text-[36px] md:leading-tight">
+            Why Smart Investors Choose Alvarado Associates
           </h2>
-          <p className="text-base leading-relaxed text-body-color-dark md:text-lg">
-            At Golden Units, we offer a smarter way to invest in real estate. One that combines the security of property ownership with the high returns of short-term rentals. Here's why our mortgage-backed Airbnb arbitrage model stands out as one of the most attractive investment opportunities today.
+          <p className="mx-auto max-w-[780px] text-base leading-loose text-body-color-dark md:text-lg">
+            At Alvarado Associates, we offer a smarter way to invest in real estate, one that combines the security of property ownership with the high returns of short-term rentals. Here is why our Airbnb mortgage and Airbnb arbitrage model stands out as one of the most compelling investment opportunities available today.
           </p>
         </div>
 
