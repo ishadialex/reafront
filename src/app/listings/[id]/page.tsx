@@ -9,6 +9,9 @@ import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import "@/components/SignupForm/phoneInput.css";
 import { z } from "zod";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
 
 const propertyContactSchema = z.object({
   contactName: z.string().min(1, "Name is required."),
@@ -30,6 +33,73 @@ const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
 // This would typically come from a database or API
 // For now, we'll use the same data structure as the listings page
 interface PropertyFeatures {
+  // ── Interior ──
+  fullBathrooms?: number;
+  heating?: string[];
+  cooling?: string[];
+  appliancesIncluded?: string[];
+  laundry?: string[];
+  interiorFeatures?: string[];
+  flooring?: string[];
+  windows?: string[];
+  basement?: string;
+  fireplaceCount?: number;
+  fireplaceFeatures?: string[];
+  totalStructureArea?: string;
+  totalLivableArea?: string;
+  // ── Property ──
+  levels?: string;
+  stories?: number;
+  patioAndPorch?: string[];
+  exteriorFeatures?: string[];
+  poolFeatures?: string[];
+  hasSpa?: boolean;
+  spaFeatures?: string[];
+  fencing?: string[];
+  // ── Lot ──
+  lotFeatures?: string[];
+  additionalStructures?: string;
+  parcelNumber?: string;
+  // ── Construction ──
+  homeType?: string;
+  propertySubtype?: string;
+  constructionMaterials?: string[];
+  foundation?: string[];
+  roof?: string[];
+  yearBuilt?: number;
+  // ── Utilities ──
+  sewer?: string[];
+  water?: string[];
+  utilitiesForProperty?: string[];
+  // ── Community & HOA ──
+  communityFeatures?: string[];
+  security?: string[];
+  subdivision?: string;
+  hasHOA?: boolean;
+  hoaFee?: string;
+  region?: string;
+  // ── Financial & listing ──
+  pricePerSqft?: string;
+  taxAssessedValue?: string;
+  annualTaxAmount?: string;
+  dateOnMarket?: string;
+  daysOnMarket?: number;
+  listingTerms?: string[];
+  // ── Market value ──
+  zestimate?: string;
+  estimatedSalesRangeLow?: string;
+  estimatedSalesRangeHigh?: string;
+  rentZestimate?: string;
+  zestimateChangePercent?: string;
+  zestimateChangeYears?: number;
+  priceHistory?: { date: string; price: number; event?: string }[];
+  // ── Climate risks ──
+  floodZone?: string;
+  floodZoneDescription?: string;
+  fireRisk?: string;
+  windRisk?: string;
+  airQualityRisk?: string;
+  // ── Legacy (kept for backward compat with mock data) ──
   intercom?: string[];
   interiorDetails?: string[];
   outdoorDetails?: string[];
@@ -126,11 +196,78 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
     managerPhone: (apiProperty as any).managerPhone || "",
     managerPhoto: (apiProperty as any).managerPhoto || null,
     features: {
-      intercom: [],
+      // Interior
+      fullBathrooms:        (apiProperty as any).fullBathrooms       ?? undefined,
+      heating:              (apiProperty as any).heating              || [],
+      cooling:              (apiProperty as any).cooling              || [],
+      appliancesIncluded:   (apiProperty as any).appliancesIncluded   || [],
+      laundry:              (apiProperty as any).laundry              || [],
+      interiorFeatures:     (apiProperty as any).interiorFeatures     || apiProperty.features || [],
+      flooring:             (apiProperty as any).flooring             || [],
+      windows:              (apiProperty as any).windows              || [],
+      basement:             (apiProperty as any).basement             || "",
+      fireplaceCount:       (apiProperty as any).fireplaceCount       || 0,
+      fireplaceFeatures:    (apiProperty as any).fireplaceFeatures    || [],
+      totalStructureArea:   (apiProperty as any).totalStructureArea   || "",
+      totalLivableArea:     (apiProperty as any).totalLivableArea     || apiProperty.area || "",
+      // Property
+      levels:               (apiProperty as any).levels               || "",
+      stories:              (apiProperty as any).stories              || 0,
+      patioAndPorch:        (apiProperty as any).patioAndPorch        || [],
+      exteriorFeatures:     (apiProperty as any).exteriorFeatures     || [],
+      poolFeatures:         (apiProperty as any).poolFeatures         || [],
+      hasSpa:               (apiProperty as any).hasSpa               ?? false,
+      spaFeatures:          (apiProperty as any).spaFeatures          || [],
+      fencing:              (apiProperty as any).fencing              || [],
+      // Lot
+      lotFeatures:          (apiProperty as any).lotFeatures          || [],
+      additionalStructures: (apiProperty as any).additionalStructures || "",
+      parcelNumber:         (apiProperty as any).parcelNumber         || "",
+      // Construction
+      homeType:             (apiProperty as any).homeType             || "",
+      propertySubtype:      (apiProperty as any).propertySubtype      || "",
+      constructionMaterials:(apiProperty as any).constructionMaterials|| [],
+      foundation:           (apiProperty as any).foundation           || [],
+      roof:                 (apiProperty as any).roof                 || [],
+      yearBuilt:            (apiProperty as any).yearBuilt            || 0,
+      // Utilities
+      sewer:                (apiProperty as any).sewer                || [],
+      water:                (apiProperty as any).water                || [],
+      utilitiesForProperty: (apiProperty as any).utilitiesForProperty || [],
+      // Community & HOA
+      communityFeatures:    (apiProperty as any).communityFeatures    || [],
+      security:             (apiProperty as any).security             || [],
+      subdivision:          (apiProperty as any).subdivision          || "",
+      hasHOA:               (apiProperty as any).hasHOA               ?? false,
+      hoaFee:               (apiProperty as any).hoaFee               || "",
+      region:               (apiProperty as any).region               || "",
+      // Financial & listing
+      pricePerSqft:         (apiProperty as any).pricePerSqft         || "",
+      taxAssessedValue:     (apiProperty as any).taxAssessedValue     || "",
+      annualTaxAmount:      (apiProperty as any).annualTaxAmount      || "",
+      dateOnMarket:         (apiProperty as any).dateOnMarket         || "",
+      daysOnMarket:         (apiProperty as any).daysOnMarket         || 0,
+      listingTerms:            (apiProperty as any).listingTerms            || [],
+      // Market value
+      zestimate:               (apiProperty as any).zestimate               || "",
+      estimatedSalesRangeLow:  (apiProperty as any).estimatedSalesRangeLow  || "",
+      estimatedSalesRangeHigh: (apiProperty as any).estimatedSalesRangeHigh || "",
+      rentZestimate:           (apiProperty as any).rentZestimate           || "",
+      zestimateChangePercent:  (apiProperty as any).zestimateChangePercent  || "",
+      zestimateChangeYears:    (apiProperty as any).zestimateChangeYears    || 0,
+      priceHistory:            (apiProperty as any).priceHistory            || [],
+      // Climate risks
+      floodZone:               (apiProperty as any).floodZone               || "",
+      floodZoneDescription:    (apiProperty as any).floodZoneDescription    || "",
+      fireRisk:                (apiProperty as any).fireRisk                || "",
+      windRisk:                (apiProperty as any).windRisk                || "",
+      airQualityRisk:          (apiProperty as any).airQualityRisk          || "",
+      // Legacy
+      intercom:        [],
       interiorDetails: apiProperty.features || [],
-      outdoorDetails: [],
-      utilities: [],
-      otherFeatures: [],
+      outdoorDetails:  [],
+      utilities:       [],
+      otherFeatures:   [],
     },
   };
 }
@@ -314,6 +451,7 @@ export default function PropertyDetailsPage({
   const [slideDir, setSlideDir] = useState<"left" | "right">("left");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [whatsSpecialExpanded, setWhatsSpecialExpanded] = useState(false);
 
   // Contact form state
   const [contactName, setContactName] = useState("");
@@ -764,114 +902,187 @@ export default function PropertyDetailsPage({
           {/* Left Side - Overview and Description */}
           <div className="lg:col-span-2">
             {/* Overview Section */}
-            <div className="mb-8 rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-dark md:p-8">
-              <h2 className="mb-3 text-lg font-bold text-black dark:text-white md:mb-6 md:text-2xl">
-                Overview
-              </h2>
-              <div className={`grid gap-2 md:gap-6 ${property.status.toLowerCase() === "for sale" ? "grid-cols-5" : "grid-cols-4"}`}>
-                {/* Bedrooms */}
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
-                    <svg
-                      className="h-4 w-4 text-primary md:h-7 md:w-7"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                    </svg>
-                  </div>
-                  <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">
-                    {property.bedrooms}
-                  </span>
-                  <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">
-                    Bedrooms
-                  </span>
-                </div>
-
-                {/* Rooms */}
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
-                    <svg
-                      className="h-4 w-4 text-primary md:h-7 md:w-7"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                    </svg>
-                  </div>
-                  <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">
-                    {property.bedrooms + 1}
-                  </span>
-                  <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">
-                    Rooms
-                  </span>
-                </div>
-
-                {/* Bathrooms */}
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
-                    <svg
-                      className="h-4 w-4 text-primary md:h-7 md:w-7"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8 4a4 4 0 00-3.903 4.879L2 14v2a2 2 0 002 2h12a2 2 0 002-2v-2l-2.097-5.121A4 4 0 0012 4H8zm2 5a1 1 0 100-2 1 1 0 000 2z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">
-                    {property.bathrooms}
-                  </span>
-                  <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">
-                    Bathrooms
-                  </span>
-                </div>
-
-                {/* Garages */}
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
-                    <svg
-                      className="h-4 w-4 text-primary md:h-7 md:w-7"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                      <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3z" />
-                    </svg>
-                  </div>
-                  <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">
-                    {property.parking}
-                  </span>
-                  <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">
-                    Garages
-                  </span>
-                </div>
-
-                {/* Area — only shown for "For Sale" properties */}
-                {property.status.toLowerCase() === "for sale" && (
-                  <div className="flex flex-col items-center text-center">
-                    <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
-                      <svg
-                        className="h-4 w-4 text-primary md:h-7 md:w-7"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+            {(property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") ? (
+              /* ── For Sale: Zillow-style overview ── */
+              <div className="mb-8 rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-dark md:p-8">
+                {/* Price + Address + Beds/Baths/Sqft */}
+                <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold text-black dark:text-white md:text-4xl">
+                      {property.price}
+                    </h2>
+                    <div className="mt-1 flex items-start gap-1.5 text-body-color dark:text-body-color-dark">
+                      <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
+                      <span className="text-sm">{property.location}</span>
                     </div>
-                    <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">
-                      {property.area.split(" ")[0]}
-                    </span>
-                    <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">
-                      {property.area.split(" ").slice(1).join(" ")}
-                    </span>
+                  </div>
+                  {/* Beds / Baths / Sqft stats */}
+                  <div className="flex items-center gap-3 sm:gap-5">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-black dark:text-white">{property.bedrooms}</p>
+                      <p className="text-xs text-body-color dark:text-body-color-dark">beds</p>
+                    </div>
+                    <div className="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-black dark:text-white">{property.bathrooms}</p>
+                      <p className="text-xs text-body-color dark:text-body-color-dark">baths</p>
+                    </div>
+                    <div className="h-8 w-px bg-gray-200 dark:bg-gray-700" />
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-black dark:text-white">{property.area.split(" ")[0]}</p>
+                      <p className="text-xs text-body-color dark:text-body-color-dark">{property.area.split(" ").slice(1).join(" ")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Estimated Payment Bar */}
+                <div className="mb-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-body-color dark:text-body-color-dark">Est. payment</p>
+                    <p className="mt-0.5 text-xl font-bold text-black dark:text-white">
+                      {(() => {
+                        const priceNum = parseFloat((property.price || "").replace(/[$,]/g, ""));
+                        if (!priceNum) return "Contact for details";
+                        const monthly = Math.round(priceNum * 0.007);
+                        return `$${monthly.toLocaleString()}/mo`;
+                      })()}
+                    </p>
+                  </div>
+                  <a
+                    href="#contact"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
+                  >
+                    Get pre-qualified
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </div>
+
+                {/* Property Detail Cards */}
+                <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-body-color dark:text-body-color-dark">Property Type</p>
+                    <p className="mt-1 font-semibold text-black dark:text-white">{property.type}</p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-body-color dark:text-body-color-dark">Lot Size</p>
+                    <p className="mt-1 font-semibold text-black dark:text-white">{property.lotSize || property.area || "N/A"}</p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-body-color dark:text-body-color-dark">Bedrooms</p>
+                    <p className="mt-1 font-semibold text-black dark:text-white">{property.bedrooms}</p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-body-color dark:text-body-color-dark">Bathrooms</p>
+                    <p className="mt-1 font-semibold text-black dark:text-white">{property.bathrooms}</p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-body-color dark:text-body-color-dark">Parking</p>
+                    <p className="mt-1 font-semibold text-black dark:text-white">
+                      {property.parking} {property.parking === 1 ? "space" : "spaces"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+                    <p className="text-xs font-medium uppercase tracking-wide text-body-color dark:text-body-color-dark">Price / Sqft</p>
+                    <p className="mt-1 font-semibold text-black dark:text-white">
+                      {(() => {
+                        const priceNum = parseFloat((property.price || "").replace(/[$,]/g, ""));
+                        const areaNum = parseFloat((property.area || "").replace(/[^0-9.]/g, ""));
+                        if (priceNum && areaNum) return `$${Math.round(priceNum / areaNum).toLocaleString()}`;
+                        return "N/A";
+                      })()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* What's Special */}
+                {property.features &&
+                  ((property.features.interiorDetails?.length ?? 0) +
+                    (property.features.otherFeatures?.length ?? 0)) > 0 && (
+                  <div>
+                    <h3 className="mb-3 text-lg font-bold text-black dark:text-white">What&apos;s special</h3>
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {[
+                        ...(property.features?.interiorDetails || []),
+                        ...(property.features?.otherFeatures || []),
+                      ].slice(0, 10).map((tag, i) => (
+                        <span
+                          key={i}
+                          className="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-body-color dark:border-gray-600 dark:text-body-color-dark"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <p className={`text-sm leading-relaxed text-body-color dark:text-body-color-dark ${whatsSpecialExpanded ? "" : "line-clamp-3"}`}>
+                      {property.description.split('\n\n')[0]}
+                    </p>
+                    <button
+                      onClick={() => setWhatsSpecialExpanded((prev) => !prev)}
+                      className="mt-2 text-sm font-semibold text-primary hover:underline"
+                    >
+                      {whatsSpecialExpanded ? "Show less" : "Read more"}
+                    </button>
                   </div>
                 )}
               </div>
-            </div>
+            ) : (
+              /* ── Other categories: icon grid overview ── */
+              <div className="mb-8 rounded-2xl bg-white p-4 shadow-lg dark:bg-gray-dark md:p-8">
+                <h2 className="mb-3 text-lg font-bold text-black dark:text-white md:mb-6 md:text-2xl">
+                  Overview
+                </h2>
+                <div className="grid grid-cols-4 gap-2 md:gap-6">
+                  {/* Bedrooms */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
+                      <svg className="h-4 w-4 text-primary md:h-7 md:w-7" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                      </svg>
+                    </div>
+                    <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">{property.bedrooms}</span>
+                    <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">Bedrooms</span>
+                  </div>
+
+                  {/* Rooms */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
+                      <svg className="h-4 w-4 text-primary md:h-7 md:w-7" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                      </svg>
+                    </div>
+                    <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">{property.bedrooms + 1}</span>
+                    <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">Rooms</span>
+                  </div>
+
+                  {/* Bathrooms */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
+                      <svg className="h-4 w-4 text-primary md:h-7 md:w-7" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8 4a4 4 0 00-3.903 4.879L2 14v2a2 2 0 002 2h12a2 2 0 002-2v-2l-2.097-5.121A4 4 0 0012 4H8zm2 5a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">{property.bathrooms}</span>
+                    <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">Bathrooms</span>
+                  </div>
+
+                  {/* Garages */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 md:mb-3 md:h-14 md:w-14">
+                      <svg className="h-4 w-4 text-primary md:h-7 md:w-7" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                        <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3z" />
+                      </svg>
+                    </div>
+                    <span className="mb-0.5 text-base font-bold text-black dark:text-white md:mb-1 md:text-2xl">{property.parking}</span>
+                    <span className="text-[10px] leading-tight text-body-color dark:text-body-color-dark md:text-sm">Garages</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Investment Type Section */}
             {property.investmentType && (
@@ -1121,16 +1332,16 @@ export default function PropertyDetailsPage({
               )}
             </div>
 
-            {/* Features Section */}
+            {/* Facts & Features Section */}
             {property.features && (
               <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
-                {/* Features Header */}
+                {/* Header */}
                 <button
                   onClick={() => setOpenSection(openSection === "features" ? null : "features")}
                   className="flex w-full items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 md:p-8"
                 >
                   <h2 className="text-2xl font-bold text-black dark:text-white">
-                    Features
+                    Facts &amp; features
                   </h2>
                   <svg
                     className={`h-6 w-6 text-black transition-transform duration-300 dark:text-white ${
@@ -1140,166 +1351,393 @@ export default function PropertyDetailsPage({
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
-                {/* Features Content */}
                 {openSection === "features" && (
-                  <div className="border-t border-gray-200 px-6 pb-6 dark:border-gray-700 md:px-8 md:pb-8">
-                    <div className="space-y-6 pt-6">
-                      {/* Intercom */}
-                      {property.features.intercom && property.features.intercom.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">
-                            Intercom
-                          </h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features.intercom.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg
-                                  className="h-5 w-5 flex-shrink-0 text-primary"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">
-                                  {feature}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                  <div className="border-t border-gray-200 dark:border-gray-700">
+                    {(() => {
+                      const f = property.features!;
+                      // Helper: comma-join a string array, or return fallback
+                      const arr = (a?: string[]) => a && a.length > 0 ? a.join(", ") : null;
+                      // Helper: render a key-value bullet row
+                      const Row = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
+                        value !== null && value !== undefined && value !== "" && value !== 0
+                          ? <li className="text-sm text-body-color dark:text-body-color-dark">• {label}: {value}</li>
+                          : null
+                      );
+                      // Helper: render a plain bullet item
+                      const Item = ({ value }: { value: string }) => (
+                        <li className="text-sm text-body-color dark:text-body-color-dark">• {value}</li>
+                      );
+                      // Subsection header
+                      const Sub = ({ title }: { title: string }) => (
+                        <h4 className="mb-2 text-sm font-bold text-black dark:text-white">{title}</h4>
+                      );
+                      // Category banner
+                      const Cat = ({ title }: { title: string }) => (
+                        <div className="bg-gray-100 px-6 py-3 dark:bg-gray-800">
+                          <h3 className="text-base font-semibold text-black dark:text-white">{title}</h3>
                         </div>
-                      )}
+                      );
 
-                      {/* Interior Details */}
-                      {property.features.interiorDetails && property.features.interiorDetails.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">
-                            Interior Details
-                          </h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features.interiorDetails.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg
-                                  className="h-5 w-5 flex-shrink-0 text-primary"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">
-                                  {feature}
-                                </span>
+                      return (
+                        <>
+                          {/* ══ INTERIOR ══ */}
+                          <Cat title="Interior" />
+                          <div className="grid grid-cols-1 gap-x-12 px-6 py-6 md:grid-cols-2 md:px-8">
+                            {/* Left column */}
+                            <div>
+                              <div className="mb-6">
+                                <Sub title="Bedrooms & bathrooms" />
+                                <ul className="space-y-1.5">
+                                  <Row label="Bedrooms" value={property.bedrooms} />
+                                  <Row label="Bathrooms" value={property.bathrooms} />
+                                  <Row label="Full bathrooms" value={f.fullBathrooms} />
+                                </ul>
                               </div>
-                            ))}
+                              {(f.heating?.length || f.cooling?.length) ? (
+                                <>
+                                  {f.heating?.length ? (
+                                    <div className="mb-6">
+                                      <Sub title="Heating" />
+                                      <ul className="space-y-1.5"><Item value={f.heating!.join(", ")} /></ul>
+                                    </div>
+                                  ) : null}
+                                  {f.cooling?.length ? (
+                                    <div className="mb-6">
+                                      <Sub title="Cooling" />
+                                      <ul className="space-y-1.5"><Item value={f.cooling!.join(", ")} /></ul>
+                                    </div>
+                                  ) : null}
+                                </>
+                              ) : null}
+                              {(f.appliancesIncluded?.length || f.laundry?.length) ? (
+                                <div className="mb-6">
+                                  <Sub title="Appliances" />
+                                  <ul className="space-y-1.5">
+                                    {f.appliancesIncluded?.length ? <Row label="Included" value={arr(f.appliancesIncluded)} /> : null}
+                                    {f.laundry?.length ? <Row label="Laundry" value={arr(f.laundry)} /> : null}
+                                  </ul>
+                                </div>
+                              ) : null}
+                            </div>
+                            {/* Right column */}
+                            <div>
+                              <div className="mb-6">
+                                <Sub title="Features" />
+                                <ul className="space-y-1.5">
+                                  {f.interiorFeatures?.map((item, i) => <Item key={i} value={item} />)}
+                                  <Row label="Flooring" value={arr(f.flooring)} />
+                                  <Row label="Windows" value={arr(f.windows)} />
+                                  <Row label="Basement" value={f.basement} />
+                                  <Row label="Number of fireplaces" value={f.fireplaceCount} />
+                                  <Row label="Fireplace features" value={arr(f.fireplaceFeatures)} />
+                                </ul>
+                              </div>
+                              {(f.totalStructureArea || f.totalLivableArea) ? (
+                                <div className="mb-6">
+                                  <Sub title="Interior area" />
+                                  <ul className="space-y-1.5">
+                                    <Row label="Total structure area" value={f.totalStructureArea} />
+                                    <Row label="Total interior livable area" value={f.totalLivableArea} />
+                                  </ul>
+                                </div>
+                              ) : null}
+                            </div>
                           </div>
-                        </div>
-                      )}
 
-                      {/* Outdoor Details */}
-                      {property.features.outdoorDetails && property.features.outdoorDetails.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">
-                            Outdoor Details
-                          </h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features.outdoorDetails.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg
-                                  className="h-5 w-5 flex-shrink-0 text-primary"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">
-                                  {feature}
-                                </span>
+                          {/* ══ PROPERTY ══ */}
+                          <Cat title="Property" />
+                          <div className="grid grid-cols-1 gap-x-12 px-6 py-6 md:grid-cols-2 md:px-8">
+                            {/* Left column */}
+                            <div className="mb-6">
+                              <Sub title="Features" />
+                              <ul className="space-y-1.5">
+                                <Row label="Levels" value={f.levels} />
+                                <Row label="Stories" value={f.stories} />
+                                <Row label="Patio & porch" value={arr(f.patioAndPorch)} />
+                                <Row label="Exterior features" value={arr(f.exteriorFeatures)} />
+                                <Row label="Pool features" value={arr(f.poolFeatures)} />
+                                {f.hasSpa !== undefined ? <li className="text-sm text-body-color dark:text-body-color-dark">• Has spa: {f.hasSpa ? "Yes" : "No"}</li> : null}
+                                <Row label="Spa features" value={arr(f.spaFeatures)} />
+                                <Row label="Fencing" value={arr(f.fencing)} />
+                              </ul>
+                            </div>
+                            {/* Right column */}
+                            <div>
+                              <div className="mb-6">
+                                <Sub title="Lot" />
+                                <ul className="space-y-1.5">
+                                  <Row label="Size" value={property.lotSize || property.area} />
+                                  <Row label="Features" value={arr(f.lotFeatures)} />
+                                </ul>
                               </div>
-                            ))}
+                              <div className="mb-6">
+                                <Sub title="Details" />
+                                <ul className="space-y-1.5">
+                                  <Row label="Additional structures" value={f.additionalStructures} />
+                                  <Row label="Parcel number" value={f.parcelNumber} />
+                                </ul>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      )}
 
-                      {/* Utilities */}
-                      {property.features.utilities && property.features.utilities.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">
-                            Utilities
-                          </h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features.utilities.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg
-                                  className="h-5 w-5 flex-shrink-0 text-primary"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">
-                                  {feature}
-                                </span>
+                          {/* ══ CONSTRUCTION ══ */}
+                          <Cat title="Construction" />
+                          <div className="grid grid-cols-1 gap-x-12 px-6 py-6 md:grid-cols-2 md:px-8">
+                            {/* Left column */}
+                            <div className="mb-6">
+                              <Sub title="Type & style" />
+                              <ul className="space-y-1.5">
+                                <Row label="Home type" value={f.homeType || property.type} />
+                                <Row label="Property subtype" value={f.propertySubtype} />
+                              </ul>
+                            </div>
+                            {/* Right column */}
+                            <div>
+                              <div className="mb-6">
+                                <Sub title="Materials" />
+                                <ul className="space-y-1.5">
+                                  {f.constructionMaterials?.map((m, i) => <Item key={i} value={m} />)}
+                                  <Row label="Foundation" value={arr(f.foundation)} />
+                                  <Row label="Roof" value={arr(f.roof)} />
+                                </ul>
                               </div>
-                            ))}
+                              <div className="mb-6">
+                                <Sub title="Condition" />
+                                <ul className="space-y-1.5">
+                                  <Row label="Year built" value={f.yearBuilt} />
+                                </ul>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      )}
 
-                      {/* Other Features */}
-                      {property.features.otherFeatures && property.features.otherFeatures.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">
-                            Other Features
-                          </h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features.otherFeatures.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg
-                                  className="h-5 w-5 flex-shrink-0 text-primary"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">
-                                  {feature}
-                                </span>
-                              </div>
-                            ))}
+                          {/* ══ UTILITIES & GREEN ENERGY ══ */}
+                          <Cat title="Utilities & green energy" />
+                          <div className="px-6 py-6 md:px-8">
+                            <ul className="space-y-1.5">
+                              <Row label="Sewer" value={arr(f.sewer)} />
+                              <Row label="Water" value={arr(f.water)} />
+                              <Row label="Utilities for property" value={arr(f.utilitiesForProperty)} />
+                            </ul>
                           </div>
-                        </div>
-                      )}
-                    </div>
+
+                          {/* ══ COMMUNITY & HOA ══ */}
+                          <Cat title="Community & HOA" />
+                          <div className="grid grid-cols-1 gap-x-12 px-6 py-6 md:grid-cols-2 md:px-8">
+                            {/* Left column */}
+                            <div className="mb-6">
+                              <Sub title="Community" />
+                              <ul className="space-y-1.5">
+                                <Row label="Features" value={arr(f.communityFeatures)} />
+                                <Row label="Security" value={arr(f.security)} />
+                                <Row label="Subdivision" value={f.subdivision} />
+                              </ul>
+                            </div>
+                            {/* Right column */}
+                            <div>
+                              <div className="mb-6">
+                                <Sub title="HOA" />
+                                <ul className="space-y-1.5">
+                                  {f.hasHOA !== undefined ? <li className="text-sm text-body-color dark:text-body-color-dark">• Has HOA: {f.hasHOA ? "Yes" : "No"}</li> : null}
+                                  <Row label="HOA fee" value={f.hoaFee} />
+                                </ul>
+                              </div>
+                              <div className="mb-6">
+                                <Sub title="Location" />
+                                <ul className="space-y-1.5">
+                                  <Row label="Region" value={f.region} />
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ══ FINANCIAL & LISTING DETAILS ══ */}
+                          <Cat title="Financial & listing details" />
+                          <div className="px-6 py-6 md:px-8">
+                            <ul className="space-y-1.5">
+                              <Row label="Price per square foot" value={f.pricePerSqft} />
+                              <Row label="Tax assessed value" value={f.taxAssessedValue} />
+                              <Row label="Annual tax amount" value={f.annualTaxAmount} />
+                              <Row label="Date on market" value={f.dateOnMarket} />
+                              <Row label="Cumulative days on market" value={f.daysOnMarket ? `${f.daysOnMarket} days` : null} />
+                              <Row label="Listing terms" value={arr(f.listingTerms)} />
+                            </ul>
+                          </div>
+
+                          {/* Hide button */}
+                          <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-700 md:px-8">
+                            <button
+                              onClick={() => setOpenSection(null)}
+                              className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                            >
+                              <svg className="h-4 w-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              Hide
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── Estimated Market Value & Climate Risks ── */}
+            {property.features && (
+              <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
+                <div className="p-6 md:p-8">
+                  {/* ── Estimated Market Value ── */}
+                  <h2 className="mb-5 text-2xl font-bold text-black dark:text-white">
+                    Estimated market value
+                  </h2>
+
+                  {/* Three value cards */}
+                  <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {/* Zestimate */}
+                    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                      <p className="mb-1 text-xs text-body-color underline decoration-dotted dark:text-body-color-dark">
+                        Zestimate<sup>®</sup>
+                      </p>
+                      <p className="text-lg font-bold text-black dark:text-white">
+                        {property.features.zestimate || "Not available"}
+                      </p>
+                    </div>
+                    {/* Estimated sales range */}
+                    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                      <p className="mb-1 text-xs text-body-color dark:text-body-color-dark">
+                        Estimated sales range
+                      </p>
+                      <p className="text-lg font-bold text-black dark:text-white">
+                        {property.features.estimatedSalesRangeLow && property.features.estimatedSalesRangeHigh
+                          ? `${property.features.estimatedSalesRangeLow} – ${property.features.estimatedSalesRangeHigh}`
+                          : "Not available"}
+                      </p>
+                    </div>
+                    {/* Rent Zestimate */}
+                    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                      <p className="mb-1 text-xs text-body-color underline decoration-dotted dark:text-body-color-dark">
+                        Rent Zestimate<sup>®</sup>
+                      </p>
+                      <p className="text-lg font-bold text-black dark:text-white">
+                        {property.features.rentZestimate || "Not available"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Zestimate history */}
+                  <div className="mb-6">
+                    <h3 className="mb-0.5 text-lg font-bold text-black dark:text-white">
+                      Zestimate<sup>®</sup> history
+                    </h3>
+                    {property.features.zestimateChangePercent && (
+                      <p className="mb-4 text-sm font-semibold text-green-600">
+                        {property.features.zestimateChangePercent} in last{" "}
+                        {property.features.zestimateChangeYears || "—"} years
+                      </p>
+                    )}
+
+                    {property.features.priceHistory && property.features.priceHistory.length > 0 ? (
+                      <div className="h-[260px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={property.features.priceHistory} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis
+                              dataKey="date"
+                              tick={{ fontSize: 11, fill: "#6b7280" }}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis
+                              tickFormatter={(v: number) =>
+                                v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M`
+                                : v >= 1000 ? `$${(v / 1000).toFixed(0)}K`
+                                : `$${v}`
+                              }
+                              tick={{ fontSize: 11, fill: "#6b7280" }}
+                              tickLine={false}
+                              axisLine={false}
+                              width={52}
+                            />
+                            <Tooltip
+                              formatter={(value: number) => [
+                                `$${value.toLocaleString()}`,
+                                "Estimated value",
+                              ]}
+                              contentStyle={{
+                                borderRadius: "8px",
+                                border: "1px solid #e5e7eb",
+                                fontSize: "12px",
+                              }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="price"
+                              stroke="#16a34a"
+                              strokeWidth={2.5}
+                              dot={false}
+                              activeDot={{ r: 5, fill: "#16a34a" }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
+                        <p className="text-sm text-body-color dark:text-body-color-dark">
+                          Price history data not yet available
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Divider */}
+                  <hr className="my-6 border-gray-200 dark:border-gray-700" />
+
+                  {/* ── Climate Risks ── */}
+                  <h2 className="mb-3 text-2xl font-bold text-black dark:text-white">
+                    Climate risks
+                  </h2>
+                  <p className="mb-5 text-sm leading-relaxed text-body-color dark:text-body-color-dark">
+                    Explore flood, wildfire, and other predictive climate risk information for this property.
+                  </p>
+
+                  <div className="space-y-4">
+                    {/* Flood zone */}
+                    <div>
+                      <p className="text-sm font-bold text-black dark:text-white">Flood zone</p>
+                      <p className="text-sm text-body-color dark:text-body-color-dark">
+                        {property.features.floodZone && property.features.floodZoneDescription
+                          ? `${property.features.floodZone} — ${property.features.floodZoneDescription}`
+                          : property.features.floodZone || "Flood zone data not available"}
+                      </p>
+                    </div>
+                    {/* Fire risk */}
+                    {property.features.fireRisk && (
+                      <div>
+                        <p className="text-sm font-bold text-black dark:text-white">Fire factor</p>
+                        <p className="text-sm text-body-color dark:text-body-color-dark">{property.features.fireRisk}</p>
+                      </div>
+                    )}
+                    {/* Wind risk */}
+                    {property.features.windRisk && (
+                      <div>
+                        <p className="text-sm font-bold text-black dark:text-white">Wind factor</p>
+                        <p className="text-sm text-body-color dark:text-body-color-dark">{property.features.windRisk}</p>
+                      </div>
+                    )}
+                    {/* Air quality */}
+                    {property.features.airQualityRisk && (
+                      <div>
+                        <p className="text-sm font-bold text-black dark:text-white">Air factor</p>
+                        <p className="text-sm text-body-color dark:text-body-color-dark">{property.features.airQualityRisk}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1476,8 +1914,8 @@ export default function PropertyDetailsPage({
           </div>
 
           {/* Contact Form Sidebar - Right Side */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 self-start">
+          <div id="contact" className="lg:col-span-1 lg:h-full">
+            <div className="sticky top-24">
               <div className="rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-dark md:p-8">
                 {/* Agent Profile */}
                 <div className="mb-6 flex flex-col items-center text-center">
