@@ -462,37 +462,59 @@ export default function DashboardOverviewPage() {
     };
     const eventSlide = getEventSlide();
 
+    // ── No active investment CTA slide ───────────────────────────────────────
+    const hasActiveInvestment = data.investments.some((inv) => inv.status === "active");
+
     // ── Time/day contextual slide ─────────────────────────────────────────────
     let greetingPrefix = "Good morning";
     let contextualSlide = "";
 
-    if (hour >= 5 && hour < 12) {
-      greetingPrefix = "Good morning";
-      contextualSlide = ["Great to see you starting your day with us!", "Ready to make today count?", "Let's make some smart investment moves today!", "Time to check on your portfolio growth!", "Here's your portfolio summary to start the day"][Math.floor(Math.random() * 5)];
-    } else if (hour >= 12 && hour < 17) {
-      greetingPrefix = "Good afternoon";
-      contextualSlide = ["Hope your day is going well!", "Let's see how your investments are performing!", "Time to check your portfolio progress!", "Your investments are working hard for you!", "Here's an overview of your investment portfolio"][Math.floor(Math.random() * 5)];
-    } else if (hour >= 17 && hour < 21) {
-      greetingPrefix = "Good evening";
-      contextualSlide = ["Wrapping up the day? Check your portfolio!", "See how your investments performed today!", "Your portfolio summary is ready!", "Time to review today's market movements!", "Here's your end-of-day portfolio update"][Math.floor(Math.random() * 5)];
+    if (hasActiveInvestment) {
+      if (hour >= 5 && hour < 12) {
+        greetingPrefix = "Good morning";
+        contextualSlide = ["Great to see you starting your day with us!", "Ready to make today count?", "Let's make some smart investment moves today!", "Time to check on your portfolio growth!", "Here's your portfolio summary to start the day"][Math.floor(Math.random() * 5)];
+      } else if (hour >= 12 && hour < 17) {
+        greetingPrefix = "Good afternoon";
+        contextualSlide = ["Hope your day is going well!", "Let's see how your investments are performing!", "Time to check your portfolio progress!", "Your investments are working hard for you!", "Here's an overview of your investment portfolio"][Math.floor(Math.random() * 5)];
+      } else if (hour >= 17 && hour < 21) {
+        greetingPrefix = "Good evening";
+        contextualSlide = ["Wrapping up the day? Check your portfolio!", "See how your investments performed today!", "Your portfolio summary is ready!", "Time to review today's market movements!", "Here's your end-of-day portfolio update"][Math.floor(Math.random() * 5)];
+      } else {
+        greetingPrefix = "Good evening";
+        contextualSlide = ["Working late? Your investments never sleep!", "Your portfolio is working while you rest!", "Even at night, your money is growing!", "Late night portfolio check? We've got you covered!", "Here's your investment portfolio overview"][Math.floor(Math.random() * 5)];
+      }
+      if (dayOfWeek === 0 || dayOfWeek === 6) contextualSlide = ["Enjoying the weekend? Your investments are still working!", "Weekend vibes! But your portfolio never takes a break!", "Relax this weekend knowing your money is working for you!"][Math.floor(Math.random() * 3)];
+      if (dayOfMonth === 1) contextualSlide = "Happy new month! Time to review your investment goals!";
+      else if (dayOfMonth <= 3) contextualSlide = "New month, new opportunities! Check your portfolio!";
+      if (dayOfWeek === 1 && hour >= 5 && hour < 12) contextualSlide = "Happy Monday! Let's start the week with your investment goals in focus!";
+      if (dayOfWeek === 5 && hour >= 12) contextualSlide = ["Happy Friday! Your investments worked hard this week!", "TGIF! Check out how your portfolio performed this week!", "Friday feeling! Your money has been growing all week!"][Math.floor(Math.random() * 3)];
     } else {
-      greetingPrefix = "Good evening";
-      contextualSlide = ["Working late? Your investments never sleep!", "Your portfolio is working while you rest!", "Even at night, your money is growing!", "Late night portfolio check? We've got you covered!", "Here's your investment portfolio overview"][Math.floor(Math.random() * 5)];
+      if (hour >= 5 && hour < 12) {
+        greetingPrefix = "Good morning";
+        contextualSlide = ["Great to see you starting your day with us!", "Ready to make today count?", "Hope you have a wonderful morning!"][Math.floor(Math.random() * 3)];
+      } else if (hour >= 12 && hour < 17) {
+        greetingPrefix = "Good afternoon";
+        contextualSlide = ["Hope your day is going well!", "Have a great afternoon!", "Hope you're having a productive day!"][Math.floor(Math.random() * 3)];
+      } else if (hour >= 17 && hour < 21) {
+        greetingPrefix = "Good evening";
+        contextualSlide = ["Hope you had a great day!", "Winding down for the evening?", "Have a relaxing evening!"][Math.floor(Math.random() * 3)];
+      } else {
+        greetingPrefix = "Good evening";
+        contextualSlide = ["Burning the midnight oil?", "Hope you're having a good night!", "Late night check-in — we're always here for you!"][Math.floor(Math.random() * 3)];
+      }
+      if (dayOfWeek === 0 || dayOfWeek === 6) contextualSlide = ["Enjoy your weekend!", "Hope you're having a relaxing weekend!", "Weekend vibes — hope it's a great one!"][Math.floor(Math.random() * 3)];
+      if (dayOfMonth === 1) contextualSlide = "Happy new month! A fresh start awaits you!";
+      else if (dayOfMonth <= 3) contextualSlide = "New month, new beginnings — welcome back!";
+      if (dayOfWeek === 1 && hour >= 5 && hour < 12) contextualSlide = "Happy Monday! Hope you have a great week ahead!";
+      if (dayOfWeek === 5 && hour >= 12) contextualSlide = ["Happy Friday! Hope you have a wonderful weekend!", "TGIF! Enjoy your time off!", "Friday feeling — have a great one!"][Math.floor(Math.random() * 3)];
     }
-    if (dayOfWeek === 0 || dayOfWeek === 6) contextualSlide = ["Enjoying the weekend? Your investments are still working!", "Weekend vibes! But your portfolio never takes a break!", "Relax this weekend knowing your money is working for you!"][Math.floor(Math.random() * 3)];
-    if (dayOfMonth === 1) contextualSlide = "Happy new month! Time to review your investment goals!";
-    else if (dayOfMonth <= 3) contextualSlide = "New month, new opportunities! Check your portfolio!";
-    if (dayOfWeek === 1 && hour >= 5 && hour < 12) contextualSlide = "Happy Monday! Let's start the week with your investment goals in focus!";
-    if (dayOfWeek === 5 && hour >= 12) contextualSlide = ["Happy Friday! Your investments worked hard this week!", "TGIF! Check out how your portfolio performed this week!", "Friday feeling! Your money has been growing all week!"][Math.floor(Math.random() * 3)];
-
-    // ── No active investment CTA slide ───────────────────────────────────────
-    const hasActiveInvestment = data.investments.some((inv) => inv.status === "active");
+    const noInvestmentOptions = [
+      "🏘️ You have no active investments yet — explore available listings and start earning!",
+      "📈 Ready to grow your money? Browse our properties and make your first investment!",
+      "💼 Start your investment journey today — check out our available listings!",
+    ];
     const noInvestmentSlides: string[] = !hasActiveInvestment
-      ? [
-          "🏘️ You have no active investments yet — explore available listings and start earning!",
-          "📈 Ready to grow your money? Browse our properties and make your first investment!",
-          "💼 Start your investment journey today — check out our available listings!",
-        ]
+      ? [noInvestmentOptions[dayOfMonth % noInvestmentOptions.length]]
       : [];
 
     // ── Assemble slides: activity first, then weather, then event/contextual ──
@@ -524,7 +546,7 @@ export default function DashboardOverviewPage() {
         setSubtitleIdx((prev) => (prev + 1) % greeting.subtitles.length);
         setSubtitleVisible(true);
       }, 300);
-    }, 5000);
+    }, 7000);
     return () => clearInterval(interval);
   }, [greeting.subtitles]);
 
