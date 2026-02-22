@@ -485,9 +485,20 @@ export default function DashboardOverviewPage() {
     if (dayOfWeek === 1 && hour >= 5 && hour < 12) contextualSlide = "Happy Monday! Let's start the week with your investment goals in focus!";
     if (dayOfWeek === 5 && hour >= 12) contextualSlide = ["Happy Friday! Your investments worked hard this week!", "TGIF! Check out how your portfolio performed this week!", "Friday feeling! Your money has been growing all week!"][Math.floor(Math.random() * 3)];
 
+    // ── No active investment CTA slide ───────────────────────────────────────
+    const hasActiveInvestment = data.investments.some((inv) => inv.status === "active");
+    const noInvestmentSlides: string[] = !hasActiveInvestment
+      ? [
+          "🏘️ You have no active investments yet — explore available listings and start earning!",
+          "📈 Ready to grow your money? Browse our properties and make your first investment!",
+          "💼 Start your investment journey today — check out our available listings!",
+        ]
+      : [];
+
     // ── Assemble slides: activity first, then weather, then event/contextual ──
     const subtitles: string[] = [
       ...activitySlides,
+      ...noInvestmentSlides,
       ...(weatherSlide ? [weatherSlide] : []),
       ...(eventSlide ? [eventSlide.slide] : [contextualSlide]),
     ];
@@ -496,7 +507,7 @@ export default function DashboardOverviewPage() {
       message: eventSlide ? eventSlide.message : `${greetingPrefix}, ${firstName}!`,
       subtitles: subtitles.length > 0 ? subtitles : [contextualSlide],
     };
-  }, [data.user, data.transactions, data.balanceSummary, weather]);
+  }, [data.user, data.transactions, data.balanceSummary, data.investments, weather]);
 
   // Reset carousel index when the slides change
   useEffect(() => {
