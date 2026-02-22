@@ -49,6 +49,17 @@ export default function RootLayout({
     return () => clearTimeout(timer);
   }, [pathname]);
 
+  // Hide Tawk.to on auth pages
+  useEffect(() => {
+    const tawk = (window as any).Tawk_API;
+    if (!tawk) return;
+    if (isAuthPage) {
+      tawk.hideWidget?.();
+    } else {
+      tawk.showWidget?.();
+    }
+  }, [isAuthPage]);
+
   // Handle closing the popup
   const handleClosePopup = () => {
     setShowNewsletterPopup(false);
@@ -136,6 +147,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+              Tawk_API.onLoad = function() {
+                var authPages = ['/signin', '/signup'];
+                if (authPages.indexOf(window.location.pathname) !== -1) {
+                  Tawk_API.hideWidget();
+                }
+              };
               (function(){
                 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
                 s1.async=true;
