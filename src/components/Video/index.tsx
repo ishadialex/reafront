@@ -3,7 +3,7 @@
 import VideoModal from "@/components/video-modal";
 import Image from "next/image";
 import { useState } from "react";
-import SectionTitle from "../Common/SectionTitle";
+
 
 export default function Video() {
   const [isOpen, setOpen] = useState(false);
@@ -12,12 +12,11 @@ export default function Video() {
     <>
       <section className="relative z-10 py-8 md:py-10 lg:py-12">
         <div className="container">
-          <SectionTitle
-            title="We are ready to help"
-            // paragraph="There are many variations of passages of Lorem Ipsum available but the majority have suffered alteration in some form."
-            center
-            mb="80px"
-          />
+          <div className="mx-auto mb-16 text-center">
+            <h2 className="text-2xl font-bold leading-tight text-black dark:text-white sm:text-3xl md:text-[34px]">
+              See How Your Investment Works
+            </h2>
+          </div>
         </div>
         <div className="relative overflow-hidden">
           <div className="-mx-4 flex flex-wrap">

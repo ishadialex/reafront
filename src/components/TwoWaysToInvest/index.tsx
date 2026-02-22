@@ -48,10 +48,8 @@ const TwoWaysToInvest = ({ options }: TwoWaysToInvestProps) => {
       <div className="container">
         {/* Header */}
         <div className="mx-auto mb-12 max-w-[600px] text-center md:mb-16 lg:mb-20">
-          <h2 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-[45px] md:leading-tight">
-            Two Ways to
-            <br />
-            Invest
+          <h2 className="mb-4 text-2xl font-bold leading-tight text-black dark:text-white sm:text-3xl sm:leading-tight md:text-[34px] md:leading-tight">
+            Choose Your Path to Profit
           </h2>
         </div>
 

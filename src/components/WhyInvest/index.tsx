@@ -163,31 +163,31 @@ const WhyInvest = () => {
       icon: <LeverageIcon />,
       title: "Leverage That Multiplies Your Returns",
       description:
-        "Rather than purchasing properties outright, we take a smarter approach strategically utilizing mortgages to acquire high-performing Airbnb units in top-tier locations. This means we can control valuable real estate assets with significantly less upfront capital. By funding just a fraction of the property's value, you gain access to the full earning potential of the asset. This financial leverage not only amplifies your return on investment but also enables diversification across multiple properties, accelerating wealth creation and passive income generation. It's a powerful way to scale your portfolio without overextending your capital.",
+        "Rather than purchasing properties outright, we take a smarter approach by strategically utilizing Airbnb mortgage financing to acquire high-performing short-term rental units in top-tier locations. \n With just a fraction of the property value, you gain access to its full earning potential. This financial leverage amplifies your returns, enables diversification across multiple properties, and accelerates wealth creation without overextending your capital.",
     },
     {
       icon: <CashFlowIcon />,
-      title: "Steady Monthly Cash Flow",
+      title: "Consistent Cash Flow. Long Term Appreciation.",
       description:
         "Our strategically selected, fully furnished Airbnb units are located in high-demand travel destinations known for strong year-round occupancy. These properties are professionally managed to ensure exceptional guest experiences and maintain high booking rates. Each month, the income generated from bookings is first used to cover the mortgage, property maintenance, and operational expenses. The remaining profit is then distributed directly to you, offering a stable, predictable source of passive income month after month. This model ensures you benefit from both consistent cash flow and long-term property appreciation without the day-to-day responsibilities.",
     },
     {
       icon: <OwnershipIcon />,
-      title: "Real Ownership, Real Wealth",
+      title: "Building Equity While You Earn",
       description:
-        "Unlike traditional rental income models that feel like subsidizing someone else's property, our strategy is rooted in true asset ownership. With our mortgage-backed Airbnb investment model, you're not just generating monthly cash flow. You're actively building equity in appreciating real estate. Each payment chips away at the mortgage balance, steadily increasing your share of ownership. Over time, this transforms short-term gains into lasting wealth, secured by a physical, income-generating asset. This is how you turn passive income into real financial freedom anchored in property, powered by smart investment.",
+        "Unlike traditional rental models, our strategy is rooted in true asset ownership. Through our Airbnb mortgage model, you are not just generating monthly cash flow, you are actively building equity in appreciating real estate. Every booking chips away at the mortgage balance, steadily increasing your ownership stake. \n Over time, short-term returns evolve into lasting wealth, secured by a physical, income-generating asset. This is how smart investors use Airbnb mortgage and arbitrage strategies to turn passive income into real, lasting financial freedom.",
     },
     {
       icon: <HandsOffIcon />,
-      title: "A Truly Hands-Off Investment Experience",
+      title: "Completely Hands Free From Day One",
       description:
-        "From the initial search to ongoing operations, we provide a seamless and fully managed investment solution. Our team identifies high-performing short-term rental markets, acquires premium properties, and secures favorable mortgage terms on your behalf. We furnish each unit with stylish, Airbnb-optimized interiors and launch professionally crafted listings designed to maximize visibility and occupancy. But we don't stop there. Our operations team handles every aspect of guest management, from round-the-clock communication and smart pricing algorithms to thorough cleaning and ongoing maintenance. This end-to-end service allows you to enjoy passive monthly income and long-term asset growth without ever needing to be involved in the day-to-day. It's a stress-free, time-free investment designed for modern investors who want results without responsibilities.",
+        "From property search to ongoing operations, we deliver a fully managed investment experience. Our team identifies high-performing short-term rental markets, secures favorable Airbnb mortgage terms, and acquires premium properties on your behalf. Every unit is furnished with stylish, Airbnb-optimized interiors and launched with professionally crafted listings designed to maximize visibility and bookings. \n Our operations team handles everything from there, including guest communication, smart pricing, cleaning, and maintenance. Whether your investment is structured through Airbnb arbitrage or Airbnb mortgage, you never have to be involved in the day-to-day. \n You simply earn. We handle the rest.",
     },
     {
       icon: <DiversificationIcon />,
-      title: "Bonus Benefit: Diversification And Risk Mitigation",
+      title: "Stability Meets High Performance",
       description:
-        "Real estate has long been regarded as one of the most reliable and stable asset classes, known for its ability to preserve and grow wealth over time. When paired with the dynamic and adaptable nature of the short-term rental market, your investment benefits from both steady long-term value and agile income potential. This dual advantage not only diversifies your portfolio but also helps shield it from the unpredictability and sharp fluctuations often seen in traditional investments such as stocks and cryptocurrencies. It's a strategic way to balance growth with security.",
+        "Real estate has long been one of the most reliable asset classes for preserving and growing wealth. When paired with the high-yield potential of short-term rentals through Airbnb arbitrage and Airbnb mortgage strategies, your investment benefits from both long-term stability and agile income generation. \n This powerful combination diversifies your portfolio and shields it from the volatility that typically plagues stocks and cryptocurrencies. It is not just an investment. It is a smarter, more secure path to lasting financial growth.",
     },
   ];
 
@@ -233,7 +233,7 @@ const WhyInvest = () => {
               </h3>
 
               {/* Description */}
-              <p className="text-base leading-relaxed text-body-color dark:text-body-color-dark">
+              <p className="whitespace-pre-line text-base leading-relaxed text-body-color dark:text-body-color-dark">
                 {benefit.description}
               </p>
             </div>
@@ -261,7 +261,7 @@ const WhyInvest = () => {
               </h3>
 
               {/* Description */}
-              <p className="text-base leading-relaxed text-body-color dark:text-body-color-dark">
+              <p className="whitespace-pre-line text-base leading-relaxed text-body-color dark:text-body-color-dark">
                 {benefit.description}
               </p>
             </div>
