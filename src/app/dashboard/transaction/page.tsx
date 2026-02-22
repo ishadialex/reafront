@@ -77,7 +77,7 @@ function normalizeRows(txList: any[], fundOps: any[]): TxRow[] {
     rows.push({
       id: tx.id,
       type: tx.type,
-      amount: Math.abs(tx.amount),
+      amount: tx.amount,
       status: tx.status || "completed",
       date: tx.createdAt,
       description: tx.description || tx.type.replace(/_/g, " "),
@@ -172,7 +172,10 @@ function TransactionContent() {
   const goToPage = (p: number) => setCurrentPage(Math.max(1, Math.min(p, totalPages)));
   useEffect(() => { setCurrentPage(1); }, [selectedFilter, selectedStatus, searchQuery]);
 
-  const isCredit = (type: string) => ["deposit", "referral", "profit", "admin_bonus", "transfer_received"].includes(type);
+  const isCredit = (type: string, amount: number) =>
+    type === "admin_bonus"
+      ? amount > 0
+      : ["deposit", "referral", "profit", "transfer_received"].includes(type);
 
   const getTypeIcon = (type: string) => {
     if (type === "deposit") return <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />;
@@ -346,8 +349,8 @@ function TransactionContent() {
                       <td className="px-6 py-4"><span className="text-sm text-body-color dark:text-body-color-dark">{row.description}</span></td>
                       <td className="px-6 py-4"><span className="text-sm text-body-color dark:text-body-color-dark">{formatDate(row.date)}</span></td>
                       <td className="px-6 py-4 text-right">
-                        <span className={`text-sm font-semibold ${isCredit(row.type) ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-                          {isCredit(row.type) ? "+" : "-"}${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className={`text-sm font-semibold ${isCredit(row.type, row.amount) ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                          {isCredit(row.type, row.amount) ? "+" : "-"}${Math.abs(row.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">{getStatusBadge(row.status)}</td>
@@ -382,8 +385,8 @@ function TransactionContent() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-body-color dark:text-body-color-dark">Amount</p>
-                      <p className={`text-lg font-bold ${isCredit(row.type) ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-                        {isCredit(row.type) ? "+" : "-"}${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      <p className={`text-lg font-bold ${isCredit(row.type, row.amount) ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                        {isCredit(row.type, row.amount) ? "+" : "-"}${Math.abs(row.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                   </div>
@@ -438,13 +441,13 @@ function TransactionContent() {
           <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark">
             <p className="text-xs text-body-color dark:text-body-color-dark">Total Credits</p>
             <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
-              ${filtered.filter((r) => isCredit(r.type)).reduce((s, r) => s + r.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ${filtered.filter((r) => isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark">
             <p className="text-xs text-body-color dark:text-body-color-dark">Total Debits</p>
             <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
-              ${filtered.filter((r) => !isCredit(r.type)).reduce((s, r) => s + r.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ${filtered.filter((r) => !isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
         </div>

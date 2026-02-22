@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { api } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 interface Notification {
   id: string;
@@ -142,10 +142,10 @@ const NotificationPanel = ({ isOpen: controlledIsOpen, onToggle }: NotificationP
 
   // Connect Socket.io for real-time push notifications
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("_at") : null;
     if (!token) return;
 
-    const socket = io(API_URL, {
+    const socket = io(SOCKET_URL, {
       auth: { token },
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,

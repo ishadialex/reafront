@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 interface Transaction {
   id: string;
-  type: "deposit" | "withdrawal" | "investment" | "transfer" | "referral";
+  type: "deposit" | "withdrawal" | "investment" | "transfer" | "referral" | "profit" | "admin_bonus" | "transfer_received" | "transfer_sent";
   amount: number;
   status: "completed" | "pending" | "failed";
   date: string;
@@ -355,7 +355,9 @@ export default function TransactionDetailPage() {
   }
 
   const timeline = getTimeline(transaction);
-  const isCredit = transaction.type === "deposit" || transaction.type === "referral";
+  const isCredit = transaction.type === "admin_bonus"
+    ? transaction.amount > 0
+    : ["deposit", "referral", "profit", "transfer_received"].includes(transaction.type);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-US", {
@@ -422,7 +424,7 @@ export default function TransactionDetailPage() {
         <div className="mt-6 border-t border-gray-200 pt-6 dark:border-gray-800">
           <p className="mb-1 text-sm text-body-color dark:text-body-color-dark">Amount</p>
           <p className={`text-4xl font-bold ${isCredit ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-            {isCredit ? "+" : "-"}${transaction.amount.toLocaleString()}
+            {isCredit ? "+" : "-"}${Math.abs(transaction.amount).toLocaleString()}
           </p>
         </div>
       </div>

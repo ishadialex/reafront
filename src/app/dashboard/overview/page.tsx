@@ -148,7 +148,7 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
         transactions.push({
           id: tx.id,
           type: tx.type,
-          amount: Math.abs(tx.amount),
+          amount: tx.amount,
           status: tx.status,
           date: tx.createdAt,
           description: tx.description || tx.type.replace(/_/g, " "),
@@ -902,13 +902,13 @@ export default function DashboardOverviewPage() {
                     <div className="flex-shrink-0 text-right">
                       <p
                         className={`whitespace-nowrap text-sm font-semibold ${
-                          ["deposit", "referral", "profit", "admin_bonus", "transfer_received"].includes(transaction.type)
+                          (transaction.type === "admin_bonus" ? transaction.amount > 0 : ["deposit", "referral", "profit", "transfer_received"].includes(transaction.type))
                             ? "text-green-600 dark:text-green-400"
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {["deposit", "referral", "profit", "admin_bonus", "transfer_received"].includes(transaction.type) ? "+" : "-"}$
-                        {transaction.amount.toLocaleString()}
+                        {(transaction.type === "admin_bonus" ? transaction.amount > 0 : ["deposit", "referral", "profit", "transfer_received"].includes(transaction.type)) ? "+" : "-"}$
+                        {Math.abs(transaction.amount).toLocaleString()}
                       </p>
                       <span
                         className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
