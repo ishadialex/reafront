@@ -381,179 +381,23 @@ export default function DashboardOverviewPage() {
     );
   }, []);
 
-  // Generate dynamic greeting based on time of day, context, and events
+  // Subtitle carousel state
+  const [subtitleIdx, setSubtitleIdx] = useState(0);
+  const [subtitleVisible, setSubtitleVisible] = useState(true);
+
+  // Generate dynamic greeting — returns an array of subtitle slides
   const greeting = useMemo(() => {
-    if (!data.user) return { message: "Welcome back!", subtitle: "Here's an overview of your investment portfolio" };
+    if (!data.user) return { message: "Welcome back!", subtitles: ["Here's an overview of your investment portfolio"] };
 
     const now = new Date();
     const hour = now.getHours();
-    const month = now.getMonth(); // 0-11
+    const month = now.getMonth();
     const dayOfMonth = now.getDate();
-    const dayOfWeek = now.getDay(); // 0 (Sunday) - 6 (Saturday)
+    const dayOfWeek = now.getDay();
     const firstName = data.user.name.split(" ")[0];
 
-    // Weather suffix — appended to every subtitle when available
-    const weatherSuffix = weather
-      ? ` · ${weather.icon} ${weather.condition}, ${weather.temp}°C in ${weather.city}`
-      : "";
-
-    // Check for special events/holidays (highest priority)
-    const getEventGreeting = () => {
-      // New Year's Day
-      if (month === 0 && dayOfMonth === 1) {
-        return { isEvent: true, message: `🎉 Happy New Year, ${firstName}!`, subtitle: "Here's to a prosperous year ahead! Let's make your money work harder!" };
-      }
-      // New Year's Week
-      if (month === 0 && dayOfMonth <= 7) {
-        return { isEvent: true, message: `Happy New Year, ${firstName}!`, subtitle: "Start the year strong with smart investments!" };
-      }
-      // Valentine's Day
-      if (month === 1 && dayOfMonth === 14) {
-        return { isEvent: true, message: `💝 Happy Valentine's Day, ${firstName}!`, subtitle: "Love your investments as much as they love growing!" };
-      }
-      // St. Patrick's Day
-      if (month === 2 && dayOfMonth === 17) {
-        return { isEvent: true, message: `🍀 Happy St. Patrick's Day, ${firstName}!`, subtitle: "May luck be on your side with your investments!" };
-      }
-      // Easter (approximate - 3rd or 4th Sunday in March/April)
-      if ((month === 2 || month === 3) && dayOfWeek === 0 && (dayOfMonth >= 15 && dayOfMonth <= 25)) {
-        return { isEvent: true, message: `🐰 Happy Easter, ${firstName}!`, subtitle: "Watch your portfolio grow like Easter eggs!" };
-      }
-      // Earth Day
-      if (month === 3 && dayOfMonth === 22) {
-        return { isEvent: true, message: `🌍 Happy Earth Day, ${firstName}!`, subtitle: "Consider sustainable investments for a better tomorrow!" };
-      }
-      // Independence Day (US)
-      if (month === 6 && dayOfMonth === 4) {
-        return { isEvent: true, message: `🎆 Happy Independence Day, ${firstName}!`, subtitle: "Celebrate financial freedom with smart investments!" };
-      }
-      // Halloween
-      if (month === 9 && dayOfMonth === 31) {
-        return { isEvent: true, message: `🎃 Happy Halloween, ${firstName}!`, subtitle: "No tricks here, just treats for your portfolio!" };
-      }
-      // Black Friday
-      if (month === 10 && dayOfWeek === 5 && dayOfMonth >= 23 && dayOfMonth <= 29) {
-        return { isEvent: true, message: `🛍️ Happy Black Friday, ${firstName}!`, subtitle: "Great deals in the market - smart time to invest!" };
-      }
-      // Thanksgiving (US - 4th Thursday in November)
-      if (month === 10 && dayOfWeek === 4 && dayOfMonth >= 22 && dayOfMonth <= 28) {
-        return { isEvent: true, message: `🦃 Happy Thanksgiving, ${firstName}!`, subtitle: "Grateful for your trust in building wealth together!" };
-      }
-      // Christmas Eve
-      if (month === 11 && dayOfMonth === 24) {
-        return { isEvent: true, message: `🎄 Merry Christmas Eve, ${firstName}!`, subtitle: "Your investments are the gift that keeps giving!" };
-      }
-      // Christmas
-      if (month === 11 && dayOfMonth === 25) {
-        return { isEvent: true, message: `🎅 Merry Christmas, ${firstName}!`, subtitle: "Wishing you joy and prosperity this holiday season!" };
-      }
-      // Christmas Week
-      if (month === 11 && dayOfMonth >= 26 && dayOfMonth <= 31) {
-        return { isEvent: true, message: `Happy Holidays, ${firstName}!`, subtitle: "Year-end is perfect for reviewing your investment goals!" };
-      }
-      // New Year's Eve
-      if (month === 11 && dayOfMonth === 31) {
-        return { isEvent: true, message: `🎊 Happy New Year's Eve, ${firstName}!`, subtitle: "Reflect on your gains and plan for next year's success!" };
-      }
-
-      // Financial Calendar Events
-      // End of Quarter (March 31, June 30, Sept 30, Dec 31)
-      if ((month === 2 || month === 5 || month === 8 || month === 11) && dayOfMonth === 31) {
-        return { isEvent: true, message: `End of Quarter, ${firstName}!`, subtitle: "Time to review your quarterly investment performance!" };
-      }
-      // Tax Day (April 15 - approximate)
-      if (month === 3 && dayOfMonth === 15) {
-        return { isEvent: true, message: `Tax Day, ${firstName}!`, subtitle: "Don't forget to consider tax-efficient investments!" };
-      }
-
-      return { isEvent: false };
-    };
-
-    // Check for special events first
-    const eventGreeting = getEventGreeting();
-    if (eventGreeting.isEvent) {
-      return { ...eventGreeting, subtitle: eventGreeting.subtitle + weatherSuffix };
-    }
-
-    // Determine time period for regular greetings
-    let greetingPrefix = "";
-    let contextualMessage = "";
-
-    if (hour >= 5 && hour < 12) {
-      greetingPrefix = "Good morning";
-      const morningMessages = [
-        "Great to see you starting your day with us!",
-        "Ready to make today count?",
-        "Let's make some smart investment moves today!",
-        "Time to check on your portfolio growth!",
-        "Here's your portfolio summary to start the day"
-      ];
-      contextualMessage = morningMessages[Math.floor(Math.random() * morningMessages.length)];
-    } else if (hour >= 12 && hour < 17) {
-      greetingPrefix = "Good afternoon";
-      const afternoonMessages = [
-        "Hope your day is going well!",
-        "Let's see how your investments are performing!",
-        "Time to check your portfolio progress!",
-        "Your investments are working hard for you!",
-        "Here's an overview of your investment portfolio"
-      ];
-      contextualMessage = afternoonMessages[Math.floor(Math.random() * afternoonMessages.length)];
-    } else if (hour >= 17 && hour < 21) {
-      greetingPrefix = "Good evening";
-      const eveningMessages = [
-        "Wrapping up the day? Check your portfolio!",
-        "See how your investments performed today!",
-        "Your portfolio summary is ready!",
-        "Time to review today's market movements!",
-        "Here's your end-of-day portfolio update"
-      ];
-      contextualMessage = eveningMessages[Math.floor(Math.random() * eveningMessages.length)];
-    } else {
-      greetingPrefix = "Good evening";
-      const nightMessages = [
-        "Working late? Your investments never sleep!",
-        "Your portfolio is working while you rest!",
-        "Even at night, your money is growing!",
-        "Late night portfolio check? We've got you covered!",
-        "Here's your investment portfolio overview"
-      ];
-      contextualMessage = nightMessages[Math.floor(Math.random() * nightMessages.length)];
-    }
-
-    // Weekend override
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      const weekendMessages = [
-        "Enjoying the weekend? Your investments are still working!",
-        "Weekend vibes! But your portfolio never takes a break!",
-        "Relax this weekend knowing your money is working for you!",
-      ];
-      contextualMessage = weekendMessages[Math.floor(Math.random() * weekendMessages.length)];
-    }
-
-    // Start of month
-    if (dayOfMonth === 1) {
-      contextualMessage = "Happy new month! Time to review your investment goals!";
-    } else if (dayOfMonth <= 3) {
-      contextualMessage = "New month, new opportunities! Check your portfolio!";
-    }
-
-    // Monday motivation
-    if (dayOfWeek === 1 && hour >= 5 && hour < 12) {
-      contextualMessage = "Happy Monday! Let's start the week with your investment goals in focus!";
-    }
-
-    // Friday celebration
-    if (dayOfWeek === 5 && hour >= 12) {
-      const fridayMessages = [
-        "Happy Friday! Your investments worked hard this week!",
-        "TGIF! Check out how your portfolio performed this week!",
-        "Friday feeling! Your money has been growing all week!",
-      ];
-      contextualMessage = fridayMessages[Math.floor(Math.random() * fridayMessages.length)];
-    }
-
-    // ── Account activity override (highest real-time priority) ──────────────
+    // ── Account activity slides ──────────────────────────────────────────────
+    const activitySlides: string[] = [];
     const now24h = Date.now() - 24 * 60 * 60 * 1000;
     const now48h = Date.now() - 48 * 60 * 60 * 1000;
     const txs = data.transactions;
@@ -570,30 +414,108 @@ export default function DashboardOverviewPage() {
       (t) => t.type === "admin_bonus" && new Date(t.date).getTime() > now48h
     );
 
-    if (pendingDeposit) {
-      contextualMessage = `Your deposit of $${pendingDeposit.amount.toLocaleString()} is pending approval.`;
-    } else if (pendingWithdrawal) {
-      contextualMessage = `Your withdrawal of $${Math.abs(pendingWithdrawal.amount).toLocaleString()} is being processed.`;
-    } else if (recentApprovedDeposit) {
-      contextualMessage = `Your deposit of $${recentApprovedDeposit.amount.toLocaleString()} was approved — funds are in your account!`;
-    } else if (recentAdminBonus) {
+    if (pendingDeposit)
+      activitySlides.push(`💳 Your deposit of $${pendingDeposit.amount.toLocaleString()} is pending approval.`);
+    if (pendingWithdrawal)
+      activitySlides.push(`⏳ Your withdrawal of $${Math.abs(pendingWithdrawal.amount).toLocaleString()} is being processed.`);
+    if (recentApprovedDeposit)
+      activitySlides.push(`✅ Your deposit of $${recentApprovedDeposit.amount.toLocaleString()} was approved — funds are in your account!`);
+    if (recentAdminBonus) {
       const amt = Math.abs(recentAdminBonus.amount);
-      contextualMessage = recentAdminBonus.amount > 0
-        ? `You received a $${amt.toLocaleString()} admin bonus — check your balance!`
-        : `$${amt.toLocaleString()} was adjusted from your account by admin.`;
-    } else if (recentApprovedWithdrawal) {
-      contextualMessage = `Your withdrawal of $${Math.abs(recentApprovedWithdrawal.amount).toLocaleString()} has been processed.`;
-    } else if (data.balanceSummary?.pendingDeposits && data.balanceSummary.pendingDeposits > 0) {
-      contextualMessage = `You have $${data.balanceSummary.pendingDeposits.toLocaleString()} in deposits awaiting approval.`;
-    } else if (data.balanceSummary?.pendingWithdrawals && data.balanceSummary.pendingWithdrawals > 0) {
-      contextualMessage = `You have $${data.balanceSummary.pendingWithdrawals.toLocaleString()} in withdrawals being processed.`;
+      activitySlides.push(
+        recentAdminBonus.amount > 0
+          ? `🎁 You received a $${amt.toLocaleString()} admin bonus — check your balance!`
+          : `📋 $${amt.toLocaleString()} was adjusted from your account by admin.`
+      );
     }
+    if (recentApprovedWithdrawal)
+      activitySlides.push(`✅ Your withdrawal of $${Math.abs(recentApprovedWithdrawal.amount).toLocaleString()} has been processed.`);
+    if (!pendingDeposit && data.balanceSummary?.pendingDeposits && data.balanceSummary.pendingDeposits > 0)
+      activitySlides.push(`💳 You have $${data.balanceSummary.pendingDeposits.toLocaleString()} in deposits awaiting approval.`);
+    if (!pendingWithdrawal && data.balanceSummary?.pendingWithdrawals && data.balanceSummary.pendingWithdrawals > 0)
+      activitySlides.push(`⏳ You have $${data.balanceSummary.pendingWithdrawals.toLocaleString()} in withdrawals being processed.`);
+
+    // ── Weather slide ────────────────────────────────────────────────────────
+    const weatherSlide = weather
+      ? `${weather.icon} ${weather.condition}, ${weather.temp}°C in ${weather.city}`
+      : null;
+
+    // ── Special event / holiday slide ────────────────────────────────────────
+    const getEventSlide = (): { message: string; slide: string } | null => {
+      if (month === 0 && dayOfMonth === 1) return { message: `🎉 Happy New Year, ${firstName}!`, slide: "Here's to a prosperous year ahead! Let's make your money work harder!" };
+      if (month === 0 && dayOfMonth <= 7) return { message: `Happy New Year, ${firstName}!`, slide: "Start the year strong with smart investments!" };
+      if (month === 1 && dayOfMonth === 14) return { message: `💝 Happy Valentine's Day, ${firstName}!`, slide: "Love your investments as much as they love growing!" };
+      if (month === 2 && dayOfMonth === 17) return { message: `🍀 Happy St. Patrick's Day, ${firstName}!`, slide: "May luck be on your side with your investments!" };
+      if ((month === 2 || month === 3) && dayOfWeek === 0 && dayOfMonth >= 15 && dayOfMonth <= 25) return { message: `🐰 Happy Easter, ${firstName}!`, slide: "Watch your portfolio grow like Easter eggs!" };
+      if (month === 3 && dayOfMonth === 22) return { message: `🌍 Happy Earth Day, ${firstName}!`, slide: "Consider sustainable investments for a better tomorrow!" };
+      if (month === 6 && dayOfMonth === 4) return { message: `🎆 Happy Independence Day, ${firstName}!`, slide: "Celebrate financial freedom with smart investments!" };
+      if (month === 9 && dayOfMonth === 31) return { message: `🎃 Happy Halloween, ${firstName}!`, slide: "No tricks here, just treats for your portfolio!" };
+      if (month === 10 && dayOfWeek === 5 && dayOfMonth >= 23 && dayOfMonth <= 29) return { message: `🛍️ Happy Black Friday, ${firstName}!`, slide: "Great deals in the market — smart time to invest!" };
+      if (month === 10 && dayOfWeek === 4 && dayOfMonth >= 22 && dayOfMonth <= 28) return { message: `🦃 Happy Thanksgiving, ${firstName}!`, slide: "Grateful for your trust in building wealth together!" };
+      if (month === 11 && dayOfMonth === 24) return { message: `🎄 Merry Christmas Eve, ${firstName}!`, slide: "Your investments are the gift that keeps giving!" };
+      if (month === 11 && dayOfMonth === 25) return { message: `🎅 Merry Christmas, ${firstName}!`, slide: "Wishing you joy and prosperity this holiday season!" };
+      if (month === 11 && dayOfMonth >= 26 && dayOfMonth <= 30) return { message: `Happy Holidays, ${firstName}!`, slide: "Year-end is perfect for reviewing your investment goals!" };
+      if (month === 11 && dayOfMonth === 31) return { message: `🎊 Happy New Year's Eve, ${firstName}!`, slide: "Reflect on your gains and plan for next year's success!" };
+      if ((month === 2 || month === 5 || month === 8 || month === 11) && dayOfMonth === 31) return { message: `End of Quarter, ${firstName}!`, slide: "Time to review your quarterly investment performance!" };
+      if (month === 3 && dayOfMonth === 15) return { message: `Tax Day, ${firstName}!`, slide: "Don't forget to consider tax-efficient investments!" };
+      return null;
+    };
+    const eventSlide = getEventSlide();
+
+    // ── Time/day contextual slide ─────────────────────────────────────────────
+    let greetingPrefix = "Good morning";
+    let contextualSlide = "";
+
+    if (hour >= 5 && hour < 12) {
+      greetingPrefix = "Good morning";
+      contextualSlide = ["Great to see you starting your day with us!", "Ready to make today count?", "Let's make some smart investment moves today!", "Time to check on your portfolio growth!", "Here's your portfolio summary to start the day"][Math.floor(Math.random() * 5)];
+    } else if (hour >= 12 && hour < 17) {
+      greetingPrefix = "Good afternoon";
+      contextualSlide = ["Hope your day is going well!", "Let's see how your investments are performing!", "Time to check your portfolio progress!", "Your investments are working hard for you!", "Here's an overview of your investment portfolio"][Math.floor(Math.random() * 5)];
+    } else if (hour >= 17 && hour < 21) {
+      greetingPrefix = "Good evening";
+      contextualSlide = ["Wrapping up the day? Check your portfolio!", "See how your investments performed today!", "Your portfolio summary is ready!", "Time to review today's market movements!", "Here's your end-of-day portfolio update"][Math.floor(Math.random() * 5)];
+    } else {
+      greetingPrefix = "Good evening";
+      contextualSlide = ["Working late? Your investments never sleep!", "Your portfolio is working while you rest!", "Even at night, your money is growing!", "Late night portfolio check? We've got you covered!", "Here's your investment portfolio overview"][Math.floor(Math.random() * 5)];
+    }
+    if (dayOfWeek === 0 || dayOfWeek === 6) contextualSlide = ["Enjoying the weekend? Your investments are still working!", "Weekend vibes! But your portfolio never takes a break!", "Relax this weekend knowing your money is working for you!"][Math.floor(Math.random() * 3)];
+    if (dayOfMonth === 1) contextualSlide = "Happy new month! Time to review your investment goals!";
+    else if (dayOfMonth <= 3) contextualSlide = "New month, new opportunities! Check your portfolio!";
+    if (dayOfWeek === 1 && hour >= 5 && hour < 12) contextualSlide = "Happy Monday! Let's start the week with your investment goals in focus!";
+    if (dayOfWeek === 5 && hour >= 12) contextualSlide = ["Happy Friday! Your investments worked hard this week!", "TGIF! Check out how your portfolio performed this week!", "Friday feeling! Your money has been growing all week!"][Math.floor(Math.random() * 3)];
+
+    // ── Assemble slides: activity first, then weather, then event/contextual ──
+    const subtitles: string[] = [
+      ...activitySlides,
+      ...(weatherSlide ? [weatherSlide] : []),
+      ...(eventSlide ? [eventSlide.slide] : [contextualSlide]),
+    ];
 
     return {
-      message: `${greetingPrefix}, ${firstName}!`,
-      subtitle: contextualMessage + weatherSuffix,
+      message: eventSlide ? eventSlide.message : `${greetingPrefix}, ${firstName}!`,
+      subtitles: subtitles.length > 0 ? subtitles : [contextualSlide],
     };
   }, [data.user, data.transactions, data.balanceSummary, weather]);
+
+  // Reset carousel index when the slides change
+  useEffect(() => {
+    setSubtitleIdx(0);
+    setSubtitleVisible(true);
+  }, [greeting.subtitles]);
+
+  // Cycle through subtitle slides every 5 seconds with a fade transition
+  useEffect(() => {
+    if (greeting.subtitles.length <= 1) return;
+    const interval = setInterval(() => {
+      setSubtitleVisible(false);
+      setTimeout(() => {
+        setSubtitleIdx((prev) => (prev + 1) % greeting.subtitles.length);
+        setSubtitleVisible(true);
+      }, 300);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [greeting.subtitles]);
 
   // Calculate stats from investments
   const stats = useMemo(() => {
@@ -734,8 +656,8 @@ export default function DashboardOverviewPage() {
             <h1 className="text-2xl font-bold text-black dark:text-white md:text-3xl">
               {greeting.message}
             </h1>
-            <p className="mt-1 text-sm text-body-color dark:text-body-color-dark md:text-base">
-              {greeting.subtitle}
+            <p className={`mt-1 text-sm text-body-color dark:text-body-color-dark md:text-base transition-opacity duration-300 ${subtitleVisible ? "opacity-100" : "opacity-0"}`}>
+              {greeting.subtitles[subtitleIdx % greeting.subtitles.length]}
             </p>
           </>
         )}
