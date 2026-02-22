@@ -1332,8 +1332,9 @@ export default function PropertyDetailsPage({
               )}
             </div>
 
-            {/* Facts & Features Section */}
+            {/* Features Section */}
             {property.features && (
+              (property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") ? (
               <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
                 {/* Header */}
                 <button
@@ -1585,10 +1586,114 @@ export default function PropertyDetailsPage({
                   </div>
                 )}
               </div>
+              ) : (
+              /* Original Features Accordion */
+              <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
+                <button
+                  onClick={() => setOpenSection(openSection === "features" ? null : "features")}
+                  className="flex w-full items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 md:p-8"
+                >
+                  <h2 className="text-2xl font-bold text-black dark:text-white">
+                    Features
+                  </h2>
+                  <svg
+                    className={`h-6 w-6 text-black transition-transform duration-300 dark:text-white ${
+                      openSection === "features" ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openSection === "features" && (
+                  <div className="border-t border-gray-200 px-6 pb-6 dark:border-gray-700 md:px-8 md:pb-8">
+                    <div className="space-y-6 pt-6">
+                      {property.features!.intercom && property.features!.intercom.length > 0 && (
+                        <div>
+                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Intercom</h3>
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            {property.features!.intercom.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {property.features!.interiorDetails && property.features!.interiorDetails.length > 0 && (
+                        <div>
+                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Interior Details</h3>
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            {property.features!.interiorDetails.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {property.features!.outdoorDetails && property.features!.outdoorDetails.length > 0 && (
+                        <div>
+                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Outdoor Details</h3>
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            {property.features!.outdoorDetails.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {property.features!.utilities && property.features!.utilities.length > 0 && (
+                        <div>
+                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Utilities</h3>
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            {property.features!.utilities.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {property.features!.otherFeatures && property.features!.otherFeatures.length > 0 && (
+                        <div>
+                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Other Features</h3>
+                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            {property.features!.otherFeatures.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              )
             )}
 
             {/* ── Estimated Market Value & Climate Risks ── */}
-            {property.features && (
+            {(property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") && property.features && (
               <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
                 <div className="p-6 md:p-8">
                   {/* ── Estimated Market Value ── */}
