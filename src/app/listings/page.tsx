@@ -32,7 +32,11 @@ function mapPropertyData(apiProperty: InvestmentProperty): Property {
   return {
     id: apiProperty.id,
     title: apiProperty.title,
-    price: `$${apiProperty.minInvestment.toLocaleString()}`,
+    price: apiProperty.category === "for_sale"
+      ? (apiProperty.price > 0 ? `$${apiProperty.price.toLocaleString()}` : "Contact for price")
+      : (apiProperty.investmentType === "pooled"
+          ? (apiProperty.minInvestment > 0 ? `$${apiProperty.minInvestment.toLocaleString()}` : (apiProperty.targetAmount > 0 ? `$${apiProperty.targetAmount.toLocaleString()}` : "N/A"))
+          : `$${(apiProperty.minInvestment || 0).toLocaleString()}`),
     description: apiProperty.description,
     images: apiProperty.images && apiProperty.images.length > 0 ? apiProperty.images : [
       "/images/how-it-works/property-1.jpg",

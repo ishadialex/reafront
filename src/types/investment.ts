@@ -7,7 +7,7 @@ export interface InvestmentProperty {
 
   // Investment specifics
   investmentType: "individual" | "pooled";
-  category: "arbitrage" | "mortgage" | "airbnb";
+  category: "arbitrage" | "mortgage" | "airbnb" | "airbnb_arbitrage" | "airbnb_mortgage" | "for_sale";
 
   // Pricing
   price: number;

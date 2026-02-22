@@ -99,6 +99,14 @@ interface PropertyFeatures {
   fireRisk?: string;
   windRisk?: string;
   airQualityRisk?: string;
+  firstStreetUrl?: string;
+  // ── Getting around ──
+  walkScore?: number;
+  walkScoreDescription?: string;
+  bikeScore?: number;
+  bikeScoreDescription?: string;
+  transitScore?: number;
+  transitScoreDescription?: string;
   // ── Legacy (kept for backward compat with mock data) ──
   intercom?: string[];
   interiorDetails?: string[];
@@ -186,6 +194,8 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
     customId: apiProperty.id,
     available: apiProperty.status === "available" ? "Yes" : "No",
     floors: 1,
+    latitude: (apiProperty as any).latitude ?? undefined,
+    longitude: (apiProperty as any).longitude ?? undefined,
     investmentType: apiProperty.investmentType,
     investmentStatus: (apiProperty as any).investmentStatus || "",
     targetAmount: apiProperty.targetAmount || 0,
@@ -262,6 +272,14 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
       fireRisk:                (apiProperty as any).fireRisk                || "",
       windRisk:                (apiProperty as any).windRisk                || "",
       airQualityRisk:          (apiProperty as any).airQualityRisk          || "",
+      firstStreetUrl:          (apiProperty as any).firstStreetUrl          || "",
+      // ── Getting around ──
+      walkScore:               (apiProperty as any).walkScore               ?? undefined,
+      walkScoreDescription:    (apiProperty as any).walkScoreDescription    || "",
+      bikeScore:               (apiProperty as any).bikeScore               ?? undefined,
+      bikeScoreDescription:    (apiProperty as any).bikeScoreDescription    || "",
+      transitScore:            (apiProperty as any).transitScore            ?? undefined,
+      transitScoreDescription: (apiProperty as any).transitScoreDescription || "",
       // Legacy
       intercom:        [],
       interiorDetails: apiProperty.features || [],
@@ -713,7 +731,7 @@ export default function PropertyDetailsPage({
         </div>
 
         {/* Status Badges and Title */}
-        <div className="mb-8">
+        <div className={(property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") ? "mb-1" : "mb-8"}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg">
@@ -731,16 +749,18 @@ export default function PropertyDetailsPage({
               )}
             </div>
 
-            {/* Price Badge */}
-            <div className="rounded-xl bg-primary px-4 py-2 shadow-lg">
-              <p className="text-xs font-medium text-white opacity-90">
-                {property.investmentType === "pooled" ? "Min Investment" : "Starts from"}
-              </p>
-              <p className="text-lg font-bold text-white md:text-xl">{property.price}</p>
-              {property.investmentType === "pooled" && property.targetAmount ? (
-                <p className="text-xs text-white opacity-80">Target: ${property.targetAmount.toLocaleString()}</p>
-              ) : null}
-            </div>
+            {/* Price Badge — hidden for for_sale (shown above image instead) */}
+            {!(property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") && (
+              <div className="rounded-xl bg-primary px-4 py-2 shadow-lg">
+                <p className="text-xs font-medium text-white opacity-90">
+                  {property.investmentType === "pooled" ? "Min Investment" : "Starts from"}
+                </p>
+                <p className="text-lg font-bold text-white md:text-xl">{property.price}</p>
+                {property.investmentType === "pooled" && property.targetAmount ? (
+                  <p className="text-xs text-white opacity-80">Target: ${property.targetAmount.toLocaleString()}</p>
+                ) : null}
+              </div>
+            )}
           </div>
 
           <h1 className="mb-3 text-3xl font-bold text-black dark:text-white md:text-4xl lg:text-5xl">
@@ -762,8 +782,19 @@ export default function PropertyDetailsPage({
           </div>
         </div>
 
+        {/* Price badge for for_sale — normal flow, sits just above image */}
+        {(property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") && (
+          <div className="mb-1 flex justify-end">
+            <div className="rounded-xl bg-primary px-5 py-3 shadow-xl">
+              <p className="text-xs font-medium text-white opacity-90">Price</p>
+              <p className="text-xl font-bold text-white">{property.price}</p>
+            </div>
+          </div>
+        )}
+
         {/* Main Image Gallery */}
-        <div className="mb-8 overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-dark">
+        <div className="mb-8">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-dark">
           {/* Main Image */}
           <div
             className="relative h-[260px] w-full overflow-hidden sm:h-[360px] md:h-[460px] lg:h-[540px] cursor-zoom-in"
@@ -896,6 +927,7 @@ export default function PropertyDetailsPage({
             );
           })()}
         </div>
+        </div>
 
         {/* Overview and Contact Form Grid */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -905,19 +937,8 @@ export default function PropertyDetailsPage({
             {(property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") ? (
               /* ── For Sale: Zillow-style overview ── */
               <div className="mb-8 rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-dark md:p-8">
-                {/* Price + Address + Beds/Baths/Sqft */}
+                {/* Beds/Baths/Sqft */}
                 <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-3xl font-bold text-black dark:text-white md:text-4xl">
-                      {property.price}
-                    </h2>
-                    <div className="mt-1 flex items-start gap-1.5 text-body-color dark:text-body-color-dark">
-                      <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-sm">{property.location}</span>
-                    </div>
-                  </div>
                   {/* Beds / Baths / Sqft stats */}
                   <div className="flex items-center gap-3 sm:gap-5">
                     <div className="text-center">
@@ -952,6 +973,10 @@ export default function PropertyDetailsPage({
                   </div>
                   <a
                     href="#contact"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
                   >
                     Get pre-qualified
@@ -1118,45 +1143,6 @@ export default function PropertyDetailsPage({
               </div>
             )}
 
-            {/* Description Section */}
-            <div className="rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
-              {/* Description Header */}
-              <button
-                onClick={() => setOpenSection(openSection === "description" ? null : "description")}
-                className="flex w-full items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 md:p-8"
-              >
-                <h2 className="text-2xl font-bold text-black dark:text-white">
-                  Description
-                </h2>
-                <svg
-                  className={`h-6 w-6 text-black transition-transform duration-300 dark:text-white ${
-                    openSection === "description" ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-
-              {/* Description Content */}
-              {openSection === "description" && (
-                <div className="border-t border-gray-200 px-6 pb-6 dark:border-gray-700 md:px-8 md:pb-8">
-                  <div className="space-y-4 pt-6 leading-relaxed text-body-color dark:text-body-color-dark">
-                    {property.description.split('\n\n').map((paragraph, index) => (
-                      <p key={index}>{paragraph}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Details Section */}
             <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
               {/* Details Header */}
@@ -1187,146 +1173,34 @@ export default function PropertyDetailsPage({
               {/* Details Content */}
               {openSection === "details" && (
                 <div className="border-t border-gray-200 px-6 pb-6 dark:border-gray-700 md:px-8 md:pb-8">
-                  <div className="grid gap-6 pt-6 md:grid-cols-2 md:gap-x-12 md:gap-y-6">
-                    {/* Left Column */}
-                    <div className="space-y-4">
-                      {/* Property ID */}
-                      <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                        <span className="font-semibold text-black dark:text-white">
-                          Property Id:
-                        </span>
-                        <span className="text-body-color dark:text-body-color-dark">
-                          {property.id}
-                        </span>
-                      </div>
-
-                      {/* Property Lot Size */}
-                      {property.lotSize && (
-                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                          <span className="font-semibold text-black dark:text-white">
-                            Property Lot Size:
-                          </span>
-                          <span className="text-body-color dark:text-body-color-dark">
-                            {property.lotSize}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Bedrooms */}
-                      <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                        <span className="font-semibold text-black dark:text-white">
-                          Bedrooms:
-                        </span>
-                        <span className="text-body-color dark:text-body-color-dark">
-                          {property.bedrooms}
-                        </span>
-                      </div>
-
-                      {/* Custom ID */}
-                      {property.customId && (
-                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                          <span className="font-semibold text-black dark:text-white">
-                            Custom ID:
-                          </span>
-                          <span className="text-body-color dark:text-body-color-dark">
-                            {property.customId}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Available */}
-                      {property.available && (
-                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                          <span className="font-semibold text-black dark:text-white">
-                            Available:
-                          </span>
-                          <span className="text-body-color dark:text-body-color-dark">
-                            {property.available}
-                          </span>
-                        </div>
-                      )}
+                  <div className="grid gap-4 pt-6 md:grid-cols-2 md:gap-x-12">
+                    {/* Property ID */}
+                    <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="font-semibold text-black dark:text-white">Property ID:</span>
+                      <span className="text-body-color dark:text-body-color-dark">{property.id}</span>
                     </div>
 
-                    {/* Right Column */}
-                    <div className="space-y-4">
-                      {/* Price */}
-                      <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                        <span className="font-semibold text-black dark:text-white">
-                          {property.investmentType === "pooled" ? "Min Investment:" : "Starts from:"}
-                        </span>
-                        <span className="text-body-color dark:text-body-color-dark">
-                          {property.price}
-                        </span>
-                      </div>
-
-                      {/* Target Amount - pooled only */}
-                      {property.investmentType === "pooled" && property.targetAmount ? (
-                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                          <span className="font-semibold text-black dark:text-white">
-                            Target Amount:
-                          </span>
-                          <span className="text-body-color dark:text-body-color-dark">
-                            ${property.targetAmount.toLocaleString()}
-                          </span>
-                        </div>
-                      ) : null}
-
-                      {/* Current Funded - pooled only */}
-                      {property.investmentType === "pooled" && property.currentFunded ? (
-                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                          <span className="font-semibold text-black dark:text-white">
-                            Funded So Far:
-                          </span>
-                          <span className="text-body-color dark:text-body-color-dark">
-                            ${property.currentFunded.toLocaleString()}
-                          </span>
-                        </div>
-                      ) : null}
-
-                      {/* Rooms */}
-                      {property.rooms && (
-                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                          <span className="font-semibold text-black dark:text-white">
-                            Rooms:
-                          </span>
-                          <span className="text-body-color dark:text-body-color-dark">
-                            {property.rooms}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Bathrooms */}
-                      <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                        <span className="font-semibold text-black dark:text-white">
-                          Bathrooms:
-                        </span>
-                        <span className="text-body-color dark:text-body-color-dark">
-                          {property.bathrooms}
-                        </span>
-                      </div>
-
-                      {/* Parking Spaces */}
-                      <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                        <span className="font-semibold text-black dark:text-white">
-                          Parking Spaces:
-                        </span>
-                        <span className="text-body-color dark:text-body-color-dark">
-                          {property.parking}
-                        </span>
-                      </div>
-
-                      {/* Floors */}
-                      {property.floors && (
-                        <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                          <span className="font-semibold text-black dark:text-white">
-                            Floors No:
-                          </span>
-                          <span className="text-body-color dark:text-body-color-dark">
-                            {property.floors}
-                          </span>
-                        </div>
-                      )}
+                    {/* Price */}
+                    <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+                      <span className="font-semibold text-black dark:text-white">Price:</span>
+                      <span className="text-body-color dark:text-body-color-dark">{property.price}</span>
                     </div>
+
+                    {/* Custom ID */}
+                    {property.customId && (
+                      <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+                        <span className="font-semibold text-black dark:text-white">Custom ID:</span>
+                        <span className="text-body-color dark:text-body-color-dark">{property.customId}</span>
+                      </div>
+                    )}
+
+                    {/* Available */}
+                    {property.available && (
+                      <div className="flex justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+                        <span className="font-semibold text-black dark:text-white">Available:</span>
+                        <span className="text-body-color dark:text-body-color-dark">{property.available}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1362,15 +1236,20 @@ export default function PropertyDetailsPage({
                       const f = property.features!;
                       // Helper: comma-join a string array, or return fallback
                       const arr = (a?: string[]) => a && a.length > 0 ? a.join(", ") : null;
+                      const CheckIcon = () => (
+                        <svg style={{ flexShrink: 0, marginTop: "3px", width: "13px", height: "13px" }} className="text-primary" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      );
                       // Helper: render a key-value bullet row
                       const Row = ({ label, value }: { label: string; value: string | number | null | undefined }) => (
                         value !== null && value !== undefined && value !== "" && value !== 0
-                          ? <li className="text-sm text-body-color dark:text-body-color-dark">• {label}: {value}</li>
+                          ? <li className="flex items-start gap-1.5 text-sm text-body-color dark:text-body-color-dark"><CheckIcon /><span><span className="font-medium text-black dark:text-white">{label}:</span> {value}</span></li>
                           : null
                       );
                       // Helper: render a plain bullet item
                       const Item = ({ value }: { value: string }) => (
-                        <li className="text-sm text-body-color dark:text-body-color-dark">• {value}</li>
+                        <li className="flex items-start gap-1.5 text-sm text-body-color dark:text-body-color-dark"><CheckIcon /><span>{value}</span></li>
                       );
                       // Subsection header
                       const Sub = ({ title }: { title: string }) => (
@@ -1392,7 +1271,7 @@ export default function PropertyDetailsPage({
                             <div>
                               <div className="mb-6">
                                 <Sub title="Bedrooms & bathrooms" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   <Row label="Bedrooms" value={property.bedrooms} />
                                   <Row label="Bathrooms" value={property.bathrooms} />
                                   <Row label="Full bathrooms" value={f.fullBathrooms} />
@@ -1403,13 +1282,13 @@ export default function PropertyDetailsPage({
                                   {f.heating?.length ? (
                                     <div className="mb-6">
                                       <Sub title="Heating" />
-                                      <ul className="space-y-1.5"><Item value={f.heating!.join(", ")} /></ul>
+                                      <ul className="grid grid-cols-2 gap-x-4 gap-y-2"><Item value={f.heating!.join(", ")} /></ul>
                                     </div>
                                   ) : null}
                                   {f.cooling?.length ? (
                                     <div className="mb-6">
                                       <Sub title="Cooling" />
-                                      <ul className="space-y-1.5"><Item value={f.cooling!.join(", ")} /></ul>
+                                      <ul className="grid grid-cols-2 gap-x-4 gap-y-2"><Item value={f.cooling!.join(", ")} /></ul>
                                     </div>
                                   ) : null}
                                 </>
@@ -1417,7 +1296,7 @@ export default function PropertyDetailsPage({
                               {(f.appliancesIncluded?.length || f.laundry?.length) ? (
                                 <div className="mb-6">
                                   <Sub title="Appliances" />
-                                  <ul className="space-y-1.5">
+                                  <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                     {f.appliancesIncluded?.length ? <Row label="Included" value={arr(f.appliancesIncluded)} /> : null}
                                     {f.laundry?.length ? <Row label="Laundry" value={arr(f.laundry)} /> : null}
                                   </ul>
@@ -1428,7 +1307,7 @@ export default function PropertyDetailsPage({
                             <div>
                               <div className="mb-6">
                                 <Sub title="Features" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   {f.interiorFeatures?.map((item, i) => <Item key={i} value={item} />)}
                                   <Row label="Flooring" value={arr(f.flooring)} />
                                   <Row label="Windows" value={arr(f.windows)} />
@@ -1440,7 +1319,7 @@ export default function PropertyDetailsPage({
                               {(f.totalStructureArea || f.totalLivableArea) ? (
                                 <div className="mb-6">
                                   <Sub title="Interior area" />
-                                  <ul className="space-y-1.5">
+                                  <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                     <Row label="Total structure area" value={f.totalStructureArea} />
                                     <Row label="Total interior livable area" value={f.totalLivableArea} />
                                   </ul>
@@ -1455,7 +1334,7 @@ export default function PropertyDetailsPage({
                             {/* Left column */}
                             <div className="mb-6">
                               <Sub title="Features" />
-                              <ul className="space-y-1.5">
+                              <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <Row label="Levels" value={f.levels} />
                                 <Row label="Stories" value={f.stories} />
                                 <Row label="Patio & porch" value={arr(f.patioAndPorch)} />
@@ -1470,14 +1349,14 @@ export default function PropertyDetailsPage({
                             <div>
                               <div className="mb-6">
                                 <Sub title="Lot" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   <Row label="Size" value={property.lotSize || property.area} />
                                   <Row label="Features" value={arr(f.lotFeatures)} />
                                 </ul>
                               </div>
                               <div className="mb-6">
                                 <Sub title="Details" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   <Row label="Additional structures" value={f.additionalStructures} />
                                   <Row label="Parcel number" value={f.parcelNumber} />
                                 </ul>
@@ -1491,7 +1370,7 @@ export default function PropertyDetailsPage({
                             {/* Left column */}
                             <div className="mb-6">
                               <Sub title="Type & style" />
-                              <ul className="space-y-1.5">
+                              <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <Row label="Home type" value={f.homeType || property.type} />
                                 <Row label="Property subtype" value={f.propertySubtype} />
                               </ul>
@@ -1500,7 +1379,7 @@ export default function PropertyDetailsPage({
                             <div>
                               <div className="mb-6">
                                 <Sub title="Materials" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   {f.constructionMaterials?.map((m, i) => <Item key={i} value={m} />)}
                                   <Row label="Foundation" value={arr(f.foundation)} />
                                   <Row label="Roof" value={arr(f.roof)} />
@@ -1508,7 +1387,7 @@ export default function PropertyDetailsPage({
                               </div>
                               <div className="mb-6">
                                 <Sub title="Condition" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   <Row label="Year built" value={f.yearBuilt} />
                                 </ul>
                               </div>
@@ -1518,7 +1397,7 @@ export default function PropertyDetailsPage({
                           {/* ══ UTILITIES & GREEN ENERGY ══ */}
                           <Cat title="Utilities & green energy" />
                           <div className="px-6 py-6 md:px-8">
-                            <ul className="space-y-1.5">
+                            <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                               <Row label="Sewer" value={arr(f.sewer)} />
                               <Row label="Water" value={arr(f.water)} />
                               <Row label="Utilities for property" value={arr(f.utilitiesForProperty)} />
@@ -1531,7 +1410,7 @@ export default function PropertyDetailsPage({
                             {/* Left column */}
                             <div className="mb-6">
                               <Sub title="Community" />
-                              <ul className="space-y-1.5">
+                              <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                 <Row label="Features" value={arr(f.communityFeatures)} />
                                 <Row label="Security" value={arr(f.security)} />
                                 <Row label="Subdivision" value={f.subdivision} />
@@ -1541,14 +1420,14 @@ export default function PropertyDetailsPage({
                             <div>
                               <div className="mb-6">
                                 <Sub title="HOA" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   {f.hasHOA !== undefined ? <li className="text-sm text-body-color dark:text-body-color-dark">• Has HOA: {f.hasHOA ? "Yes" : "No"}</li> : null}
                                   <Row label="HOA fee" value={f.hoaFee} />
                                 </ul>
                               </div>
                               <div className="mb-6">
                                 <Sub title="Location" />
-                                <ul className="space-y-1.5">
+                                <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                                   <Row label="Region" value={f.region} />
                                 </ul>
                               </div>
@@ -1558,7 +1437,7 @@ export default function PropertyDetailsPage({
                           {/* ══ FINANCIAL & LISTING DETAILS ══ */}
                           <Cat title="Financial & listing details" />
                           <div className="px-6 py-6 md:px-8">
-                            <ul className="space-y-1.5">
+                            <ul className="grid grid-cols-2 gap-x-4 gap-y-2">
                               <Row label="Price per square foot" value={f.pricePerSqft} />
                               <Row label="Tax assessed value" value={f.taxAssessedValue} />
                               <Row label="Annual tax amount" value={f.annualTaxAmount} />
@@ -1609,82 +1488,32 @@ export default function PropertyDetailsPage({
                 </button>
                 {openSection === "features" && (
                   <div className="border-t border-gray-200 px-6 pb-6 dark:border-gray-700 md:px-8 md:pb-8">
-                    <div className="space-y-6 pt-6">
-                      {property.features!.intercom && property.features!.intercom.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Intercom</h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features!.intercom.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
-                              </div>
-                            ))}
+                    <div className="space-y-8 pt-6">
+                      {/* Helper: renders a section with items in 2-column balanced layout */}
+                      {[
+                        { label: "Intercom",          items: property.features!.intercom },
+                        { label: "Interior Details",  items: property.features!.interiorDetails },
+                        { label: "Outdoor Details",   items: property.features!.outdoorDetails },
+                        { label: "Utilities",         items: property.features!.utilities },
+                        { label: "Other Features",    items: property.features!.otherFeatures },
+                      ]
+                        .filter(({ items }) => items && items.length > 0)
+                        .map(({ label, items }) => (
+                          <div key={label}>
+                            <h3 className="mb-4 text-lg font-semibold text-black dark:text-white">{label}</h3>
+                            <div className="columns-2 gap-x-8 sm:columns-2 lg:columns-3">
+                              {items!.map((feature, index) => (
+                                <div key={index} className="mb-2.5 flex items-start gap-2 break-inside-avoid">
+                                  <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  <span className="text-sm text-body-color dark:text-body-color-dark">{feature}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {property.features!.interiorDetails && property.features!.interiorDetails.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Interior Details</h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features!.interiorDetails.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {property.features!.outdoorDetails && property.features!.outdoorDetails.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Outdoor Details</h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features!.outdoorDetails.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {property.features!.utilities && property.features!.utilities.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Utilities</h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features!.utilities.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {property.features!.otherFeatures && property.features!.otherFeatures.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 text-lg font-semibold text-black dark:text-white">Other Features</h3>
-                          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {property.features!.otherFeatures.map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <svg className="h-5 w-5 flex-shrink-0 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-body-color dark:text-body-color-dark">{feature}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                        ))
+                      }
                     </div>
                   </div>
                 )}
@@ -1694,6 +1523,7 @@ export default function PropertyDetailsPage({
 
             {/* ── Estimated Market Value & Climate Risks ── */}
             {(property.status.toLowerCase() === "for sale" || property.type.toLowerCase() === "for sale") && property.features && (
+              <>
               <div className="mt-8 rounded-2xl bg-white shadow-lg dark:bg-gray-dark">
                 <div className="p-6 md:p-8">
                   {/* ── Estimated Market Value ── */}
@@ -1703,10 +1533,10 @@ export default function PropertyDetailsPage({
 
                   {/* Three value cards */}
                   <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {/* Zestimate */}
+                    {/* PropEstimate */}
                     <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                       <p className="mb-1 text-xs text-body-color underline decoration-dotted dark:text-body-color-dark">
-                        Zestimate<sup>®</sup>
+                        PropEstimate<sup>™</sup>
                       </p>
                       <p className="text-lg font-bold text-black dark:text-white">
                         {property.features.zestimate || "Not available"}
@@ -1723,10 +1553,10 @@ export default function PropertyDetailsPage({
                           : "Not available"}
                       </p>
                     </div>
-                    {/* Rent Zestimate */}
+                    {/* Rent Estimate */}
                     <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
                       <p className="mb-1 text-xs text-body-color underline decoration-dotted dark:text-body-color-dark">
-                        Rent Zestimate<sup>®</sup>
+                        Rent Estimate<sup>™</sup>
                       </p>
                       <p className="text-lg font-bold text-black dark:text-white">
                         {property.features.rentZestimate || "Not available"}
@@ -1734,10 +1564,10 @@ export default function PropertyDetailsPage({
                     </div>
                   </div>
 
-                  {/* Zestimate history */}
+                  {/* Value History */}
                   <div className="mb-6">
                     <h3 className="mb-0.5 text-lg font-bold text-black dark:text-white">
-                      Zestimate<sup>®</sup> history
+                      Value History
                     </h3>
                     {property.features.zestimateChangePercent && (
                       <p className="mb-4 text-sm font-semibold text-green-600">
@@ -1746,57 +1576,173 @@ export default function PropertyDetailsPage({
                       </p>
                     )}
 
-                    {property.features.priceHistory && property.features.priceHistory.length > 0 ? (
-                      <div className="h-[260px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={property.features.priceHistory} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                            <XAxis
-                              dataKey="date"
-                              tick={{ fontSize: 11, fill: "#6b7280" }}
-                              tickLine={false}
-                              axisLine={false}
-                            />
-                            <YAxis
-                              tickFormatter={(v: number) =>
-                                v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M`
-                                : v >= 1000 ? `$${(v / 1000).toFixed(0)}K`
-                                : `$${v}`
-                              }
-                              tick={{ fontSize: 11, fill: "#6b7280" }}
-                              tickLine={false}
-                              axisLine={false}
-                              width={52}
-                            />
-                            <Tooltip
-                              formatter={(value: number) => [
-                                `$${value.toLocaleString()}`,
-                                "Estimated value",
-                              ]}
-                              contentStyle={{
-                                borderRadius: "8px",
-                                border: "1px solid #e5e7eb",
-                                fontSize: "12px",
-                              }}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="price"
-                              stroke="#16a34a"
-                              strokeWidth={2.5}
-                              dot={false}
-                              activeDot={{ r: 5, fill: "#16a34a" }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
-                        <p className="text-sm text-body-color dark:text-body-color-dark">
-                          Price history data not yet available
-                        </p>
-                      </div>
-                    )}
+                    {(() => {
+                      const demoHistory = [
+                        { date: "Jan '17", price: 259100 },
+                        { date: "Feb '17", price: 280500 },
+                        { date: "Mar '17", price: 335700 },
+                        { date: "Apr '17", price: 327400 },
+                        { date: "May '17", price: 342800 },
+                        { date: "5/17/17", price: 375000, event: "Sold for $375K" },
+                        { date: "Jun '17", price: 330400 },
+                        { date: "Jul '17", price: 354000 },
+                        { date: "Aug '17", price: 360800 },
+                        { date: "Sep '17", price: 362900 },
+                        { date: "Oct '17", price: 356900 },
+                        { date: "Nov '17", price: 350200 },
+                        { date: "Dec '17", price: 349400 },
+                        { date: "Jan '18", price: 367400 },
+                        { date: "Feb '18", price: 263000 },
+                        { date: "Mar '18", price: 243800 },
+                        { date: "Apr '18", price: 278900 },
+                        { date: "May '18", price: 284700 },
+                        { date: "Jun '18", price: 277400 },
+                        { date: "Jul '18", price: 269500 },
+                        { date: "Aug '18", price: 280200 },
+                        { date: "Sep '18", price: 271700 },
+                        { date: "Oct '18", price: 287600 },
+                        { date: "Nov '18", price: 290800 },
+                        { date: "Dec '18", price: 294000 },
+                        { date: "Jan '19", price: 315000 },
+                        { date: "Feb '19", price: 316000 },
+                        { date: "Mar '19", price: 310900 },
+                        { date: "Apr '19", price: 326100 },
+                        { date: "May '19", price: 320400 },
+                        { date: "Jun '19", price: 358200 },
+                        { date: "Jul '19", price: 338500 },
+                        { date: "Aug '19", price: 341300 },
+                        { date: "Sep '19", price: 335500 },
+                        { date: "Oct '19", price: 336200 },
+                        { date: "Nov '19", price: 337400 },
+                        { date: "Dec '19", price: 354700 },
+                        { date: "Jan '20", price: 334300 },
+                        { date: "Feb '20", price: 458600 },
+                        { date: "Mar '20", price: 470200 },
+                        { date: "Apr '20", price: 458600 },
+                        { date: "May '20", price: 458400 },
+                        { date: "Jun '20", price: 469900 },
+                        { date: "Jul '20", price: 430400 },
+                        { date: "Aug '20", price: 431500 },
+                        { date: "Sep '20", price: 432800 },
+                        { date: "Oct '20", price: 434100 },
+                        { date: "Nov '20", price: 437300 },
+                        { date: "Dec '20", price: 438700 },
+                        { date: "Jan '21", price: 440600 },
+                        { date: "Feb '21", price: 444100 },
+                        { date: "Mar '21", price: 445400 },
+                        { date: "Apr '21", price: 447100 },
+                        { date: "May '21", price: 452800 },
+                        { date: "Jun '21", price: 589700 },
+                        { date: "Jul '21", price: 600500 },
+                        { date: "Aug '21", price: 637300 },
+                        { date: "9/1/21", price: 637000, event: "Sold for $637K" },
+                        { date: "Sep '21", price: 640200 },
+                        { date: "Oct '21", price: 643500 },
+                        { date: "Nov '21", price: 645700 },
+                        { date: "Dec '21", price: 658700 },
+                        { date: "Jan '22", price: 661500 },
+                        { date: "Feb '22", price: 664100 },
+                        { date: "Mar '22", price: 666500 },
+                        { date: "Apr '22", price: 669800 },
+                        { date: "May '22", price: 673500 },
+                        { date: "Jun '22", price: 693400 },
+                        { date: "Jul '22", price: 697200 },
+                        { date: "Aug '22", price: 742800 },
+                        { date: "Sep '22", price: 747800 },
+                        { date: "Oct '22", price: 751600 },
+                        { date: "Nov '22", price: 740900 },
+                        { date: "Dec '22", price: 744000 },
+                        { date: "Jan '23", price: 747200 },
+                        { date: "Feb '23", price: 888200 },
+                        { date: "Mar '23", price: 870100 },
+                        { date: "Apr '23", price: 883700 },
+                        { date: "May '23", price: 888200 },
+                        { date: "Jun '23", price: 912200 },
+                        { date: "Jul '23", price: 898600 },
+                        { date: "Aug '23", price: 894900 },
+                        { date: "Sep '23", price: 885700 },
+                        { date: "Oct '23", price: 890200 },
+                        { date: "Nov '23", price: 893100 },
+                        { date: "Dec '23", price: 896300 },
+                        { date: "Jan '24", price: 772000 },
+                        { date: "Feb '24", price: 848100 },
+                        { date: "Mar '24", price: 849600 },
+                        { date: "Apr '24", price: 847200 },
+                        { date: "May '24", price: 770200 },
+                        { date: "Nov '24", price: 696200 },
+                        { date: "Dec '24", price: 681300 },
+                        { date: "Jan '25", price: 678700 },
+                        { date: "Feb '25", price: 696600 },
+                        { date: "Mar '25", price: 678500 },
+                        { date: "Apr '25", price: 680500 },
+                        { date: "May '25", price: 692500 },
+                        { date: "Jun '25", price: 688600 },
+                        { date: "Jul '25", price: 666600 },
+                        { date: "Aug '25", price: 690500 },
+                        { date: "Sep '25", price: 682000 },
+                        { date: "Oct '25", price: 679700 },
+                        { date: "Nov '25", price: 675200 },
+                        { date: "Dec '25", price: 675000 },
+                        { date: "Jan '26", price: 677000 },
+                        { date: "Feb '26", price: 596700 },
+                      ];
+                      const chartData = property.features!.priceHistory?.length
+                        ? property.features!.priceHistory
+                        : demoHistory;
+                      const yearTicks = ["Jan '17","Jan '18","Jan '19","Jan '20","Jan '21","Jan '22","Jan '23","Jan '24","Jan '25","Jan '26"];
+                      return (
+                        <div className="h-[300px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                              <XAxis
+                                dataKey="date"
+                                ticks={yearTicks}
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <YAxis
+                                tickFormatter={(v: number) =>
+                                  v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M`
+                                  : v >= 1000 ? `$${(v / 1000).toFixed(0)}K`
+                                  : `$${v}`
+                                }
+                                tick={{ fontSize: 11, fill: "#6b7280" }}
+                                tickLine={false}
+                                axisLine={false}
+                                width={52}
+                              />
+                              <Tooltip
+                                formatter={(value: number, _name: string, props: any) => [
+                                  `$${Number(value).toLocaleString()}`,
+                                  props.payload?.event || "Estimated value",
+                                ]}
+                                labelFormatter={(label) => String(label)}
+                                contentStyle={{
+                                  borderRadius: "8px",
+                                  border: "1px solid #e5e7eb",
+                                  fontSize: "12px",
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="price"
+                                stroke="#16a34a"
+                                strokeWidth={2.5}
+                                dot={(props: any) => {
+                                  if (props.payload?.event) {
+                                    return <circle key={props.key} cx={props.cx} cy={props.cy} r={5} fill="#dc2626" stroke="#fff" strokeWidth={2} />;
+                                  }
+                                  return <g key={props.key} />;
+                                }}
+                                activeDot={{ r: 5, fill: "#16a34a" }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Divider */}
@@ -1807,7 +1753,19 @@ export default function PropertyDetailsPage({
                     Climate risks
                   </h2>
                   <p className="mb-5 text-sm leading-relaxed text-body-color dark:text-body-color-dark">
-                    Explore flood, wildfire, and other predictive climate risk information for this property.
+                    Explore flood, wildfire, and other predictive climate risk information for this property on{" "}
+                    {property.features.firstStreetUrl ? (
+                      <a
+                        href={property.features.firstStreetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-primary underline hover:opacity-80"
+                      >
+                        First Street<sup>®</sup>
+                      </a>
+                    ) : (
+                      <span className="font-medium text-primary">First Street<sup>®</sup></span>
+                    )}.
                   </p>
 
                   <div className="space-y-4">
@@ -1842,8 +1800,97 @@ export default function PropertyDetailsPage({
                       </div>
                     )}
                   </div>
+
                 </div>
               </div>
+
+              {/* ── Getting Around ── */}
+              <div className="mt-8 rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-dark md:p-8">
+                <h2 className="mb-6 text-2xl font-bold text-black dark:text-white">
+                  Getting around
+                </h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {/* Walk Score */}
+                  {(() => {
+                    const score = property.features?.walkScore ?? 11;
+                    const desc = property.features?.walkScoreDescription || "Car-Dependent";
+                    return (
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#2ecc40]">
+                          {/* walking person icon */}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 w-7 fill-white">
+                            <circle cx="12" cy="3.5" r="1.5" />
+                            <path d="M10 8.5c-.6.9-1 2-1 3.2V18h1.5v-6h3V18H15v-6.3c0-1.2-.4-2.3-1-3.2L13 7h-2l-1 1.5zM9 20h6v1.5H9z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-black dark:text-white">
+                            Walk Score<sup>®</sup>
+                          </p>
+                          <p className="text-sm text-body-color dark:text-body-color-dark">
+                            <span className="font-bold text-black dark:text-white">{score}</span>
+                            <span className="text-gray-400"> / 100</span>
+                          </p>
+                          <p className="text-sm text-body-color dark:text-body-color-dark">{desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Bike Score */}
+                  {(() => {
+                    const score = property.features?.bikeScore ?? 18;
+                    const desc = property.features?.bikeScoreDescription || "Somewhat Bikeable";
+                    return (
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#2ecc40]">
+                          {/* bicycle icon */}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 w-7 fill-white">
+                            <path d="M5 18.5A3.5 3.5 0 1 0 5 11.5a3.5 3.5 0 0 0 0 7zm0-1.5A2 2 0 1 1 5 13a2 2 0 0 1 0 4zm14 1.5A3.5 3.5 0 1 0 19 11.5a3.5 3.5 0 0 0 0 7zm0-1.5A2 2 0 1 1 19 13a2 2 0 0 1 0 4zM9 6h3l2.5 5H9.5L8 8.5 6.5 10H5l3-4zm1.2 1L8.7 9h4.6L11.2 7zM9 11l1.5 3H14l-1-2H9z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-black dark:text-white">
+                            Bike Score<sup>®</sup>
+                          </p>
+                          <p className="text-sm text-body-color dark:text-body-color-dark">
+                            <span className="font-bold text-black dark:text-white">{score}</span>
+                            <span className="text-gray-400"> / 100</span>
+                          </p>
+                          <p className="text-sm text-body-color dark:text-body-color-dark">{desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Transit Score — only if data present */}
+                  {property.features?.transitScore !== undefined && (() => {
+                    const score = property.features!.transitScore!;
+                    const desc = property.features!.transitScoreDescription || "";
+                    return (
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-[#2ecc40]">
+                          {/* bus / transit icon */}
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 w-7 fill-white">
+                            <path d="M4 6a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v9a2 2 0 0 1-1 1.73V18a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2h-4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-1.27A2 2 0 0 1 4 15V6zm2 0v7h12V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2zm1 10a1 1 0 1 0 2 0 1 1 0 0 0-2 0zm9 0a1 1 0 1 0 2 0 1 1 0 0 0-2 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-black dark:text-white">
+                            Transit Score<sup>®</sup>
+                          </p>
+                          <p className="text-sm text-body-color dark:text-body-color-dark">
+                            <span className="font-bold text-black dark:text-white">{score}</span>
+                            <span className="text-gray-400"> / 100</span>
+                          </p>
+                          {desc && <p className="text-sm text-body-color dark:text-body-color-dark">{desc}</p>}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+              </>
             )}
 
             {/* Map Section */}
