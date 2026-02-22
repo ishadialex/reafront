@@ -27,9 +27,11 @@ interface BalanceSummary {
 
 interface Investment {
   id: string;
+  propertyId?: string;
   propertyTitle: string;
   amount: number;
   expectedROI: number;
+  propertyExpectedROI: number;
   expectedReturn: number;
   monthlyReturn: number;
   status: "active" | "completed" | "pending";
@@ -119,9 +121,11 @@ const fetchInvestments = async (): Promise<Investment[]> => {
     if (result.success && result.data) {
       return result.data.map((inv: any) => ({
         id: inv.id,
+        propertyId: inv.propertyId || undefined,
         propertyTitle: inv.propertyTitle || "Investment",
         amount: inv.amount,
         expectedROI: inv.expectedROI || 0,
+        propertyExpectedROI: inv.propertyExpectedROI ?? inv.expectedROI ?? 0,
         expectedReturn: inv.expectedReturn || 0,
         monthlyReturn: inv.monthlyReturn || 0,
         status: inv.status,
@@ -264,6 +268,7 @@ export default function DashboardOverviewPage() {
     properties: true,
   });
   const [error, setError] = useState<string | null>(null);
+  const [weather, setWeather] = useState<{ temp: number; icon: string; condition: string; city: string } | null>(null);
 
   // Fetch all dashboard data — each piece updates state as soon as it arrives
   const fetchDashboardData = useCallback(() => {
@@ -325,6 +330,57 @@ export default function DashboardOverviewPage() {
     return () => clearInterval(pollInterval);
   }, [data.user?.kycStatus]); // Re-run when KYC status changes
 
+  // Fetch weather via geolocation + Open-Meteo (free, no API key needed)
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const wmoIcon = (code: number): string => {
+      if (code === 0) return "☀️";
+      if (code <= 2) return "🌤️";
+      if (code === 3) return "☁️";
+      if (code <= 48) return "🌫️";
+      if (code <= 67) return "🌧️";
+      if (code <= 77) return "🌨️";
+      if (code <= 82) return "🌦️";
+      return "⛈️";
+    };
+    const wmoCondition = (code: number): string => {
+      if (code === 0) return "Clear and sunny";
+      if (code <= 2) return "Mostly clear";
+      if (code === 3) return "Overcast";
+      if (code <= 48) return "Foggy";
+      if (code <= 57) return "Drizzling";
+      if (code <= 67) return "Rainy";
+      if (code <= 77) return "Snowy";
+      if (code <= 82) return "Showery";
+      return "Stormy";
+    };
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const [weatherRes, geoRes] = await Promise.all([
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true`),
+            fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`),
+          ]);
+          const weatherJson = await weatherRes.json();
+          const geoJson = await geoRes.json();
+          const cw = weatherJson.current_weather;
+          const addr = geoJson.address;
+          const city = addr.city || addr.town || addr.village || addr.county || "your area";
+          setWeather({
+            temp: Math.round(cw.temperature),
+            icon: wmoIcon(cw.weathercode),
+            condition: wmoCondition(cw.weathercode),
+            city,
+          });
+        } catch {
+          // weather is optional — silent fail
+        }
+      },
+      () => {/* permission denied — skip */},
+      { timeout: 8000 }
+    );
+  }, []);
+
   // Generate dynamic greeting based on time of day, context, and events
   const greeting = useMemo(() => {
     if (!data.user) return { message: "Welcome back!", subtitle: "Here's an overview of your investment portfolio" };
@@ -335,6 +391,11 @@ export default function DashboardOverviewPage() {
     const dayOfMonth = now.getDate();
     const dayOfWeek = now.getDay(); // 0 (Sunday) - 6 (Saturday)
     const firstName = data.user.name.split(" ")[0];
+
+    // Weather suffix — appended to every subtitle when available
+    const weatherSuffix = weather
+      ? ` · ${weather.icon} ${weather.condition}, ${weather.temp}°C in ${weather.city}`
+      : "";
 
     // Check for special events/holidays (highest priority)
     const getEventGreeting = () => {
@@ -411,7 +472,7 @@ export default function DashboardOverviewPage() {
     // Check for special events first
     const eventGreeting = getEventGreeting();
     if (eventGreeting.isEvent) {
-      return eventGreeting;
+      return { ...eventGreeting, subtitle: eventGreeting.subtitle + weatherSuffix };
     }
 
     // Determine time period for regular greetings
@@ -492,11 +553,47 @@ export default function DashboardOverviewPage() {
       contextualMessage = fridayMessages[Math.floor(Math.random() * fridayMessages.length)];
     }
 
+    // ── Account activity override (highest real-time priority) ──────────────
+    const now24h = Date.now() - 24 * 60 * 60 * 1000;
+    const now48h = Date.now() - 48 * 60 * 60 * 1000;
+    const txs = data.transactions;
+
+    const pendingDeposit = txs.find((t) => t.type === "deposit" && t.status === "pending");
+    const pendingWithdrawal = txs.find((t) => t.type === "withdrawal" && t.status === "pending");
+    const recentApprovedDeposit = txs.find(
+      (t) => t.type === "deposit" && t.status === "completed" && new Date(t.date).getTime() > now24h
+    );
+    const recentApprovedWithdrawal = txs.find(
+      (t) => t.type === "withdrawal" && t.status === "completed" && new Date(t.date).getTime() > now24h
+    );
+    const recentAdminBonus = txs.find(
+      (t) => t.type === "admin_bonus" && new Date(t.date).getTime() > now48h
+    );
+
+    if (pendingDeposit) {
+      contextualMessage = `Your deposit of $${pendingDeposit.amount.toLocaleString()} is pending approval.`;
+    } else if (pendingWithdrawal) {
+      contextualMessage = `Your withdrawal of $${Math.abs(pendingWithdrawal.amount).toLocaleString()} is being processed.`;
+    } else if (recentApprovedDeposit) {
+      contextualMessage = `Your deposit of $${recentApprovedDeposit.amount.toLocaleString()} was approved — funds are in your account!`;
+    } else if (recentAdminBonus) {
+      const amt = Math.abs(recentAdminBonus.amount);
+      contextualMessage = recentAdminBonus.amount > 0
+        ? `You received a $${amt.toLocaleString()} admin bonus — check your balance!`
+        : `$${amt.toLocaleString()} was adjusted from your account by admin.`;
+    } else if (recentApprovedWithdrawal) {
+      contextualMessage = `Your withdrawal of $${Math.abs(recentApprovedWithdrawal.amount).toLocaleString()} has been processed.`;
+    } else if (data.balanceSummary?.pendingDeposits && data.balanceSummary.pendingDeposits > 0) {
+      contextualMessage = `You have $${data.balanceSummary.pendingDeposits.toLocaleString()} in deposits awaiting approval.`;
+    } else if (data.balanceSummary?.pendingWithdrawals && data.balanceSummary.pendingWithdrawals > 0) {
+      contextualMessage = `You have $${data.balanceSummary.pendingWithdrawals.toLocaleString()} in withdrawals being processed.`;
+    }
+
     return {
       message: `${greetingPrefix}, ${firstName}!`,
-      subtitle: contextualMessage,
+      subtitle: contextualMessage + weatherSuffix,
     };
-  }, [data.user]);
+  }, [data.user, data.transactions, data.balanceSummary, weather]);
 
   // Calculate stats from investments
   const stats = useMemo(() => {
@@ -509,7 +606,14 @@ export default function DashboardOverviewPage() {
     // Count unique properties (not individual investment transactions)
     const uniquePropertyTitles = new Set(activeInvestments.map(inv => inv.propertyTitle));
     const activeCount = uniquePropertyTitles.size;
-    const totalROI = activeInvestments.reduce((sum, inv) => sum + inv.expectedROI, 0);
+    // Sum expectedROI once per unique property
+    const seenPropertyIds = new Set<string>();
+    const totalROI = activeInvestments.reduce((sum, inv) => {
+      const key = inv.propertyId || inv.propertyTitle;
+      if (seenPropertyIds.has(key)) return sum;
+      seenPropertyIds.add(key);
+      return sum + inv.propertyExpectedROI;
+    }, 0);
 
     return {
       accountBalance: data.balanceSummary?.balance ?? data.user?.accountBalance ?? 0,
@@ -619,41 +723,22 @@ export default function DashboardOverviewPage() {
   return (
     <div className="min-h-screen">
       {/* Welcome Header */}
-      <div className="mb-6 flex items-center justify-between md:mb-8">
-        <div>
-          {loading.user ? (
-            <div className="animate-pulse">
-              <div className="h-8 w-48 rounded bg-gray-200 dark:bg-gray-700" />
-              <div className="mt-2 h-4 w-64 rounded bg-gray-200 dark:bg-gray-700" />
-            </div>
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold text-black dark:text-white md:text-3xl">
-                {greeting.message}
-              </h1>
-              <p className="mt-1 text-sm text-body-color dark:text-body-color-dark md:text-base">
-                {greeting.subtitle}
-              </p>
-            </>
-          )}
-        </div>
-        <button
-          onClick={handleRefresh}
-          disabled={loading.user || loading.balance || loading.investments || loading.transactions || loading.properties}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
-          title="Refresh data"
-        >
-          <svg
-            className={`h-5 w-5 text-gray-600 dark:text-gray-400 ${
-              loading.user || loading.balance || loading.investments || loading.transactions || loading.properties ? "animate-spin" : ""
-            }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
+      <div className="mb-6 md:mb-8">
+        {loading.user ? (
+          <div className="animate-pulse">
+            <div className="h-8 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="mt-2 h-4 w-64 rounded bg-gray-200 dark:bg-gray-700" />
+          </div>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-black dark:text-white md:text-3xl">
+              {greeting.message}
+            </h1>
+            <p className="mt-1 text-sm text-body-color dark:text-body-color-dark md:text-base">
+              {greeting.subtitle}
+            </p>
+          </>
+        )}
       </div>
 
       {/* Main Stats Cards */}
@@ -765,7 +850,7 @@ export default function DashboardOverviewPage() {
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark md:p-6">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-medium text-body-color dark:text-body-color-dark">
-                  Portfolio ROI
+                  Expected Portfolio ROI
                 </p>
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
                   <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
