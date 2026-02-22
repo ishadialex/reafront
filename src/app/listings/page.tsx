@@ -18,107 +18,9 @@ interface Property {
   parking: number;
   status: string;
   investmentType: "individual" | "pooled";
+  category: string;
 }
 
-// Fallback mock properties data
-const mockProperties: Property[] = [
-  {
-    id: "1",
-    title: "Cycladic home in Fira, Greece",
-    price: "$25,000",
-    description: "This luxury villa has the best location and feature specious terraces with famous view of ...",
-    images: [
-      "/images/how-it-works/property-1.jpg",
-      "/images/how-it-works/property-2.jpg",
-      "/images/how-it-works/property-3.jpg",
-    ],
-    bedrooms: 3,
-    bathrooms: 3,
-    parking: 2,
-    status: "Available",
-    investmentType: "individual",
-  },
-  {
-    id: "2",
-    title: "Entire Rental Property Ownership",
-    price: "$15,000",
-    description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
-    images: [
-      "/images/how-it-works/property-2.jpg",
-      "/images/how-it-works/property-1.jpg",
-      "/images/how-it-works/property-3.jpg",
-    ],
-    bedrooms: 4,
-    bathrooms: 2,
-    parking: 1,
-    status: "Available",
-    investmentType: "pooled",
-  },
-  {
-    id: "3",
-    title: "Entire Rental Property Ownership",
-    price: "$15,000",
-    description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
-    images: [
-      "/images/how-it-works/property-3.jpg",
-      "/images/how-it-works/property-1.jpg",
-      "/images/how-it-works/property-2.jpg",
-    ],
-    bedrooms: 2,
-    bathrooms: 2,
-    parking: 1,
-    status: "Available",
-    investmentType: "individual",
-  },
-  {
-    id: "4",
-    title: "Entire Rental Property Ownership",
-    price: "$15,000",
-    description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
-    images: [
-      "/images/how-it-works/property-1.jpg",
-      "/images/how-it-works/property-2.jpg",
-      "/images/how-it-works/property-3.jpg",
-    ],
-    bedrooms: 5,
-    bathrooms: 3,
-    parking: 2,
-    status: "Available",
-    investmentType: "pooled",
-  },
-  {
-    id: "5",
-    title: "Entire Rental Property Ownership",
-    price: "$15,000",
-    description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
-    images: [
-      "/images/how-it-works/property-2.jpg",
-      "/images/how-it-works/property-3.jpg",
-      "/images/how-it-works/property-1.jpg",
-    ],
-    bedrooms: 3,
-    bathrooms: 2,
-    parking: 2,
-    status: "Available",
-    investmentType: "individual",
-  },
-  {
-    id: "6",
-    title: "Entire Rental Property Ownership",
-    price: "$15,000",
-    description: "Step into full ownership of a profitable Airbnb rental property with an investment as low as $15,000.",
-    images: [
-      "/images/how-it-works/property-3.jpg",
-      "/images/how-it-works/property-2.jpg",
-      "/images/how-it-works/property-1.jpg",
-    ],
-    bedrooms: 4,
-    bathrooms: 3,
-    parking: 1,
-    status: "Available",
-    investmentType: "pooled",
-  },
-];
 
 // Helper function to map API property data to component format
 function mapPropertyData(apiProperty: InvestmentProperty): Property {
@@ -142,6 +44,7 @@ function mapPropertyData(apiProperty: InvestmentProperty): Property {
     parking: apiProperty.parking,
     status: formattedStatus || "N/A",
     investmentType: apiProperty.investmentType,
+    category: apiProperty.category || "",
   };
 }
 
@@ -183,6 +86,19 @@ function PropertyCard({ property }: { property: Property }) {
 
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-10" />
+
+        {/* Category Badge */}
+        {property.category && (
+          <div className="absolute left-4 top-4 z-10">
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md ${{
+              airbnb_arbitrage: "bg-blue-600",
+              airbnb_mortgage: "bg-purple-600",
+              for_sale: "bg-green-600",
+            }[property.category] ?? "bg-gray-600"}`}>
+              {({ airbnb_arbitrage: "Airbnb Arbitrage", airbnb_mortgage: "Airbnb Mortgage", for_sale: "For Sale" } as Record<string, string>)[property.category] ?? property.category}
+            </span>
+          </div>
+        )}
 
         {/* Status Badge */}
         <div className="absolute right-4 top-4 z-10 flex flex-col items-end gap-2">
@@ -385,14 +301,10 @@ export default function ListingsPage() {
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         const list: InvestmentProperty[] = data.data || [];
-        if (list.length > 0) {
-          setProperties(list.map(mapPropertyData));
-        } else {
-          setProperties(mockProperties);
-        }
+        setProperties(list.map(mapPropertyData));
       } catch (error: any) {
-        console.error("Failed to fetch properties, using fallback data:", error);
-        setProperties(mockProperties);
+        console.error("Failed to fetch properties:", error);
+        setProperties([]);
       } finally {
         setLoading(false);
       }
@@ -419,14 +331,18 @@ export default function ListingsPage() {
               {/* Overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-black/70 to-black/50" />
 
-              {/* Text Content on Image */}
-              <div className="absolute inset-0 flex flex-col justify-center p-8 text-white md:p-12 lg:p-16">
+              {/* Top-left: Earn Monthly */}
+              <div className="absolute left-0 top-0 p-8 text-white md:p-12 lg:p-16">
                 <p className="mb-2 text-sm font-medium uppercase tracking-wider md:text-base">
                   EARN MONTHLY
                 </p>
-                <h2 className="mb-6 text-6xl font-bold md:text-7xl lg:text-8xl">
-                  15%
+                <h2 className="text-5xl font-bold md:text-7xl lg:text-6xl">
+                  7% -15%
                 </h2>
+              </div>
+
+              {/* Bottom-right: Investment */}
+              <div className="absolute bottom-0 right-0 p-8 text-right text-white md:p-12 lg:p-16">
                 <p className="mb-3 text-lg font-semibold uppercase tracking-wide md:text-xl">
                   INVESTMENT
                 </p>
@@ -441,23 +357,23 @@ export default function ListingsPage() {
 
             {/* Right Side - Content */}
             <div className="flex flex-col justify-center bg-white p-8 dark:bg-gray-dark md:p-12 lg:p-16">
-              <h3 className="mb-6 text-3xl font-bold text-black dark:text-white md:text-4xl lg:text-5xl">
-                Investment
+              <h3 className="mb-6 text-xl font-bold text-black dark:text-white md:text-2xl lg:text-3xl">
+              Own the Lease. Control the Asset. Earn from Day One.
               </h3>
               <p className="mb-8 text-4xl font-bold text-black dark:text-white md:text-5xl">
-                $15,000
+              $15k+ Entry
               </p>
-              <p className="mb-6 text-base leading-relaxed text-body-color dark:text-body-color-dark md:text-lg">
-                Unlock the gateway to leasing entire Airbnb property. With investments
-                kicking off at just $15,000 and above. Whether it's chic condos or
-                luxurious private villas catering to high-net-worth investors, We've got
-                you covered.
+              <p className="mb-4 text-base leading-relaxed text-body-color dark:text-body-color-dark md:text-lg">
+                Gain exclusive access to fully leased Airbnb properties — from sophisticated urban condos to premium private villas — designed specifically for high-net-worth investors seeking strong short-term rental returns.
               </p>
-              <p className="text-base leading-relaxed text-body-color dark:text-body-color-dark md:text-lg">
-                Additionally, you have the privilege of enjoying complimentary stays for
-                holiday purposes. As the lessee of the entire property, you have full
-                control and can opt to sell it at your discretion should you decide to
-                withdraw from the investment.
+              <p className="mb-4 text-base leading-relaxed text-body-color dark:text-body-color-dark md:text-lg">
+                With entry points starting at just $15,000, this is a rare opportunity to participate in the booming hospitality market without the complexity of traditional property ownership.
+              </p>
+              <p className="mb-4 text-base leading-relaxed text-body-color dark:text-body-color-dark md:text-lg">
+                As the leaseholder, you enjoy complete operational control over the asset, along with complimentary stays for personal or holiday use. And should your investment goals evolve, you retain the flexibility to exit by transferring your lease on your own terms.
+              </p>
+              <p className="text-base font-semibold leading-relaxed text-black dark:text-white md:text-lg">
+                This isn&apos;t just an investment. It&apos;s a lifestyle asset that works for you.
               </p>
             </div>
           </div>

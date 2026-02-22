@@ -9,7 +9,7 @@ const CallToAction = () => {
             Work With ALVARADO Associates Today
           </h2>
           <p className="mx-auto mb-10 max-w-[900px] text-base leading-relaxed text-gray-300 sm:text-lg md:text-xl">
-            At Alvarado Associates, our seasoned team of real estate and hospitality experts is committed to guiding you through every step of your short term rental investment journey. With a proven track record in Airbnb arbitrage, we make it easy for you to tap into high yield rental markets with minimal upfront capital and zero operational stress.
+            At Alvarado Associates, our seasoned team of real estate and hospitality experts is dedicated to maximizing your short-term rental investments. With a proven track record in Airbnb arbitrage, we open doors to high-yield rental markets with minimal capital, zero operational stress, and a trusted partner beside you at every step.
           </p>
           <Link
             href="/contact"

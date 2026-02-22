@@ -110,7 +110,7 @@ function mapApiPropertyToLocal(apiProperty: InvestmentProperty): Property {
     parking: apiProperty.parking,
     status: formattedStatus || "N/A",
     area: apiProperty.area,
-    type: apiProperty.category ? apiProperty.category.charAt(0).toUpperCase() + apiProperty.category.slice(1) : "Property",
+    type: apiProperty.category ? ({ airbnb_arbitrage: "Airbnb Arbitrage", airbnb_mortgage: "Airbnb Mortgage", for_sale: "For Sale" } as Record<string, string>)[apiProperty.category] ?? apiProperty.category : "Property",
     lotSize: apiProperty.area,
     rooms: apiProperty.bedrooms + 1,
     customId: apiProperty.id,

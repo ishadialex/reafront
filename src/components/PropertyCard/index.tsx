@@ -19,14 +19,25 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
       ? property.targetAmount - property.currentFunded
       : 0;
 
-  const getCategoryStyle = (): React.CSSProperties => {
-    const colors: Record<string, string> = {
-      arbitrage: "#2563eb",
-      mortgage: "#9333ea",
-      airbnb: "#db2777",
-    };
-    return { backgroundColor: colors[property.category.toLowerCase()] || "#6b7280", color: "#fff" };
+  const CATEGORY_LABELS: Record<string, string> = {
+    airbnb_arbitrage: "Airbnb Arbitrage",
+    airbnb_mortgage: "Airbnb Mortgage",
+    for_sale: "For Sale",
   };
+
+  const CATEGORY_COLORS: Record<string, string> = {
+    airbnb_arbitrage: "#2563eb",
+    airbnb_mortgage: "#9333ea",
+    for_sale: "#16a34a",
+  };
+
+  const getCategoryStyle = (): React.CSSProperties => ({
+    backgroundColor: CATEGORY_COLORS[property.category] || "#6b7280",
+    color: "#fff",
+  });
+
+  const getCategoryLabel = (): string =>
+    CATEGORY_LABELS[property.category] || property.category;
 
   const getTypeStyle = (): React.CSSProperties => {
     return {
@@ -68,7 +79,7 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
         {/* Category Badge */}
         <div className="absolute left-3 top-3">
           <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold shadow-md" style={getCategoryStyle()}>
-            {property.category.charAt(0).toUpperCase() + property.category.slice(1)}
+            {getCategoryLabel()}
           </span>
         </div>
         {/* Type Badge */}

@@ -546,7 +546,7 @@ export default function DashboardOverviewPage() {
         setSubtitleIdx((prev) => (prev + 1) % greeting.subtitles.length);
         setSubtitleVisible(true);
       }, 300);
-    }, 7000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [greeting.subtitles]);
 

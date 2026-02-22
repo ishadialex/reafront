@@ -87,14 +87,20 @@ export default function PropertyDetailPage() {
   const monthlyEarnings = amount * (property.monthlyReturn / 100);
   const annualEarnings = amount * (property.expectedROI / 100);
 
-  const getCategoryBadge = () => {
-    const colors: Record<string, string> = {
-      arbitrage: "bg-blue-600 text-white dark:bg-blue-700 dark:text-white",
-      mortgage: "bg-purple-600 text-white dark:bg-purple-700 dark:text-white",
-      airbnb: "bg-pink-600 text-white dark:bg-pink-700 dark:text-white",
-    };
-    return colors[property.category] || "bg-gray-600 text-white";
+  const CATEGORY_LABELS: Record<string, string> = {
+    airbnb_arbitrage: "Airbnb Arbitrage",
+    airbnb_mortgage: "Airbnb Mortgage",
+    for_sale: "For Sale",
   };
+
+  const CATEGORY_COLORS: Record<string, string> = {
+    airbnb_arbitrage: "bg-blue-600 text-white dark:bg-blue-700 dark:text-white",
+    airbnb_mortgage: "bg-purple-600 text-white dark:bg-purple-700 dark:text-white",
+    for_sale: "bg-green-600 text-white dark:bg-green-700 dark:text-white",
+  };
+
+  const getCategoryBadge = () => CATEGORY_COLORS[property.category] || "bg-gray-600 text-white";
+  const getCategoryLabel = () => CATEGORY_LABELS[property.category] || property.category;
 
   const getRiskBadge = () => {
     const colors: Record<string, string> = {
@@ -166,7 +172,7 @@ export default function PropertyDetailPage() {
           <div className="mb-6">
             <div className="mb-3 flex flex-wrap gap-2">
               <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getCategoryBadge()}`}>
-                {property.category.charAt(0).toUpperCase() + property.category.slice(1)}
+                {getCategoryLabel()}
               </span>
               <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${property.investmentType === "individual" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"}`}>
                 {property.investmentType === "individual" ? "Individual" : "Pooled"}
