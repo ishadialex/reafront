@@ -7,19 +7,25 @@ export default function HMOPage() {
         {/* Header */}
         <div className="mx-auto mb-16 max-w-[800px] text-center">
           <h1 className="mb-8 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight md:text-[45px] md:leading-tight">
-            House in Multiple Occupation
+            House in Multiple Occupation (HMO)
             <br />
-            (HMO)
+            <span className="mt-2 block text-xl font-medium text-primary sm:text-2xl md:text-[28px]">More Tenants. More Income. One Smart Investment.</span>
           </h1>
           <div className="space-y-4 text-base leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg">
             <p>
-              A House in Multiple Occupation (HMO) with Alvarado Associates refers to a strategic real estate investment model where a single property is rented out to multiple tenants who are not part of the same household, typically sharing common areas such as kitchens, bathrooms, and living spaces. This model allows for a more efficient use of space and generates higher rental yields compared to traditional single-let properties, offering a potentially more profitable investment.
+              A House in Multiple Occupation (HMO) is one of the most powerful and high-yielding strategies in the real estate investment landscape. Rather than renting a single property to one household, an HMO allows the same property to generate income from multiple tenants simultaneously, each occupying private rooms while sharing common areas such as kitchens, bathrooms, and living spaces.
             </p>
             <p>
-              Alvarado Associates expertly manages this HMO setup to optimize the rental income while ensuring a seamless, hands-off experience for investors.
+              The result is a significantly higher rental yield compared to traditional single-let properties, making HMOs a preferred choice among sophisticated investors seeking stronger, more consistent returns from a single asset.
             </p>
             <p>
-              Alvarado Associates' expertise in managing HMOs makes it a unique and attractive investment opportunity, providing higher yields, hands-off management, and a reliable income stream for investors.
+              At Alvarado Associates, we have mastered the art of HMO investment management. From identifying the right properties in high-demand rental markets to handling licensing, compliance, tenant management, and ongoing maintenance, our team takes care of every detail so you never have to. Our end-to-end approach ensures your HMO operates at maximum occupancy and profitability at all times.
+            </p>
+            <p>
+              For investors, this translates to a reliable, diversified income stream where your returns are never dependent on a single tenant. Even if one room is vacant, the remaining occupied rooms continue generating income, significantly reducing your investment risk.
+            </p>
+            <p className="font-medium text-black dark:text-white">
+              This is not just a property investment. It is a smarter, more resilient income model built for investors who demand higher yields, lower risk, and complete peace of mind.
             </p>
           </div>
         </div>

@@ -10,7 +10,7 @@ interface FAQItem {
 const faqData: FAQItem[] = [
   {
     question: "What is Avarado Associates and how does it differ from traditional Airbnb hosting?",
-    answer: "Avarado Associates is an Airbnb Arbitrage investment company that leverages strategic property management to optimize rental income. Unlike traditional hosting, we handle property management, ensuring consistent returns without the day-to-day hassle."
+    answer: "Alvarado Associates is a full-service real estate investment firm specializing in Airbnb arbitrage, Airbnb mortgage, and HMO investment strategies. Unlike traditional Airbnb hosting where landlords manage their own properties, we handle everything on your behalf, from property acquisition and furnishing to listing, guest management, and monthly profit distribution. Our investors enjoy consistent, hands-free returns without ever dealing with the day-to-day complexities of property management. You bring the capital. We deliver the results."
   },
   {
     question: "How does Avarado Associates handle potential risks in the Airbnb Arbitrage market, such as market fluctuations or property damages?",
