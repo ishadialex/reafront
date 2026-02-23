@@ -116,9 +116,9 @@ export default function PropertiesPage() {
                 className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 pr-10 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
               >
                 <option value="all">All Categories</option>
-                <option value="arbitrage">Arbitrage</option>
-                <option value="mortgage">Mortgage</option>
-                <option value="airbnb">Airbnb</option>
+                <option value="airbnb_arbitrage">Airbnb Arbitrage</option>
+                <option value="airbnb_mortgage">Airbnb Mortgage</option>
+                <option value="for_sale">For Sale</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                 <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
