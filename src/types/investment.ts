@@ -19,6 +19,10 @@ export interface InvestmentProperty {
   currentFunded: number;
   investorCount: number;
 
+  // For-sale bid tracking (optional — populated when bidding is active)
+  bidCount?: number;
+  recentBidAmount?: number;
+
   // Returns
   expectedROI: number; // Annual percentage
   monthlyReturn: number; // Monthly percentage

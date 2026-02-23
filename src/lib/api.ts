@@ -376,6 +376,16 @@ export class ApiClient {
     return response.data;
   }
 
+  async submitBid(propertyId: string, amount: number) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(`/api/properties/${propertyId}/bid`, { amount });
+    return response.data;
+  }
+
+  async submitBuyNow(propertyId: string) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(`/api/properties/${propertyId}/buy`);
+    return response.data;
+  }
+
   async getInvestments() {
     const response = await this.axiosInstance.get<ApiResponse<any[]>>("/api/investments");
     return response.data;

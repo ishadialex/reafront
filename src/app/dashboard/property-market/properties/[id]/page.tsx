@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { InvestmentProperty } from "@/types/investment";
 import InvestmentModal from "@/components/InvestmentModal";
+import BidModal from "@/components/BidModal";
+import BuyNowModal from "@/components/BuyNowModal";
 import PropertyDetailSkeleton from "@/components/PropertyDetailSkeleton";
 import { api } from "@/lib/api";
 
@@ -17,6 +19,10 @@ export default function PropertyDetailPage() {
   const [investmentAmount, setInvestmentAmount] = useState("");
   const [walletBalance, setWalletBalance] = useState(0);
   const [existingInvestment, setExistingInvestment] = useState<{ id: string; amount: number; expectedROI: number; monthlyReturn: number } | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
+  const [showBidModal, setShowBidModal] = useState(false);
+  const [showBuyNowModal, setShowBuyNowModal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -86,6 +92,10 @@ export default function PropertyDetailPage() {
   const amount = parseFloat(investmentAmount) || 0;
   const monthlyEarnings = amount * (property.monthlyReturn / 100);
   const annualEarnings = amount * (property.expectedROI / 100);
+
+  const isIndividualClosed =
+    property.investmentType === "individual" &&
+    ["closed", "fully-funded"].includes(property.status.toLowerCase());
 
   const CATEGORY_LABELS: Record<string, string> = {
     airbnb_arbitrage: "Airbnb Arbitrage",
@@ -191,9 +201,24 @@ export default function PropertyDetailPage() {
             </p>
           </div>
 
-          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-dark">
-            <h2 className="mb-4 text-xl font-bold text-black dark:text-white">About This Property</h2>
-            <p className="text-body-color dark:text-body-color-dark">{property.description}</p>
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow dark:border-gray-800 dark:bg-gray-dark">
+            <button
+              onClick={() => setAboutOpen((prev) => !prev)}
+              className="flex w-full items-center justify-between p-6 text-left"
+            >
+              <h2 className="text-xl font-bold text-black dark:text-white">About This Property</h2>
+              <svg
+                className={`h-5 w-5 text-body-color transition-transform duration-300 dark:text-body-color-dark ${aboutOpen ? "rotate-180" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {aboutOpen && (
+              <div className="border-t border-gray-200 px-6 pb-6 pt-4 dark:border-gray-700">
+                <p className="text-body-color dark:text-body-color-dark">{property.description}</p>
+              </div>
+            )}
           </div>
 
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-dark">
@@ -219,18 +244,51 @@ export default function PropertyDetailPage() {
           </div>
 
           {property.features.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow dark:border-gray-800 dark:bg-gray-dark">
-              <h2 className="mb-4 text-xl font-bold text-black dark:text-white">Features & Amenities</h2>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                {property.features.map((feature, index) => (
-                  <div key={index} className="flex items-center">
-                    <svg className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <div className="rounded-xl border border-gray-200 bg-white shadow dark:border-gray-800 dark:bg-gray-dark">
+              {(property.category === "airbnb_mortgage" || property.category === "airbnb_arbitrage") ? (
+                <>
+                  <button
+                    onClick={() => setFeaturesOpen((prev) => !prev)}
+                    className="flex w-full items-center justify-between p-6 text-left"
+                  >
+                    <h2 className="text-xl font-bold text-black dark:text-white">Features & Amenities</h2>
+                    <svg
+                      className={`h-5 w-5 text-body-color transition-transform duration-300 dark:text-body-color-dark ${featuresOpen ? "rotate-180" : ""}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                    <span className="text-sm text-black dark:text-white">{feature}</span>
+                  </button>
+                  {featuresOpen && (
+                    <div className="border-t border-gray-200 px-6 pb-6 pt-4 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                        {property.features.map((feature, index) => (
+                          <div key={index} className="flex items-center">
+                            <svg className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="text-sm text-black dark:text-white">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="p-6">
+                  <h2 className="mb-4 text-xl font-bold text-black dark:text-white">Features & Amenities</h2>
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {property.features.map((feature, index) => (
+                      <div key={index} className="flex items-center">
+                        <svg className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-sm text-black dark:text-white">{feature}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -240,29 +298,46 @@ export default function PropertyDetailPage() {
             <h2 className="mb-4 text-xl font-bold text-black dark:text-white">Investment Overview</h2>
             <div className="mb-4 space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-body-color dark:text-body-color-dark">Expected ROI</span>
+                <span className="text-sm text-body-color dark:text-body-color-dark">{property.category === "for_sale" ? "Expected Annual ROI" : "Expected ROI"}</span>
                 <span className="text-lg font-bold text-green-600 dark:text-green-400">{property.expectedROI}%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-body-color dark:text-body-color-dark">Monthly Return</span>
                 <span className="font-semibold text-black dark:text-white">{property.monthlyReturn}%</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-body-color dark:text-body-color-dark">Duration</span>
-                <span className="font-semibold text-black dark:text-white">{property.duration} months</span>
-              </div>
+              {property.category !== "for_sale" && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-body-color dark:text-body-color-dark">Duration</span>
+                  <span className="font-semibold text-black dark:text-white">{property.duration} months</span>
+                </div>
+              )}
 
               {/* Individual/Mortgage Properties - Show Property Worth and Amount Required */}
               {property.investmentType === "individual" && (
                 <>
                   <div className="flex justify-between border-t border-gray-200 pt-3 dark:border-gray-700">
-                    <span className="text-sm text-body-color dark:text-body-color-dark">Property Worth</span>
+                    <span className="text-sm text-body-color dark:text-body-color-dark">{property.category === "for_sale" ? "Property Price" : "Property Worth"}</span>
                     <span className="text-xl font-bold text-black dark:text-white">${property.price.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-body-color dark:text-body-color-dark">Amount Required</span>
-                    <span className="font-semibold text-primary">${property.minInvestment.toLocaleString()}</span>
-                  </div>
+                  {property.category === "for_sale" ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-body-color dark:text-body-color-dark">Number of Bids</span>
+                        <span className="font-semibold text-black dark:text-white">{property.bidCount ?? property.investorCount ?? 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-body-color dark:text-body-color-dark">Recent Bid Amount</span>
+                        <span className="font-semibold text-primary">
+                          {property.recentBidAmount ? `$${property.recentBidAmount.toLocaleString()}` : "—"}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-body-color dark:text-body-color-dark">Amount Required</span>
+                      <span className="font-semibold text-primary">${property.minInvestment.toLocaleString()}</span>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -312,43 +387,78 @@ export default function PropertyDetailPage() {
                 <p className="text-lg font-bold text-green-700 dark:text-green-400">
                   ${existingInvestment.amount.toLocaleString()}
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-500 mt-1">Add more funds to increase your position</p>
+                {!isIndividualClosed && (
+                  <p className="text-xs text-green-600 dark:text-green-500 mt-1">Add more funds to increase your position</p>
+                )}
               </div>
             )}
 
-            <div className="mb-6">
-              <label className="mb-2 block text-sm font-semibold text-black dark:text-white">{existingInvestment ? "Top-Up Amount" : "Investment Amount"}</label>
-              <input
-                type="number"
-                value={investmentAmount}
-                onChange={(e) => setInvestmentAmount(e.target.value)}
-                min={property.minInvestment}
-                max={property.investmentType === "pooled" ? Math.min(property.maxInvestment, remainingAmount) : property.maxInvestment}
-                placeholder={`Min: $${property.minInvestment.toLocaleString()}`}
-                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
+            {!isIndividualClosed && (
+              <>
+                <div className="mb-6">
+                  <label className="mb-2 block text-sm font-semibold text-black dark:text-white">{property.category === "for_sale" ? "Bid Amount" : existingInvestment ? "Top-Up Amount" : "Investment Amount"}</label>
+                  <input
+                    type={property.category === "for_sale" ? "text" : "number"}
+                    inputMode="decimal"
+                    value={investmentAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (property.category === "for_sale") {
+                        if (val === "" || /^\d*\.?\d*$/.test(val)) setInvestmentAmount(val);
+                      } else {
+                        setInvestmentAmount(val);
+                      }
+                    }}
+                    {...(property.category !== "for_sale" && {
+                      min: property.minInvestment,
+                      max: property.investmentType === "pooled" ? Math.min(property.maxInvestment, remainingAmount) : property.maxInvestment,
+                    })}
+                    placeholder={property.category === "for_sale" ? "Enter your bid amount" : `Min: $${property.minInvestment.toLocaleString()}`}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
 
-            {amount > 0 && (
-              <div className="mb-6 space-y-3 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-                <div className="flex justify-between">
-                  <span className="text-sm text-blue-800 dark:text-blue-300">Monthly Earnings</span>
-                  <span className="font-bold text-green-600 dark:text-green-400">${monthlyEarnings.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-blue-800 dark:text-blue-300">Annual Earnings</span>
-                  <span className="font-bold text-green-600 dark:text-green-400">${annualEarnings.toFixed(2)}</span>
-                </div>
-              </div>
+                {amount > 0 && (
+                  <div className="mb-6 space-y-3 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-blue-800 dark:text-blue-300">Monthly Earnings</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">${monthlyEarnings.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-blue-800 dark:text-blue-300">Annual Earnings</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">${annualEarnings.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            <button
-              onClick={() => setShowInvestmentModal(true)}
-              disabled={property.status.toLowerCase() !== "available" || amount < property.minInvestment}
-              className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {property.status.toLowerCase() === "available" ? (existingInvestment ? "Top Up Investment" : "Invest Now") : property.status.toLowerCase() === "fully-funded" ? "Fully Funded" : property.status.toLowerCase() === "closed" ? "Closed" : "Coming Soon"}
-            </button>
+            {property.category === "for_sale" ? (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBidModal(true)}
+                  disabled={property.status.toLowerCase() !== "available"}
+                  className="flex-1 rounded-lg border border-primary px-6 py-3 font-semibold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Bid
+                </button>
+                <button
+                  onClick={() => setShowBuyNowModal(true)}
+                  disabled={property.status.toLowerCase() !== "available"}
+                  className="flex-1 rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Buy Now
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowInvestmentModal(true)}
+                disabled={property.status.toLowerCase() !== "available" || amount < property.minInvestment}
+                className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {property.status.toLowerCase() === "available" ? (existingInvestment ? "Top Up Investment" : "Invest Now") : property.status.toLowerCase() === "fully-funded" ? "Fully Funded" : property.status.toLowerCase() === "closed" ? "Closed" : "Coming Soon"}
+              </button>
+            )}
 
             {property.status.toLowerCase() === "available" && amount < property.minInvestment && amount > 0 && (
               <p className="mt-2 text-xs text-red-600 dark:text-red-400">
@@ -369,6 +479,19 @@ export default function PropertyDetailPage() {
           existingInvestment={existingInvestment}
         />
       )}
+
+      <BidModal
+        isOpen={showBidModal}
+        onClose={() => setShowBidModal(false)}
+        property={{ id: property.id, title: property.title, location: property.location }}
+        initialAmount={investmentAmount}
+      />
+
+      <BuyNowModal
+        isOpen={showBuyNowModal}
+        onClose={() => setShowBuyNowModal(false)}
+        property={{ id: property.id, title: property.title, location: property.location, price: property.price }}
+      />
     </div>
   );
 }
