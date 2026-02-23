@@ -151,6 +151,14 @@ export default function RootLayout({
                 var authPages = ['/signin', '/signup'];
                 if (authPages.indexOf(window.location.pathname) !== -1) {
                   Tawk_API.hideWidget();
+                  return;
+                }
+                // Only allow greeting on first visit per browser session.
+                // On refresh/navigation, immediately minimize so triggers can't pop it open.
+                if (sessionStorage.getItem('tawkSeen')) {
+                  Tawk_API.minimize();
+                } else {
+                  sessionStorage.setItem('tawkSeen', '1');
                 }
               };
               (function(){

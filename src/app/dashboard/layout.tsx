@@ -111,9 +111,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [router, isLoggedIn]);
 
-  // Show security prompt only if 2FA is disabled OR KYC is not yet submitted/verified
+  // Show security prompt only once per session (not on every page refresh)
+  // sessionStorage is cleared when the browser tab is closed, so it resets on each new login session
   useEffect(() => {
     if (isLoggedIn !== "true") return;
+    if (sessionStorage.getItem("securityPromptChecked")) return;
+    sessionStorage.setItem("securityPromptChecked", "true");
 
     api.getProfile()
       .then((res) => {
