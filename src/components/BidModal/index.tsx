@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 
 interface BidModalProps {
@@ -8,13 +8,22 @@ interface BidModalProps {
   onClose: () => void;
   property: { id: string; title: string; location: string };
   initialAmount?: string;
+  onSuccess?: (amount: number) => void;
 }
 
-export default function BidModal({ isOpen, onClose, property, initialAmount = "" }: BidModalProps) {
+export default function BidModal({ isOpen, onClose, property, initialAmount = "", onSuccess }: BidModalProps) {
   const [amount, setAmount] = useState(initialAmount);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setAmount(initialAmount);
+      setSuccess(false);
+      setErrorMsg("");
+    }
+  }, [isOpen, initialAmount]);
 
   if (!isOpen) return null;
 
@@ -31,6 +40,7 @@ export default function BidModal({ isOpen, onClose, property, initialAmount = ""
       const result = await api.submitBid(property.id, bidAmount);
       if (result.success) {
         setSuccess(true);
+        onSuccess?.(bidAmount);
       } else {
         setErrorMsg(result.message || "Failed to submit bid. Please try again.");
       }

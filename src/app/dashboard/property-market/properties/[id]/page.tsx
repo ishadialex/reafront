@@ -24,6 +24,17 @@ export default function PropertyDetailPage() {
   const [showBidModal, setShowBidModal] = useState(false);
   const [showBuyNowModal, setShowBuyNowModal] = useState(false);
 
+  const handleBidSuccess = (bidAmount: number) => {
+    setProperty((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        bidCount: (prev.bidCount ?? 0) + 1,
+        recentBidAmount: bidAmount,
+      };
+    });
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -485,6 +496,7 @@ export default function PropertyDetailPage() {
         onClose={() => setShowBidModal(false)}
         property={{ id: property.id, title: property.title, location: property.location }}
         initialAmount={investmentAmount}
+        onSuccess={handleBidSuccess}
       />
 
       <BuyNowModal
