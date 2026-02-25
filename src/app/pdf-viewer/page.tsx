@@ -8,7 +8,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 function PDFViewerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pdfFile = searchParams.get("file");
+  const docId = searchParams.get("docId");
+  const docTitle = searchParams.get("title") || "document";
   const tokenParam = searchParams.get("token"); // Get JWT token from URL
   const [isIOS, setIsIOS] = useState(false);
 
@@ -18,7 +19,7 @@ function PDFViewerContent() {
     setIsIOS(iOS);
   }, []);
 
-  if (!pdfFile) {
+  if (!docId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-dark">
         <div className="rounded-xl bg-white p-8 shadow-xl dark:bg-gray-dark">
@@ -38,17 +39,10 @@ function PDFViewerContent() {
     );
   }
 
-  // Extract filename from pdfFile path and create secure PDF URL with JWT token
+  // Build secure PDF serve URL using the document's MongoDB ID
   const getSecurePdfUrl = () => {
-    if (!pdfFile || !tokenParam) return pdfFile;
-
-    // Extract filename from path (e.g., "/pdfs/filename.pdf" -> "filename.pdf")
-    const filename = pdfFile.split('/').pop();
-
-    // Create secure URL with JWT token - use full backend URL
-    const securePdfUrl = `${API_URL}/api/pdf/serve/${filename}?token=${encodeURIComponent(tokenParam)}`;
-
-    return securePdfUrl;
+    if (!docId || !tokenParam) return null;
+    return `${API_URL}/api/pdf/serve/${docId}?token=${encodeURIComponent(tokenParam)}`;
   };
 
   const handlePrint = () => {
@@ -62,9 +56,8 @@ function PDFViewerContent() {
     }
 
     try {
-      // Get the secure PDF URL (without the #toolbar parameters)
-      const filename = pdfFile.split('/').pop();
-      const securePdfUrl = `${API_URL}/api/pdf/serve/${filename}?token=${encodeURIComponent(tokenParam)}`;
+      // Build secure URL using the document ID
+      const securePdfUrl = `${API_URL}/api/pdf/serve/${docId}?token=${encodeURIComponent(tokenParam)}`;
 
       // Fetch the PDF with the token
       const response = await fetch(securePdfUrl);
@@ -80,7 +73,7 @@ function PDFViewerContent() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = filename || "document.pdf";
+      link.download = `${docTitle}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

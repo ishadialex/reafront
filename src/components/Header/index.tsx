@@ -94,7 +94,7 @@ const Header = () => {
             return {
               id: 40 + index + 1,
               title: pdf.title,
-              path: `/pdf-viewer?file=${encodeURIComponent(pdf.fileUrl)}`,
+              path: `/pdf-viewer?docId=${encodeURIComponent(pdf.id)}&title=${encodeURIComponent(pdf.title)}`,
               newTab: true,
             };
           });

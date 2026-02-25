@@ -28,10 +28,14 @@ const Testimonials = () => {
     const fetchReviews = async () => {
       try {
         const res = await fetch(`${API_URL}/api/public/reviews`);
-        if (!res.ok) throw new Error("Failed");
+        if (!res.ok) {
+          console.error("[Testimonials] reviews API returned", res.status, res.statusText);
+          throw new Error("Failed");
+        }
         const data = await res.json();
         const list: any[] =
           data?.data?.reviews ?? data?.data ?? data?.reviews ?? [];
+        console.log("[Testimonials] fetched reviews:", list.length, "items", list.slice(0, 1));
         if (!Array.isArray(list) || list.length === 0) {
           setTestimonials([]);
           return;
