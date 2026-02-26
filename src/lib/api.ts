@@ -689,6 +689,320 @@ export class ApiClient {
     return response.data;
   }
 
+  // ─── ADMIN: Users ───────────────────────────────────────────────────────────
+
+  async adminGetUserStats() {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      totalUsers: number;
+      activeUsers: number;
+      inactiveUsers: number;
+      verifiedUsers: number;
+      adminCount: number;
+      superadminCount: number;
+      regularUsers: number;
+    }>>("/api/admin/users/stats");
+    return response.data;
+  }
+
+  async adminGetUsers(params?: {
+    role?: string;
+    kycStatus?: string;
+    isActive?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.role) query.append("role", params.role);
+    if (params?.kycStatus) query.append("kycStatus", params.kycStatus);
+    if (params?.isActive !== undefined) query.append("isActive", params.isActive);
+    if (params?.search) query.append("search", params.search);
+    if (params?.limit !== undefined) query.append("limit", String(params.limit));
+    if (params?.offset !== undefined) query.append("offset", String(params.offset));
+    const url = `/api/admin/users${query.toString() ? `?${query}` : ""}`;
+    const response = await this.axiosInstance.get<ApiResponse<{
+      users: Array<{
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        phone?: string;
+        role: string;
+        emailVerified: boolean;
+        twoFactorEnabled: boolean;
+        kycStatus: string;
+        balance: number;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string;
+        lastLoginAt: string | null;
+        lastActiveAt: string | null;
+        lastLoginDevice: string | null;
+        lastLoginLocation: string | null;
+      }>;
+      total: number;
+      limit: number;
+      offset: number;
+    }>>(url);
+    return response.data;
+  }
+
+  async adminGetUser(id: string) {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      phone?: string;
+      dateOfBirth?: string;
+      nationality?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+      country?: string;
+      profilePhoto?: string;
+      bio?: string;
+      occupation?: string;
+      role: string;
+      emailVerified: boolean;
+      twoFactorEnabled: boolean;
+      kycStatus: string;
+      balance: number;
+      referralCode?: string;
+      isActive: boolean;
+      createdAt: string;
+      updatedAt: string;
+      lastLoginAt: string | null;
+      lastActiveAt: string | null;
+      lastLoginDevice: string | null;
+      lastLoginBrowser: string | null;
+      lastLoginOs: string | null;
+      lastLoginLocation: string | null;
+      lastLoginIp: string | null;
+      recentSessions: Array<{
+        loginAt: string;
+        lastActive: string | null;
+        device: string | null;
+        browser: string | null;
+        os: string | null;
+        location: string | null;
+        ipAddress: string | null;
+      }>;
+      _count: { transactions: number; investments: number; referrals: number; sessions: number };
+    }>>(`/api/admin/users/${id}`);
+    return response.data;
+  }
+
+  async adminUpdateUserStatus(id: string, isActive: boolean) {
+    const response = await this.axiosInstance.patch<ApiResponse<{ id: string; isActive: boolean }>>(
+      `/api/admin/users/${id}/status`,
+      { isActive }
+    );
+    return response.data;
+  }
+
+  async adminUpdateUserBalance(id: string, amount: number, note?: string) {
+    const response = await this.axiosInstance.patch<ApiResponse<{ id: string; balance: number }>>(
+      `/api/admin/users/${id}/balance`,
+      { amount, note }
+    );
+    return response.data;
+  }
+
+  // ─── ADMIN: Fund Operations ──────────────────────────────────────────────────
+
+  async adminGetFundOperations(params?: {
+    type?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.type) query.append("type", params.type);
+    if (params?.status) query.append("status", params.status);
+    if (params?.limit !== undefined) query.append("limit", String(params.limit));
+    if (params?.offset !== undefined) query.append("offset", String(params.offset));
+    const url = `/api/admin/fund-operations${query.toString() ? `?${query}` : ""}`;
+    const response = await this.axiosInstance.get<ApiResponse<{
+      operations: Array<{
+        id: string;
+        type: string;
+        status: string;
+        amount: number;
+        reference: string;
+        createdAt: string;
+        completedAt?: string;
+        user: { id: string; firstName: string; lastName: string; email: string };
+      }>;
+      total: number;
+    }>>(url);
+    return response.data;
+  }
+
+  async adminApproveFundOperation(id: string, note?: string) {
+    const response = await this.axiosInstance.post<ApiResponse<null>>(
+      `/api/admin/fund-operations/${id}/approve`,
+      { note }
+    );
+    return response.data;
+  }
+
+  async adminRejectFundOperation(id: string, reason?: string) {
+    const response = await this.axiosInstance.post<ApiResponse<null>>(
+      `/api/admin/fund-operations/${id}/reject`,
+      { reason }
+    );
+    return response.data;
+  }
+
+  // ─── ADMIN: KYC ─────────────────────────────────────────────────────────────
+
+  async adminGetKYCStats() {
+    const response = await this.axiosInstance.get<ApiResponse<{
+      stats: { total: number; pending: number; approved: number; rejected: number; notSubmitted: number };
+    }>>("/api/admin/kyc/stats");
+    return response.data;
+  }
+
+  async adminGetKYCSubmissions(params?: { status?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.status) query.append("status", params.status);
+    if (params?.page !== undefined) query.append("page", String(params.page));
+    if (params?.limit !== undefined) query.append("limit", String(params.limit));
+    const url = `/api/admin/kyc/submissions${query.toString() ? `?${query}` : ""}`;
+    const response = await this.axiosInstance.get<ApiResponse<{
+      submissions: Array<{
+        id: string;
+        userId: string;
+        status: string;
+        submittedAt: string;
+        reviewedAt?: string;
+        rejectionReason?: string;
+        adminNotes?: string;
+        user: { id: string; email: string; firstName: string; lastName: string; profilePhoto?: string; createdAt: string };
+      }>;
+      pagination: { total: number; page: number; limit: number; totalPages: number };
+    }>>(url);
+    return response.data;
+  }
+
+  async adminApproveKYC(id: string, adminNotes?: string) {
+    const response = await this.axiosInstance.post<ApiResponse<{ kyc: any }>>(
+      `/api/admin/kyc/approve/${id}`,
+      { adminNotes }
+    );
+    return response.data;
+  }
+
+  async adminRejectKYC(id: string, rejectionReason: string, adminNotes?: string) {
+    const response = await this.axiosInstance.post<ApiResponse<{ kyc: any }>>(
+      `/api/admin/kyc/reject/${id}`,
+      { rejectionReason, adminNotes }
+    );
+    return response.data;
+  }
+
+  // ─── ADMIN: Properties ───────────────────────────────────────────────────
+
+  async adminGetProperties(params?: {
+    category?: string;
+    investmentType?: string;
+    status?: string;
+    type?: string;
+    featured?: boolean;
+    active?: boolean;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.category) query.append("category", params.category);
+    if (params?.investmentType) query.append("investmentType", params.investmentType);
+    if (params?.status) query.append("status", params.status);
+    if (params?.type) query.append("type", params.type);
+    if (params?.featured !== undefined) query.append("featured", String(params.featured));
+    if (params?.active !== undefined) query.append("active", String(params.active));
+    const url = `/api/admin/properties${query.toString() ? `?${query}` : ""}`;
+    const response = await this.axiosInstance.get<ApiResponse<any[]>>(url);
+    return response.data;
+  }
+
+  async adminGetProperty(id: string) {
+    const response = await this.axiosInstance.get<ApiResponse<any>>(
+      `/api/admin/properties/${id}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Use native fetch (not axios) for multipart uploads.
+   * Axios merges the instance-level "Content-Type: application/json" default
+   * onto every request; setting it to undefined doesn't reliably clear it.
+   * fetch() with a FormData body lets the browser generate the correct
+   * "Content-Type: multipart/form-data; boundary=..." header automatically.
+   */
+  private async _fetchUpload(
+    method: "POST" | "PATCH",
+    path: string,
+    formData: FormData
+  ): Promise<any> {
+    const headers: Record<string, string> = {};
+    if (this.accessToken) headers["Authorization"] = `Bearer ${this.accessToken}`;
+    const res = await fetch(`${API_URL}${path}`, {
+      method,
+      body: formData,
+      credentials: "include",
+      headers,
+      // No Content-Type — browser sets it with the correct boundary
+    });
+    const data = await res.json().catch(() => ({ success: false, message: "Upload failed" }));
+    if (!res.ok) throw { response: { data } };
+    return data;
+  }
+
+  async adminCreateProperty(formData: FormData) {
+    return this._fetchUpload("POST", "/api/admin/properties", formData);
+  }
+
+  async adminUpdateProperty(id: string, formData: FormData) {
+    return this._fetchUpload("PATCH", `/api/admin/properties/${id}`, formData);
+  }
+
+  /** Send a JSON (non-multipart) PATCH when there are no file uploads */
+  async adminUpdatePropertyJson(id: string, data: Record<string, string>) {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (this.accessToken) headers["Authorization"] = `Bearer ${this.accessToken}`;
+    const res = await fetch(`${API_URL}/api/admin/properties/${id}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
+    const responseData = await res.json().catch(() => ({ success: false, message: "Update failed" }));
+    if (!res.ok) throw { response: { data: responseData } };
+    return responseData;
+  }
+
+  async adminSoftDeleteProperty(id: string) {
+    const response = await this.axiosInstance.delete<ApiResponse<any>>(
+      `/api/admin/properties/${id}`
+    );
+    return response.data;
+  }
+
+  async adminHardDeleteProperty(id: string) {
+    const response = await this.axiosInstance.delete<ApiResponse<any>>(
+      `/api/admin/properties/${id}/permanent`
+    );
+    return response.data;
+  }
+
+  async adminRemovePropertyImage(id: string, url: string) {
+    const response = await this.axiosInstance.delete<ApiResponse<{ images: string[] }>>(
+      `/api/admin/properties/${id}/images`,
+      { data: { url } }
+    );
+    return response.data;
+  }
+
   // Newsletter endpoints
   async subscribeToNewsletter(data: { name: string; email: string }) {
     const response = await this.axiosInstance.post<ApiResponse<{

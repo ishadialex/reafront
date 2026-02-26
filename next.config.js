@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Allow up to 50 MB request bodies in API route handlers and middleware.
+  // The default (10 MB) truncates large image upload batches, causing the
+  // backend to receive an incomplete multipart stream → ECONNRESET.
+  middlewareClientMaxBodySize: 50 * 1024 * 1024, // 50 MB
+
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },

@@ -24,6 +24,7 @@ export default function RootLayout({
   const pathname = usePathname();
   const isPDFViewer = pathname?.startsWith("/pdf-viewer");
   const isDashboard = pathname?.startsWith("/dashboard");
+  const isAdmin = pathname?.startsWith("/admin");
   const isAuthPage = pathname === "/signin" || pathname === "/signup";
   const [showNewsletterPopup, setShowNewsletterPopup] = useState(false);
   const hasShownPopupRef = useRef(false);
@@ -131,11 +132,11 @@ export default function RootLayout({
       <body className={`bg-[#FCFCFC] dark:bg-black ${inter.className}`}>
         <Providers>
           <div className="isolate">
-            {!isPDFViewer && !isDashboard && !isAuthPage && <Header />}
+            {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && <Header />}
             {children}
-            {!isPDFViewer && !isDashboard && !isAuthPage && <Footer />}
+            {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && <Footer />}
           </div>
-          {!isPDFViewer && !isDashboard && !isAuthPage && <ScrollToTop />}
+          {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && <ScrollToTop />}
           <NewsletterPopup
             isOpen={showNewsletterPopup}
             onClose={handleClosePopup}
@@ -149,7 +150,8 @@ export default function RootLayout({
               var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
               Tawk_API.onLoad = function() {
                 var authPages = ['/signin', '/signup'];
-                if (authPages.indexOf(window.location.pathname) !== -1) {
+                if (authPages.indexOf(window.location.pathname) !== -1 ||
+                    window.location.pathname.startsWith('/admin')) {
                   Tawk_API.hideWidget();
                   return;
                 }
