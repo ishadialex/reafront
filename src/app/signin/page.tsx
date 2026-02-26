@@ -234,6 +234,20 @@ function SigninContent() {
         timestamp: new Date().toISOString()
       }));
 
+      // Another admin account is already logged in — hard block
+      if (err.response?.status === 409 && err.response?.data?.adminConflict) {
+        setError(err.response.data.message);
+        setIsLoading(false);
+        return;
+      }
+
+      // Same admin already on another device — hard block, must log out first
+      if (err.response?.status === 409 && err.response?.data?.adminDeviceConflict) {
+        setError(err.response.data.message);
+        setIsLoading(false);
+        return;
+      }
+
       // Active session on another device - show warning modal
       if (err.response?.status === 409 && err.response?.data?.requiresForceLogin) {
         setExistingSessionData(err.response.data);

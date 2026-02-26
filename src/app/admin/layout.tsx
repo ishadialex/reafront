@@ -13,7 +13,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (isLoggedIn !== "true") {
-      router.push("/signin");
+      // Pass current path so signin can return the admin here after login
+      const returnTo = encodeURIComponent(window.location.pathname);
+      router.push(`/signin?redirect=${returnTo}`);
       return;
     }
 
