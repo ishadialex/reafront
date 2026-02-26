@@ -1,7 +1,13 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
+// Load the PDF.js worker from the local public folder (avoids CORS issues with CDN)
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -10,13 +16,82 @@ function PDFViewerContent() {
   const router = useRouter();
   const docId = searchParams.get("docId");
   const docTitle = searchParams.get("title") || "document";
-  const tokenParam = searchParams.get("token"); // Get JWT token from URL
+  const tokenParam = searchParams.get("token");
+
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [containerWidth, setContainerWidth] = useState<number>(800);
+
+  // Build the authenticated serve URL
+  const getServeUrl = useCallback(() => {
+    if (!docId || !tokenParam) return null;
+    const safeTitle = encodeURIComponent(docTitle.replace(/[/\\?%*:|"<>]/g, "-"));
+    return `${API_URL}/api/pdf/serve/${docId}/${safeTitle}.pdf?token=${encodeURIComponent(tokenParam)}`;
+  }, [docId, tokenParam, docTitle]);
+
+  // Fetch PDF with token and create a blob URL for react-pdf
+  useEffect(() => {
+    const url = getServeUrl();
+    if (!url) return;
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch PDF");
+        return res.blob();
+      })
+      .then((blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(objectUrl);
+      })
+      .catch(() => setLoadError("Failed to load document. Please try again."));
+
+    return () => {
+      setPdfBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    };
+  }, [getServeUrl]);
+
+  // Track container width for responsive page scaling
+  useEffect(() => {
+    const updateWidth = () => {
+      const el = document.getElementById("pdf-container");
+      if (el) setContainerWidth(el.clientWidth);
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
+  const handleDownload = async () => {
+    const url = getServeUrl();
+    if (!url) return;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed");
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${docTitle}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    } catch {
+      alert("Failed to download PDF. Please try again.");
+    }
+  };
+
+  const handlePrint = () => window.print();
+  const handleClose = () => router.push("/");
 
   if (!docId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-dark">
         <div className="rounded-xl bg-white p-8 shadow-xl dark:bg-gray-dark">
-          <p className="text-lg text-red-600 dark:text-red-400">No PDF file specified</p>
+          <p className="text-lg text-red-600 dark:text-red-400">No document specified</p>
         </div>
       </div>
     );
@@ -32,87 +107,33 @@ function PDFViewerContent() {
     );
   }
 
-  // Build secure PDF serve URL using the document's MongoDB ID.
-  // The title is appended as the final path segment so browsers (especially
-  // Chrome on Android) display the document name instead of the raw ID.
-  const getSecurePdfUrl = () => {
-    if (!docId || !tokenParam) return null;
-    const safeTitle = encodeURIComponent(docTitle.replace(/[/\\?%*:|"<>]/g, "-"));
-    return `${API_URL}/api/pdf/serve/${docId}/${safeTitle}.pdf?token=${encodeURIComponent(tokenParam)}`;
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleDownload = async () => {
-    if (!tokenParam) {
-      alert("Cannot download: No access token");
-      return;
-    }
-
-    try {
-      // Build secure URL using the document ID
-      const securePdfUrl = getSecurePdfUrl()!;
-
-      // Fetch the PDF with the token
-      const response = await fetch(securePdfUrl);
-
-      if (!response.ok) {
-        throw new Error("Failed to download PDF");
-      }
-
-      // Get the blob
-      const blob = await response.blob();
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${docTitle}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download error:", error);
-      alert("Failed to download PDF. Please try again.");
-    }
-  };
-
-  const handleClose = () => {
-    router.push("/");
-  };
-
-  // Add PDF parameters for better iOS compatibility
-  const pdfUrl = `${getSecurePdfUrl()}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`;
-
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-dark">
       {/* Action Bar */}
       <div className="sticky top-0 z-40 bg-white shadow-md dark:bg-gray-800">
-        <div className="mx-auto flex max-w-full items-center justify-between px-2 py-2 sm:px-4 sm:py-3 md:py-4">
-          <h1 className="text-sm font-semibold text-black dark:text-white sm:text-base md:text-lg">
-            PDF Viewer
+        <div className="mx-auto flex max-w-full items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
+          <h1 className="max-w-[40%] truncate text-sm font-semibold text-black dark:text-white sm:text-base">
+            {docTitle}
           </h1>
-          <div className="flex gap-1.5 sm:gap-2 md:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {numPages > 0 && (
+              <span className="text-xs text-body-color dark:text-gray-400">{numPages} page{numPages !== 1 ? "s" : ""}</span>
+            )}
             <button
               onClick={handlePrint}
-              className="rounded-md bg-primary px-2 py-1.5 text-xs font-medium text-white transition hover:bg-primary/80 sm:px-3 sm:py-2 sm:text-sm md:px-4"
+              className="rounded-md bg-primary px-2 py-1.5 text-xs font-medium text-white transition hover:bg-primary/80 sm:px-3 sm:py-2 sm:text-sm"
             >
               Print
             </button>
             <button
               onClick={handleDownload}
-              className="rounded-md bg-green-600 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-green-700 sm:px-3 sm:py-2 sm:text-sm md:px-4"
+              className="rounded-md bg-green-600 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-green-700 sm:px-3 sm:py-2 sm:text-sm"
             >
               Download
             </button>
             <button
               onClick={handleClose}
-              className="rounded-md bg-black px-2 py-1.5 text-xs font-medium text-white transition hover:bg-black/80 dark:bg-white dark:text-black dark:hover:bg-white/90 sm:px-3 sm:py-2 sm:text-sm md:px-4"
+              className="rounded-md bg-black px-2 py-1.5 text-xs font-medium text-white transition hover:bg-black/80 dark:bg-white dark:text-black dark:hover:bg-white/90 sm:px-3 sm:py-2 sm:text-sm"
             >
               Close
             </button>
@@ -120,16 +141,55 @@ function PDFViewerContent() {
         </div>
       </div>
 
-      {/* PDF Viewer */}
-      <div className="mx-auto max-w-full">
-        <div style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
-          <iframe
-            src={pdfUrl}
-            className="h-full w-full"
-            title="PDF Viewer"
-            style={{ border: 'none' }}
-          />
-        </div>
+      {/* PDF Content */}
+      <div
+        id="pdf-container"
+        className="mx-auto max-w-4xl overflow-y-auto p-2 sm:p-4"
+        style={{ height: "calc(100vh - 56px)" }}
+      >
+        {loadError ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="rounded-xl bg-white p-8 text-center shadow dark:bg-gray-dark">
+              <p className="mb-4 text-red-500">{loadError}</p>
+              <button
+                onClick={handleDownload}
+                className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary/80"
+              >
+                Download Instead
+              </button>
+            </div>
+          </div>
+        ) : !pdfBlobUrl ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="text-sm text-body-color dark:text-white">Loading document…</p>
+            </div>
+          </div>
+        ) : (
+          <Document
+            file={pdfBlobUrl}
+            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            onLoadError={() => setLoadError("Failed to render document.")}
+            loading={
+              <div className="flex h-64 items-center justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            }
+          >
+            {/* Render all pages stacked — user scrolls naturally */}
+            {Array.from({ length: numPages }, (_, i) => (
+              <Page
+                key={i + 1}
+                pageNumber={i + 1}
+                width={Math.min(containerWidth, 800)}
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+                className="mx-auto mb-3 shadow-lg"
+              />
+            ))}
+          </Document>
+        )}
       </div>
     </div>
   );
@@ -141,8 +201,8 @@ export default function PDFViewer() {
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-dark">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-            <p className="text-lg text-black dark:text-white">Loading PDF...</p>
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-lg text-black dark:text-white">Loading…</p>
           </div>
         </div>
       }
