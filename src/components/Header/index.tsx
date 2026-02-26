@@ -209,9 +209,22 @@ const Header = () => {
   // Handle successful passcode verification
   const handlePasscodeSuccess = (token: string) => {
     if (pendingDocument) {
-      // Open the document in a new tab with the JWT token
-      const urlWithToken = `${pendingDocument.path}&token=${encodeURIComponent(token)}`;
-      window.open(urlWithToken, "_blank");
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // On mobile, open the PDF serve URL directly — the browser handles it natively
+        // without the intermediate pdf-viewer card page.
+        const url = new URL(pendingDocument.path, window.location.origin);
+        const docId = url.searchParams.get("docId");
+        if (docId) {
+          window.location.href = `${API_URL}/api/pdf/serve/${docId}?token=${encodeURIComponent(token)}`;
+        }
+      } else {
+        // Desktop: open the full pdf-viewer page in a new tab
+        const urlWithToken = `${pendingDocument.path}&token=${encodeURIComponent(token)}`;
+        window.open(urlWithToken, "_blank");
+      }
+
       setPendingDocument(null);
     }
   };
