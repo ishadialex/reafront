@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -11,12 +11,6 @@ function PDFViewerContent() {
   const docId = searchParams.get("docId");
   const docTitle = searchParams.get("title") || "document";
   const tokenParam = searchParams.get("token"); // Get JWT token from URL
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    setIsMobile(mobile);
-  }, []);
 
   if (!docId) {
     return (
@@ -124,64 +118,14 @@ function PDFViewerContent() {
       </div>
 
       {/* PDF Viewer */}
-      <div className="mx-auto max-w-full p-1 sm:p-2 md:p-4">
-        <div className="rounded-sm bg-white shadow-lg sm:rounded-md md:rounded-lg">
-          {isMobile ? (
-            // Mobile: browsers cannot reliably embed PDFs in iframes/object tags.
-            // Show a clean card with Open + Download actions instead.
-            <div
-              className="flex items-center justify-center"
-              style={{ height: 'calc(100vh - 80px)' }}
-            >
-              <div className="w-full max-w-sm rounded-2xl bg-gray-50 p-8 text-center shadow dark:bg-gray-800">
-                <svg
-                  className="mx-auto mb-4 h-16 w-16 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <h2 className="mb-1 text-lg font-semibold text-black dark:text-white">
-                  {docTitle}
-                </h2>
-                <p className="mb-6 text-sm text-body-color dark:text-body-color-dark">
-                  Tap below to view or download this document.
-                </p>
-                <div className="flex flex-col gap-3">
-                  <a
-                    href={getSecurePdfUrl() || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block rounded-lg bg-primary px-6 py-3 text-base font-medium text-white transition hover:bg-primary/80"
-                  >
-                    Open Document
-                  </a>
-                  <button
-                    onClick={handleDownload}
-                    className="rounded-lg bg-green-600 px-6 py-3 text-base font-medium text-white transition hover:bg-green-700"
-                  >
-                    Download
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // Desktop: use iframe for inline PDF viewing
-            <div style={{ height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
-              <iframe
-                src={pdfUrl}
-                className="h-full w-full"
-                title="PDF Viewer"
-                style={{ border: 'none' }}
-              />
-            </div>
-          )}
+      <div className="mx-auto max-w-full">
+        <div style={{ height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
+          <iframe
+            src={pdfUrl}
+            className="h-full w-full"
+            title="PDF Viewer"
+            style={{ border: 'none' }}
+          />
         </div>
       </div>
     </div>

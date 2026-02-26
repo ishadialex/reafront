@@ -209,19 +209,14 @@ const Header = () => {
   // Handle successful passcode verification
   const handlePasscodeSuccess = (token: string) => {
     if (pendingDocument) {
+      const urlWithToken = `${pendingDocument.path}&token=${encodeURIComponent(token)}`;
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // On mobile, open the PDF serve URL directly — the browser handles it natively
-        // without the intermediate pdf-viewer card page.
-        const url = new URL(pendingDocument.path, window.location.origin);
-        const docId = url.searchParams.get("docId");
-        if (docId) {
-          window.location.href = `${API_URL}/api/pdf/serve/${docId}?token=${encodeURIComponent(token)}`;
-        }
+        // Navigate in same tab on mobile to avoid popup blocking
+        window.location.href = urlWithToken;
       } else {
-        // Desktop: open the full pdf-viewer page in a new tab
-        const urlWithToken = `${pendingDocument.path}&token=${encodeURIComponent(token)}`;
+        // Desktop: open the pdf-viewer page in a new tab
         window.open(urlWithToken, "_blank");
       }
 
