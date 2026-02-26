@@ -32,10 +32,13 @@ function PDFViewerContent() {
     );
   }
 
-  // Build secure PDF serve URL using the document's MongoDB ID
+  // Build secure PDF serve URL using the document's MongoDB ID.
+  // The title is appended as the final path segment so browsers (especially
+  // Chrome on Android) display the document name instead of the raw ID.
   const getSecurePdfUrl = () => {
     if (!docId || !tokenParam) return null;
-    return `${API_URL}/api/pdf/serve/${docId}?token=${encodeURIComponent(tokenParam)}`;
+    const safeTitle = encodeURIComponent(docTitle.replace(/[/\\?%*:|"<>]/g, "-"));
+    return `${API_URL}/api/pdf/serve/${docId}/${safeTitle}.pdf?token=${encodeURIComponent(tokenParam)}`;
   };
 
   const handlePrint = () => {
@@ -50,7 +53,7 @@ function PDFViewerContent() {
 
     try {
       // Build secure URL using the document ID
-      const securePdfUrl = `${API_URL}/api/pdf/serve/${docId}?token=${encodeURIComponent(tokenParam)}`;
+      const securePdfUrl = getSecurePdfUrl()!;
 
       // Fetch the PDF with the token
       const response = await fetch(securePdfUrl);
