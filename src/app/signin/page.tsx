@@ -8,6 +8,12 @@ import SignInSkeleton from "@/components/SignInSkeleton";
 import axios from "axios";
 import { api } from "@/lib/api";
 
+/** Returns the correct home route based on the user's role. */
+function getHomeRoute(user: any): string {
+  const role = user?.role;
+  return role === "admin" || role === "superadmin" ? "/admin/users" : "/dashboard";
+}
+
 function SigninContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,10 +50,11 @@ function SigninContent() {
       return;
     }
 
-    // Redirect to dashboard if already logged in
+    // Redirect to correct home based on role if already logged in
     // Note: Actual auth is in httpOnly cookies, isLoggedIn is just a flag
     if (isLoggedIn === "true" && !reason) {
-      router.replace("/dashboard");
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      router.replace(getHomeRoute(storedUser));
     }
   }, [searchParams, router]);
 
@@ -85,7 +92,7 @@ function SigninContent() {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     const redirectTo = searchParams.get("redirect");
-    window.location.href = redirectTo || "/dashboard";
+    window.location.href = redirectTo || getHomeRoute(data.user);
   };
 
   const handleForceLogin = async () => {

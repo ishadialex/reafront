@@ -8,6 +8,12 @@ import { api } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
+/** Returns the correct home route based on the user's role. */
+function getHomeRoute(user: any): string {
+  const role = user?.role;
+  return role === "admin" || role === "superadmin" ? "/admin/users" : "/dashboard";
+}
+
 // Force dynamic rendering - don't statically generate this page
 export const dynamic = 'force-dynamic';
 
@@ -168,8 +174,8 @@ function AuthCallbackContent() {
           // Wait for cookies to be fully stored before navigating
           await new Promise(resolve => setTimeout(resolve, 200));
 
-          // Full page navigation ensures cookies are attached on first dashboard request
-          window.location.href = "/dashboard";
+          // Full page navigation ensures cookies are attached on first request
+          window.location.href = getHomeRoute(user);
         } else {
           throw new Error("Token exchange failed");
         }
@@ -247,7 +253,7 @@ function AuthCallbackContent() {
 
         window.dispatchEvent(new Event("authStateChanged"));
         await new Promise(resolve => setTimeout(resolve, 200));
-        window.location.href = "/dashboard";
+        window.location.href = getHomeRoute(user);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Force login failed. Please try again.");
@@ -339,9 +345,9 @@ function AuthCallbackContent() {
           // Dispatch custom event to notify Header of auth state change
           window.dispatchEvent(new Event("authStateChanged"));
 
-          // Redirect to dashboard
-          console.log("Redirecting to dashboard...");
-          router.replace("/dashboard");
+          // Redirect to correct home based on role
+          console.log("Redirecting to home...");
+          router.replace(getHomeRoute(user));
         } else {
           console.error("❌ No user data in OAuth response");
           console.error("Full response:", response.data);
