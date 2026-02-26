@@ -2,12 +2,10 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { Document, Page, pdfjs } from "react-pdf";
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import "react-pdf/dist/Page/TextLayer.css";
-
-// Worker served from public folder — same origin, no CORS issues
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+import { Worker, Viewer } from "@react-pdf-viewer/core";
+import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
+import "@react-pdf-viewer/core/lib/styles/index.css";
+import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -20,8 +18,8 @@ export default function PDFViewerContent() {
 
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [numPages, setNumPages] = useState<number>(0);
-  const [containerWidth, setContainerWidth] = useState<number>(800);
+
+  const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   const getServeUrl = useCallback(() => {
     if (!docId || !tokenParam) return null;
@@ -29,7 +27,7 @@ export default function PDFViewerContent() {
     return `${API_URL}/api/pdf/serve/${docId}/${safeTitle}.pdf?token=${encodeURIComponent(tokenParam)}`;
   }, [docId, tokenParam, docTitle]);
 
-  // Fetch PDF with auth token → blob URL for react-pdf
+  // Fetch PDF with auth token → blob URL
   useEffect(() => {
     const url = getServeUrl();
     if (!url) return;
@@ -50,17 +48,6 @@ export default function PDFViewerContent() {
     };
   }, [getServeUrl]);
 
-  // Responsive page width
-  useEffect(() => {
-    const update = () => {
-      const el = document.getElementById("pdf-container");
-      if (el) setContainerWidth(el.clientWidth);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
   const handleDownload = async () => {
     const url = getServeUrl();
     if (!url) return;
@@ -80,7 +67,6 @@ export default function PDFViewerContent() {
     }
   };
 
-  const handlePrint = () => window.print();
   const handleClose = () => router.push("/");
 
   if (!docId) {
@@ -104,21 +90,16 @@ export default function PDFViewerContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-dark">
+    <div className="flex min-h-screen flex-col bg-gray-100 dark:bg-gray-dark">
       {/* Action Bar */}
       <div className="sticky top-0 z-40 bg-white shadow-md dark:bg-gray-800">
         <div className="mx-auto flex max-w-full items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
-          <h1 className="max-w-[40%] truncate text-sm font-semibold text-black dark:text-white sm:text-base">
+          <h1 className="max-w-[50%] truncate text-sm font-semibold text-black dark:text-white sm:text-base">
             {docTitle}
           </h1>
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {numPages > 0 && (
-              <span className="text-xs text-body-color dark:text-gray-400">
-                {numPages} page{numPages !== 1 ? "s" : ""}
-              </span>
-            )}
             <button
-              onClick={handlePrint}
+              onClick={() => window.print()}
               className="rounded-md bg-primary px-2 py-1.5 text-xs font-medium text-white transition hover:bg-primary/80 sm:px-3 sm:py-2 sm:text-sm"
             >
               Print
@@ -139,12 +120,8 @@ export default function PDFViewerContent() {
         </div>
       </div>
 
-      {/* PDF Content — scrollable */}
-      <div
-        id="pdf-container"
-        className="mx-auto max-w-4xl overflow-y-auto p-2 sm:p-4"
-        style={{ height: "calc(100vh - 56px)" }}
-      >
+      {/* PDF Viewer */}
+      <div className="flex-1" style={{ height: "calc(100vh - 56px)" }}>
         {loadError ? (
           <div className="flex h-full items-center justify-center">
             <div className="rounded-xl bg-white p-8 text-center shadow dark:bg-gray-dark">
@@ -165,27 +142,12 @@ export default function PDFViewerContent() {
             </div>
           </div>
         ) : (
-          <Document
-            file={pdfBlobUrl}
-            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-            onLoadError={() => setLoadError("Failed to render document.")}
-            loading={
-              <div className="flex h-64 items-center justify-center">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              </div>
-            }
-          >
-            {Array.from({ length: numPages }, (_, i) => (
-              <Page
-                key={i + 1}
-                pageNumber={i + 1}
-                width={Math.min(containerWidth, 800)}
-                renderTextLayer
-                renderAnnotationLayer
-                className="mx-auto mb-3 shadow-lg"
-              />
-            ))}
-          </Document>
+          <Worker workerUrl="/pdf.worker.min.js">
+            <Viewer
+              fileUrl={pdfBlobUrl}
+              plugins={[defaultLayoutPluginInstance]}
+            />
+          </Worker>
         )}
       </div>
     </div>
