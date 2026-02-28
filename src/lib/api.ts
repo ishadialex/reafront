@@ -1003,6 +1003,167 @@ export class ApiClient {
     return response.data;
   }
 
+  // ─── ADMIN: Payment Wallets ──────────────────────────────────────────────
+
+  async adminGetPaymentWallets(params?: { type?: "bank" | "crypto" }) {
+    const query = new URLSearchParams();
+    if (params?.type) query.append("type", params.type);
+    const url = `/api/admin/payment-wallets${query.toString() ? `?${query}` : ""}`;
+    const response = await this.axiosInstance.get<ApiResponse<any[]>>(url);
+    return response.data;
+  }
+
+  async adminCreatePaymentWallet(data: {
+    type: "bank" | "crypto";
+    method: string;
+    name: string;
+    address?: string;
+    network?: string;
+    bankName?: string;
+    accountName?: string;
+    swiftCode?: string;
+    routingNumber?: string;
+    instructions?: string;
+    qrCodeData?: string;
+    isActive?: boolean;
+  }) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(
+      "/api/admin/payment-wallets",
+      data
+    );
+    return response.data;
+  }
+
+  async adminUpdatePaymentWallet(id: string, data: Record<string, unknown>) {
+    const response = await this.axiosInstance.patch<ApiResponse<any>>(
+      `/api/admin/payment-wallets/${id}`,
+      data
+    );
+    return response.data;
+  }
+
+  async adminTogglePaymentWallet(id: string) {
+    const response = await this.axiosInstance.patch<ApiResponse<any>>(
+      `/api/admin/payment-wallets/${id}/toggle`
+    );
+    return response.data;
+  }
+
+  async adminDeletePaymentWallet(id: string) {
+    const response = await this.axiosInstance.delete<ApiResponse<null>>(
+      `/api/admin/payment-wallets/${id}`
+    );
+    return response.data;
+  }
+
+  // ─── ADMIN: Documents ────────────────────────────────────────────────────
+
+  async adminGetDocuments(params?: { userId?: string; status?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.userId) query.append("userId", params.userId);
+    if (params?.status) query.append("status", params.status);
+    if (params?.page) query.append("page", String(params.page));
+    if (params?.limit) query.append("limit", String(params.limit));
+    const url = `/api/admin/documents${query.toString() ? `?${query}` : ""}`;
+    const response = await this.axiosInstance.get<ApiResponse<any>>(url);
+    return response.data;
+  }
+
+  async adminSendDocument(formData: FormData) {
+    return this._fetchUpload("POST", "/api/admin/documents/send", formData);
+  }
+
+  async adminDeleteDocument(id: string) {
+    const response = await this.axiosInstance.delete<ApiResponse<null>>(
+      `/api/admin/documents/${id}`
+    );
+    return response.data;
+  }
+
+  // ─── USER: Documents ─────────────────────────────────────────────────────
+
+  async getUserDocuments() {
+    const response = await this.axiosInstance.get<ApiResponse<any[]>>("/api/documents");
+    return response.data;
+  }
+
+  async signDocument(id: string, payload: {
+    signatureDataUrl: string;
+    sigPos: { xPct: number; yPct: number };
+    sigScale: number;
+    nameText?: string | null;
+    namePos: { xPct: number; yPct: number };
+    dateText?: string | null;
+    datePos: { xPct: number; yPct: number };
+  }) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(
+      `/api/documents/${id}/sign`,
+      payload,
+    );
+    return response.data;
+  }
+
+  async downloadDocumentFile(id: string, signed = false): Promise<Blob> {
+    const response = await this.axiosInstance.get(
+      `/api/documents/${encodeURIComponent(id)}/download${signed ? "?signed=true" : ""}`,
+      { responseType: "blob" }
+    );
+    return response.data;
+  }
+
+  async adminDownloadDocument(id: string, signed = false): Promise<Blob> {
+    const response = await this.axiosInstance.get(
+      `/api/admin/documents/${encodeURIComponent(id)}/download${signed ? "?signed=true" : ""}`,
+      { responseType: "blob" }
+    );
+    return response.data;
+  }
+
+  // Admin support ticket endpoints
+  async adminGetSupportTickets(params?: {
+    userId?: string;
+    status?: string;
+    priority?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const query = new URLSearchParams();
+    if (params?.userId) query.set("userId", params.userId);
+    if (params?.status) query.set("status", params.status);
+    if (params?.priority) query.set("priority", params.priority);
+    if (params?.category) query.set("category", params.category);
+    if (params?.page) query.set("page", String(params.page));
+    if (params?.limit) query.set("limit", String(params.limit));
+    const response = await this.axiosInstance.get<ApiResponse<any>>(
+      `/api/admin/support${query.toString() ? `?${query}` : ""}`
+    );
+    return response.data;
+  }
+
+  async adminGetSupportTicket(id: string) {
+    const response = await this.axiosInstance.get<ApiResponse<any>>(
+      `/api/admin/support/${encodeURIComponent(id)}`
+    );
+    return response.data;
+  }
+
+  async adminReplyToTicket(id: string, message: string) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(
+      `/api/admin/support/${encodeURIComponent(id)}/reply`,
+      { message }
+    );
+    return response.data;
+  }
+
+  async adminUpdateTicketStatus(id: string, status: string) {
+    const response = await this.axiosInstance.patch<ApiResponse<any>>(
+      `/api/admin/support/${encodeURIComponent(id)}/status`,
+      { status }
+    );
+    return response.data;
+  }
+
   // Newsletter endpoints
   async subscribeToNewsletter(data: { name: string; email: string }) {
     const response = await this.axiosInstance.post<ApiResponse<{

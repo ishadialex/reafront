@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { io, Socket } from "socket.io-client";
 import { api } from "@/lib/api";
 import { TabWrapper } from "./TabWrapper";
 import SupportSkeleton from "@/components/SupportSkeleton";
 import TicketDetailSkeleton from "@/components/TicketDetailSkeleton";
+
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 interface FileAttachment {
   id: string;
@@ -56,6 +59,9 @@ function SupportContent() {
   const [activeTab, setActiveTab] = useState<"tickets" | "new">(initialTab);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [isLoadingTicket, setIsLoadingTicket] = useState(false);
+
+  const socketRef = useRef<Socket | null>(null);
+  const currentTicketIdRef = useRef<string | null>(null);
 
   // Cache ticket count for better skeleton loading
   const [cachedTicketCount, setCachedTicketCount] = useState(() => {
@@ -118,6 +124,63 @@ function SupportContent() {
   useEffect(() => {
     fetchTickets();
   }, []);
+
+  // ── Socket.io for real-time ticket updates ───────────────────────────────
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("_at") : null;
+    if (!token) return;
+
+    const socket = io(SOCKET_URL, {
+      auth: { token },
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+    });
+    socketRef.current = socket;
+
+    socket.on("support_new_reply", ({ ticketId, reply }: { ticketId: string; reply: TicketReply }) => {
+      setSelectedTicket((prev) => {
+        if (!prev || prev.id !== ticketId) return prev;
+        if (prev.replies.some((r) => r.id === reply.id)) return prev;
+        return { ...prev, replies: [...prev.replies, reply] };
+      });
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, replyCount: (t.replyCount ?? 0) + 1 } : t))
+      );
+    });
+
+    socket.on("ticket_status_changed", ({ ticketId, status }: { ticketId: string; status: string }) => {
+      setSelectedTicket((prev) =>
+        prev?.id === ticketId ? { ...prev, status: status as SupportTicket["status"] } : prev
+      );
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, status: status as SupportTicket["status"] } : t))
+      );
+    });
+
+    socket.on("connect_error", () => { /* silent */ });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Join/leave ticket room when a ticket is opened/closed
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    const prev = currentTicketIdRef.current;
+    if (prev) socket.emit("leave_ticket", prev);
+
+    if (selectedTicket?.id) {
+      socket.emit("join_ticket", selectedTicket.id);
+      currentTicketIdRef.current = selectedTicket.id;
+    } else {
+      currentTicketIdRef.current = null;
+    }
+  }, [selectedTicket?.id]);
 
   useEffect(() => {
     if (selectedTicket) {

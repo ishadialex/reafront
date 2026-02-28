@@ -1,10 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Allow up to 50 MB request bodies in API route handlers and middleware.
-  // The default (10 MB) truncates large image upload batches, causing the
-  // backend to receive an incomplete multipart stream → ECONNRESET.
-  middlewareClientMaxBodySize: 50 * 1024 * 1024, // 50 MB
-
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
@@ -33,6 +28,8 @@ const nextConfig = {
       },
     ],
   },
+  // Empty turbopack config satisfies Next.js 16's requirement when no turbopack customisation is needed
+  turbopack: {},
   async rewrites() {
     // Proxy API requests through the frontend domain so cookies are first-party.
     // This fixes third-party cookie blocking in Safari, Firefox, and Brave.
