@@ -86,8 +86,15 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   const [namePos, setNamePos] = useState({ xPct: 0.10, yPct: 0.88 });
   const [datePos, setDatePos] = useState({ xPct: 0.10, yPct: 0.93 });
 
-  // Signature scale
-  const [sigScale, setSigScale] = useState(1.0);
+  // Signature display size (canvas pixels)
+  const [sigW, setSigW] = useState(180);
+  const [sigH, setSigH] = useState(60);
+
+  // Resize state
+  const isResizing       = useRef(false);
+  const resizeHandle     = useRef<"n"|"ne"|"e"|"se"|"s"|"sw"|"w"|"nw" | null>(null);
+  const resizeStartBox   = useRef({ left: 0, top: 0, w: 0, h: 0 });
+  const resizeStartMouse = useRef({ x: 0, y: 0 });
 
   // Name / date values
   const [nameText, setNameText] = useState("");
@@ -108,8 +115,6 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   const pageCanvasRef   = useRef<HTMLCanvasElement>(null);
   const [pageDims, setPageDims] = useState<{ w: number; h: number } | null>(null);
   const [pageRenderError, setPageRenderError] = useState(false);
-  const [sigDispW, setSigDispW] = useState(180);
-  const [sigDispH, setSigDispH] = useState(60);
 
   // Preview
   const [previewUrl, setPreviewUrl]       = useState<string | null>(null);
@@ -194,8 +199,8 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
         setPageDims(dims);
 
         const dw = Math.min(200, dims.w * 0.32);
-        setSigDispW(Math.round(dw));
-        setSigDispH(Math.round(dw / 3));
+        setSigW(Math.round(dw));
+        setSigH(Math.round(dw / 3));
       } catch {
         setPageRenderError(true);
       }
@@ -230,6 +235,32 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   };
 
   const onDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+    // ── Resize mode ──────────────────────────────────────────────────────────
+    if (isResizing.current && resizeHandle.current && pageDims && pageCanvasRef.current) {
+      didDrag.current = true;
+      const rect = getCanvasRect();
+      const { cx, cy } = getClientXY(e);
+      const dx = cx - resizeStartMouse.current.x;
+      const dy = cy - resizeStartMouse.current.y;
+      const { left: iL, top: iT, w: iW, h: iH } = resizeStartBox.current;
+      const h = resizeHandle.current;
+      const MIN_W = 40, MIN_H = 16;
+
+      let nL = iL, nT = iT, nW = iW, nH = iH;
+      if (h.includes("e")) nW = Math.max(MIN_W, iW + dx);
+      if (h.includes("w")) { nW = Math.max(MIN_W, iW - dx); nL = iL + iW - nW; }
+      if (h.includes("s")) nH = Math.max(MIN_H, iH + dy);
+      if (h.includes("n")) { nH = Math.max(MIN_H, iH - dy); nT = iT + iH - nH; }
+
+      nL = Math.max(0, Math.min(nL, rect.width  - nW));
+      nT = Math.max(0, Math.min(nT, rect.height - nH));
+      setSigPos({ xPct: nL / rect.width, yPct: nT / rect.height });
+      setSigW(Math.round(nW));
+      setSigH(Math.round(nH));
+      return;
+    }
+
+    // ── Drag mode ────────────────────────────────────────────────────────────
     if (!isDragging.current || !pageDims || !draggingTarget.current || !pageCanvasRef.current) return;
     didDrag.current = true;
     const rect = getCanvasRect();
@@ -237,8 +268,8 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     const newLeft = cx - rect.left - dragOffset.current.x;
     const newTop  = cy - rect.top  - dragOffset.current.y;
     const target  = draggingTarget.current;
-    const boxW = target === "sig" ? sigDispW * sigScale : target === "name" ? nameBoxW : dateBoxW;
-    const boxH = target === "sig" ? sigDispH * sigScale : TEXT_BOX_H;
+    const boxW = target === "sig" ? sigW : target === "name" ? nameBoxW : dateBoxW;
+    const boxH = target === "sig" ? sigH : TEXT_BOX_H;
     const newPos = {
       xPct: Math.max(0, Math.min(newLeft, rect.width  - boxW)) / rect.width,
       yPct: Math.max(0, Math.min(newTop,  rect.height - boxH)) / rect.height,
@@ -248,7 +279,32 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     else                         setDatePos(newPos);
   };
 
-  const onDragEnd = () => { isDragging.current = false; draggingTarget.current = null; };
+  const onDragEnd = () => {
+    isDragging.current    = false;
+    draggingTarget.current = null;
+    isResizing.current    = false;
+    resizeHandle.current  = null;
+  };
+
+  const onResizeStart = (
+    handle: "n"|"ne"|"e"|"se"|"s"|"sw"|"w"|"nw",
+    e: React.MouseEvent | React.TouchEvent,
+  ) => {
+    if (!pageDims || !pageCanvasRef.current) return;
+    e.stopPropagation();
+    didDrag.current = true; // prevent canvas-click firing on mouse-up
+    isResizing.current   = true;
+    resizeHandle.current = handle;
+    const rect = getCanvasRect();
+    const { cx, cy } = getClientXY(e);
+    resizeStartMouse.current = { x: cx, y: cy };
+    resizeStartBox.current   = {
+      left: sigPos.xPct * rect.width,
+      top:  sigPos.yPct * rect.height,
+      w: sigW,
+      h: sigH,
+    };
+  };
 
   // ── Click-to-place handler on the PDF canvas area ────────────────────────
 
@@ -300,8 +356,8 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
       // see on the positioning canvas is exactly what lands in the PDF.
       const canvasW  = pageDims?.w ?? pdfW;
       const scaleRatio = pdfW / canvasW;
-      const sigWidth  = sigDispW * sigScale * scaleRatio;
-      const sigHeight = sigDispH * sigScale * scaleRatio;
+      const sigWidth  = sigW * scaleRatio;
+      const sigHeight = sigH * scaleRatio;
 
       lastPage.drawImage(sigImage, {
         x: Math.max(0, sigPos.xPct * pdfW),
@@ -357,14 +413,14 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
       await api.signDocument(doc.id, {
         signatureDataUrl,
         sigPos,
-        sigScale,
+        sigScale: 1,
         nameText: nameText.trim() || null,
         namePos,
         dateText: dateText || null,
         datePos,
         canvasW:     pageDims?.w ?? 595,
-        sigDisplayW: sigDispW,
-        sigDisplayH: sigDispH,
+        sigDisplayW: sigW,
+        sigDisplayH: sigH,
       });
       setStep("success");
       setTimeout(() => onSigned(), 2500);
@@ -523,31 +579,68 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
               </div>
             )}
 
-            {/* Draggable signature */}
-            {signatureDataUrl && pageDims && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: sigPos.xPct * pageDims.w,
-                  top:  sigPos.yPct * pageDims.h,
-                  width:  sigDispW * sigScale,
-                  height: sigDispH * sigScale,
-                  cursor: "grab", touchAction: "none",
-                }}
-                onMouseDown={makeDragStart("sig")}
-                onTouchStart={makeDragStart("sig")}
-              >
-                <div className="h-full w-full rounded border-2 border-primary bg-white/85 p-1 shadow-lg">
-                  <img src={signatureDataUrl} alt="signature" className="h-full w-full object-contain" draggable={false} />
+            {/* Draggable + resizable signature */}
+            {signatureDataUrl && pageDims && (() => {
+              const HANDLES: Array<{
+                id: "n"|"ne"|"e"|"se"|"s"|"sw"|"w"|"nw";
+                cursor: string;
+                style: React.CSSProperties;
+              }> = [
+                { id: "nw", cursor: "nw-resize", style: { top: -4,  left:  -4 } },
+                { id: "n",  cursor: "n-resize",  style: { top: -4,  left: "50%", marginLeft: -4 } },
+                { id: "ne", cursor: "ne-resize", style: { top: -4,  right: -4 } },
+                { id: "e",  cursor: "e-resize",  style: { top: "50%", marginTop: -4, right: -4 } },
+                { id: "se", cursor: "se-resize", style: { bottom: -4, right: -4 } },
+                { id: "s",  cursor: "s-resize",  style: { bottom: -4, left: "50%", marginLeft: -4 } },
+                { id: "sw", cursor: "sw-resize", style: { bottom: -4, left: -4 } },
+                { id: "w",  cursor: "w-resize",  style: { top: "50%", marginTop: -4, left: -4 } },
+              ];
+              return (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: sigPos.xPct * pageDims.w,
+                    top:  sigPos.yPct * pageDims.h,
+                    width:  sigW,
+                    height: sigH,
+                    cursor: "grab",
+                    touchAction: "none",
+                  }}
+                  onMouseDown={makeDragStart("sig")}
+                  onTouchStart={makeDragStart("sig")}
+                >
+                  <div className="h-full w-full rounded border-2 border-primary bg-white/85 p-1 shadow-lg">
+                    <img src={signatureDataUrl} alt="signature" className="h-full w-full object-contain" draggable={false} />
+                  </div>
+
+                  {/* Edit button */}
+                  <button
+                    className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white shadow"
+                    style={{ fontSize: 9 }}
+                    onClick={(e) => { e.stopPropagation(); setOpenPanel("sig"); }}
+                  >✎</button>
+
+                  {/* Resize handles */}
+                  {HANDLES.map((hnd) => (
+                    <div
+                      key={hnd.id}
+                      style={{
+                        position: "absolute",
+                        width: 8, height: 8,
+                        background: "white",
+                        border: "1.5px solid #3b82f6",
+                        borderRadius: 2,
+                        cursor: hnd.cursor,
+                        ...hnd.style,
+                      }}
+                      onMouseDown={(e) => onResizeStart(hnd.id, e)}
+                      onTouchStart={(e) => onResizeStart(hnd.id, e)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ))}
                 </div>
-                {/* Edit hint */}
-                <button
-                  className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white shadow"
-                  style={{ fontSize: 9 }}
-                  onClick={(e) => { e.stopPropagation(); setOpenPanel("sig"); }}
-                >✎</button>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Draggable name */}
             {nameText && pageDims && (
@@ -614,16 +707,6 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
             <span className="ml-auto text-xs text-body-color">Drag to reposition · ✎ to edit</span>
           </div>
 
-          {signatureDataUrl && (
-            <div className="mb-4 mt-2 flex items-center gap-3">
-              <span className="flex-shrink-0 text-xs text-body-color">Sig size</span>
-              <input type="range" min={0.4} max={2.5} step={0.05} value={sigScale}
-                onChange={(e) => setSigScale(parseFloat(e.target.value))}
-                className="h-1.5 w-full cursor-pointer accent-primary" />
-              <span className="w-10 flex-shrink-0 text-right text-xs text-body-color">{Math.round(sigScale * 100)}%</span>
-            </div>
-          )}
-
           {/* ── Inline panels ─────────────────────────────────────────────── */}
 
           {/* Signature panel */}
@@ -653,10 +736,10 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
                     }
                     setError("");
                     const dataUrl = padRef.current.toDataURL("image/png");
-                    // Measure the actual drawn image so sigDispH matches its real proportions
+                    // Measure the actual drawn image so sigH matches its real proportions
                     const img = new window.Image();
                     img.onload = () => {
-                      setSigDispH(Math.max(20, Math.round(sigDispW * img.height / img.width)));
+                      setSigH(Math.max(20, Math.round(sigW * img.height / img.width)));
                     };
                     img.src = dataUrl;
                     setSignatureDataUrl(dataUrl);
