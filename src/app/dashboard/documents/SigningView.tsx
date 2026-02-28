@@ -106,8 +106,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   // PDF canvas refs / state
   const posContainerRef = useRef<HTMLDivElement>(null);
   const pageCanvasRef   = useRef<HTMLCanvasElement>(null);
-  const [pageDims, setPageDims]         = useState<{ w: number; h: number } | null>(null);
-  const [pdfPageDims, setPdfPageDims]   = useState<{ w: number; h: number } | null>(null);
+  const [pageDims, setPageDims] = useState<{ w: number; h: number } | null>(null);
   const [pageRenderError, setPageRenderError] = useState(false);
   const [sigDispW, setSigDispW] = useState(180);
   const [sigDispH, setSigDispH] = useState(60);
@@ -169,7 +168,6 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     if (step !== "fill") return;
     setPageRenderError(false);
     setPageDims(null);
-    setPdfPageDims(null);
 
     (async () => {
       try {
@@ -194,7 +192,6 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
 
         const dims = { w: canvas.width, h: canvas.height };
         setPageDims(dims);
-        setPdfPageDims({ w: baseVp.width, h: baseVp.height });
 
         const dw = Math.min(200, dims.w * 0.32);
         setSigDispW(Math.round(dw));
@@ -218,23 +215,24 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     return { cx: (e as React.MouseEvent).clientX, cy: (e as React.MouseEvent).clientY };
   };
 
+  const getCanvasRect = () => pageCanvasRef.current!.getBoundingClientRect();
+
   const makeDragStart = (target: "sig" | "name" | "date") => (e: React.MouseEvent | React.TouchEvent) => {
-    if (!pageDims) return;
+    if (!pageDims || !pageCanvasRef.current) return;
     draggingTarget.current = target;
     isDragging.current = true;
     didDrag.current = false;
-    const rect = posContainerRef.current!.getBoundingClientRect();
+    const rect = getCanvasRect();
     const { cx, cy } = getClientXY(e);
     const pos = target === "sig" ? sigPos : target === "name" ? namePos : datePos;
-    dragOffset.current = { x: cx - rect.left - pos.xPct * pageDims.w, y: cy - rect.top - pos.yPct * pageDims.h };
-    e.preventDefault();
+    dragOffset.current = { x: cx - rect.left - pos.xPct * rect.width, y: cy - rect.top - pos.yPct * rect.height };
     e.stopPropagation();
   };
 
   const onDragMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging.current || !pageDims || !draggingTarget.current) return;
+    if (!isDragging.current || !pageDims || !draggingTarget.current || !pageCanvasRef.current) return;
     didDrag.current = true;
-    const rect = posContainerRef.current!.getBoundingClientRect();
+    const rect = getCanvasRect();
     const { cx, cy } = getClientXY(e);
     const newLeft = cx - rect.left - dragOffset.current.x;
     const newTop  = cy - rect.top  - dragOffset.current.y;
@@ -242,8 +240,8 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     const boxW = target === "sig" ? sigDispW * sigScale : target === "name" ? nameBoxW : dateBoxW;
     const boxH = target === "sig" ? sigDispH * sigScale : TEXT_BOX_H;
     const newPos = {
-      xPct: Math.max(0, Math.min(newLeft, pageDims.w - boxW)) / pageDims.w,
-      yPct: Math.max(0, Math.min(newTop,  pageDims.h - boxH)) / pageDims.h,
+      xPct: Math.max(0, Math.min(newLeft, rect.width  - boxW)) / rect.width,
+      yPct: Math.max(0, Math.min(newTop,  rect.height - boxH)) / rect.height,
     };
     if (target === "sig")        setSigPos(newPos);
     else if (target === "name")  setNamePos(newPos);
@@ -257,11 +255,11 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   const onCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Ignore if this was the end of a drag
     if (didDrag.current) { didDrag.current = false; return; }
-    if (!activeTool || !pageDims) return;
+    if (!activeTool || !pageDims || !pageCanvasRef.current) return;
 
-    const rect = posContainerRef.current!.getBoundingClientRect();
-    const xPct = Math.max(0, Math.min((e.clientX - rect.left) / pageDims.w, 0.98));
-    const yPct = Math.max(0, Math.min((e.clientY - rect.top)  / pageDims.h, 0.98));
+    const rect = getCanvasRect();
+    const xPct = Math.max(0, Math.min((e.clientX - rect.left) / rect.width,  0.98));
+    const yPct = Math.max(0, Math.min((e.clientY - rect.top)  / rect.height, 0.98));
 
     if (activeTool === "sig")        setSigPos ({ xPct, yPct });
     else if (activeTool === "name")  setNamePos({ xPct, yPct });
@@ -297,9 +295,13 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
       const lastPage  = pages[pages.length - 1];
       const { width: pdfW, height: pdfH } = lastPage.getSize();
 
-      const { width: imgW, height: imgH } = sigImage.scale(1);
-      const sigWidth  = Math.min(220, pdfW * 0.32) * sigScale;
-      const sigHeight = (imgH / imgW) * sigWidth;
+      // Scale the signature from canvas pixels → PDF points using the same ratio
+      // the canvas used to scale the PDF (canvasW / pdfW). This ensures what you
+      // see on the positioning canvas is exactly what lands in the PDF.
+      const canvasW  = pageDims?.w ?? pdfW;
+      const scaleRatio = pdfW / canvasW;
+      const sigWidth  = sigDispW * sigScale * scaleRatio;
+      const sigHeight = sigDispH * sigScale * scaleRatio;
 
       lastPage.drawImage(sigImage, {
         x: Math.max(0, sigPos.xPct * pdfW),
@@ -312,10 +314,13 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
         const { StandardFonts } = await import("pdf-lib");
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
+        // TEXT_BOX_H=26px; baseline sits ~70% down the box → 18 * scaleRatio
+        const textYOffset = 18 * scaleRatio;
+
         if (nameText.trim()) {
           lastPage.drawText(nameText.trim(), {
             x: Math.max(0, namePos.xPct * pdfW),
-            y: Math.max(0, pdfH * (1 - namePos.yPct) - 10),
+            y: Math.max(0, pdfH * (1 - namePos.yPct) - textYOffset),
             size: 10, font, color: rgb(0, 0, 0),
           });
         }
@@ -326,7 +331,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
           });
           lastPage.drawText(formatted, {
             x: Math.max(0, datePos.xPct * pdfW),
-            y: Math.max(0, pdfH * (1 - datePos.yPct) - 10),
+            y: Math.max(0, pdfH * (1 - datePos.yPct) - textYOffset),
             size: 10, font, color: rgb(0, 0, 0),
           });
         }
@@ -357,6 +362,9 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
         namePos,
         dateText: dateText || null,
         datePos,
+        canvasW:     pageDims?.w ?? 595,
+        sigDisplayW: sigDispW,
+        sigDisplayH: sigDispH,
       });
       setStep("success");
       setTimeout(() => onSigned(), 2500);
@@ -486,7 +494,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
           <div
             ref={posContainerRef}
             className="relative mb-3 overflow-hidden rounded-xl border border-stroke bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-            style={{ userSelect: "none", cursor: activeTool ? "crosshair" : "default" }}
+            style={{ userSelect: "none", touchAction: "none", cursor: activeTool ? "crosshair" : "default" }}
             onClick={onCanvasClick}
             onMouseMove={onDragMove}
             onMouseUp={onDragEnd}
@@ -644,7 +652,14 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
                       return;
                     }
                     setError("");
-                    setSignatureDataUrl(padRef.current.toDataURL("image/png"));
+                    const dataUrl = padRef.current.toDataURL("image/png");
+                    // Measure the actual drawn image so sigDispH matches its real proportions
+                    const img = new window.Image();
+                    img.onload = () => {
+                      setSigDispH(Math.max(20, Math.round(sigDispW * img.height / img.width)));
+                    };
+                    img.src = dataUrl;
+                    setSignatureDataUrl(dataUrl);
                     setOpenPanel(null);
                   }}
                   className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">

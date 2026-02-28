@@ -1095,6 +1095,9 @@ export class ApiClient {
     namePos: { xPct: number; yPct: number };
     dateText?: string | null;
     datePos: { xPct: number; yPct: number };
+    canvasW?: number;
+    sigDisplayW?: number;
+    sigDisplayH?: number;
   }) {
     const response = await this.axiosInstance.post<ApiResponse<any>>(
       `/api/documents/${id}/sign`,
