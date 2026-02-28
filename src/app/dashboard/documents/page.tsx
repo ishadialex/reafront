@@ -16,6 +16,15 @@ const SigningView = dynamic(() => import("./SigningView"), {
 
 const PdfViewerModal = dynamic(() => import("./PdfViewerModal"), { ssr: false });
 
+interface DocField {
+  id: string;
+  type: "signature" | "name" | "date" | "text" | "stamp";
+  assignedTo: "user" | "admin" | "witness";
+  required: boolean;
+  xPct: number; yPct: number;
+  wPct: number; hPct: number;
+}
+
 interface SigningDoc {
   id: string;
   title: string;
@@ -26,6 +35,7 @@ interface SigningDoc {
   status: string;
   signedAt: string | null;
   createdAt: string;
+  fields?: DocField[];
 }
 
 function fmt(date: string | null) {

@@ -7,7 +7,35 @@ import { api } from "@/lib/api";
 
 type Step = "review" | "fill" | "preview" | "success";
 type ActiveTool = "sig" | "name" | "date" | null;
-type OpenPanel = "sig" | "name" | "date" | null;
+type OpenPanel = "sig" | "name" | "date" | "text" | null;
+
+// ─── DocField (admin-defined field zones) ─────────────────────────────────────
+
+interface DocField {
+  id: string;
+  type: "signature" | "name" | "date" | "text" | "stamp";
+  assignedTo: "user" | "admin" | "witness";
+  required: boolean;
+  xPct: number; yPct: number;
+  wPct: number; hPct: number;
+}
+
+const GUIDED_COLORS: Record<DocField["assignedTo"], { border: string; bg: string }> = {
+  user:    { border: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
+  admin:   { border: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
+  witness: { border: "#f97316", bg: "rgba(249,115,22,0.12)" },
+};
+
+const GUIDED_ICONS: Record<DocField["type"], string> = {
+  signature: "✍", name: "A", date: "📅", text: "T", stamp: "🔏",
+};
+
+interface FieldValue {
+  fieldId: string;
+  value: string;
+  sigW?: number;
+  sigH?: number;
+}
 
 interface SigningDoc {
   id: string;
@@ -15,6 +43,7 @@ interface SigningDoc {
   description: string;
   userMessage: string;
   documentUrl: string;
+  fields?: DocField[];
 }
 
 interface Props {
@@ -96,9 +125,10 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   const resizeStartBox   = useRef({ left: 0, top: 0, w: 0, h: 0 });
   const resizeStartMouse = useRef({ x: 0, y: 0 });
 
-  // Name / date values
+  // Name / date / text values
   const [nameText, setNameText] = useState("");
   const [dateText, setDateText] = useState(() => new Date().toISOString().split("T")[0]);
+  const [textValue, setTextValue] = useState(""); // for guided "text" type fields
 
   // Interactive fill step: which tool is armed for next click, and which panel is open
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
@@ -123,6 +153,26 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   // Submit
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState("");
+
+  // ── Guided mode state ────────────────────────────────────────────────────
+
+  const [fieldValues, setFieldValues]               = useState<FieldValue[]>([]);
+  const [activeGuidedFieldId, setActiveGuidedFieldId] = useState<string | null>(null);
+
+  // ── Signature input mode (draw vs upload) ────────────────────────────────
+
+  const [sigInputMode, setSigInputMode]             = useState<"draw" | "upload">("draw");
+  const [uploadedSigPreview, setUploadedSigPreview] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver]                 = useState(false);
+  const uploadSigInputRef                           = useRef<HTMLInputElement>(null);
+
+  // ── Derived: guided mode ─────────────────────────────────────────────────
+
+  const guidedMode = (doc.fields ?? []).length > 0;
+  const guidedUserFields = guidedMode ? (doc.fields ?? []).filter((f) => f.assignedTo === "user") : [];
+  const guidedAllRequiredFilled = guidedUserFields
+    .filter((f) => f.required)
+    .every((f) => fieldValues.some((fv) => fv.fieldId === f.id && fv.value));
 
   // Blob URL cleanup
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
@@ -309,7 +359,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   // ── Click-to-place handler on the PDF canvas area ────────────────────────
 
   const onCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Ignore if this was the end of a drag
+    if (guidedMode) return; // guided mode handles clicks on individual field zones
     if (didDrag.current) { didDrag.current = false; return; }
     if (!activeTool || !pageDims || !pageCanvasRef.current) return;
 
@@ -325,10 +375,36 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     setActiveTool(null);
   };
 
+  // ── Guided: click on a user field zone to fill it ────────────────────────
+
+  const onGuidedFieldClick = (f: DocField) => {
+    if (f.assignedTo !== "user") return;
+    setActiveGuidedFieldId(f.id);
+    // Reset signature upload state each time the panel opens
+    if (f.type === "signature") { setSigInputMode("draw"); setUploadedSigPreview(null); setIsDragOver(false); }
+    // Pre-populate inputs from existing fieldValues if any
+    const existing = fieldValues.find((fv) => fv.fieldId === f.id);
+    if (f.type === "name") setNameText(existing?.value ?? "");
+    if (f.type === "date") setDateText(existing?.value ?? new Date().toISOString().split("T")[0]);
+    if (f.type === "text") setTextValue(existing?.value ?? "");
+    const panelType: OpenPanel =
+      f.type === "signature" ? "sig" :
+      f.type === "name"      ? "name" :
+      f.type === "date"      ? "date" : "text";
+    setOpenPanel(panelType);
+  };
+
   // ── Generate preview PDF ──────────────────────────────────────────────────
 
   const goToPreview = async () => {
-    if (!signatureDataUrl) { setError("Please place and draw your signature first."); return; }
+    if (guidedMode) {
+      if (!guidedAllRequiredFilled) {
+        setError("Please fill all required fields before previewing.");
+        return;
+      }
+    } else {
+      if (!signatureDataUrl) { setError("Please place and draw your signature first."); return; }
+    }
     setError("");
     setPreviewLoading(true);
     setStep("preview");
@@ -341,55 +417,87 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
       const { PDFDocument, rgb } = await import("pdf-lib");
       const pdfDoc = await PDFDocument.load(pdfBytes);
 
-      const base64  = signatureDataUrl.replace("data:image/png;base64,", "");
-      const binary  = atob(base64);
-      const sigBytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) sigBytes[i] = binary.charCodeAt(i);
-
-      const sigImage  = await pdfDoc.embedPng(sigBytes);
-      const pages     = pdfDoc.getPages();
-      const lastPage  = pages[pages.length - 1];
+      const pages    = pdfDoc.getPages();
+      const lastPage = pages[pages.length - 1];
       const { width: pdfW, height: pdfH } = lastPage.getSize();
 
-      // Scale the signature from canvas pixels → PDF points using the same ratio
-      // the canvas used to scale the PDF (canvasW / pdfW). This ensures what you
-      // see on the positioning canvas is exactly what lands in the PDF.
-      const canvasW  = pageDims?.w ?? pdfW;
+      const canvasW    = pageDims?.w ?? pdfW;
       const scaleRatio = pdfW / canvasW;
-      const sigWidth  = sigW * scaleRatio;
-      const sigHeight = sigH * scaleRatio;
 
-      lastPage.drawImage(sigImage, {
-        x: Math.max(0, sigPos.xPct * pdfW),
-        y: Math.max(0, pdfH * (1 - sigPos.yPct) - sigHeight),
-        width: sigWidth,
-        height: sigHeight,
-      });
-
-      if (nameText.trim() || dateText) {
+      if (guidedMode) {
+        // ── Render fields at admin-defined positions ───────────────────────
         const { StandardFonts } = await import("pdf-lib");
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-        // TEXT_BOX_H=26px; baseline sits ~70% down the box → 18 * scaleRatio
-        const textYOffset = 18 * scaleRatio;
+        for (const f of (doc.fields ?? [])) {
+          if (f.assignedTo !== "user") continue;
+          const fv = fieldValues.find((v) => v.fieldId === f.id);
+          if (!fv?.value) continue;
 
-        if (nameText.trim()) {
-          lastPage.drawText(nameText.trim(), {
-            x: Math.max(0, namePos.xPct * pdfW),
-            y: Math.max(0, pdfH * (1 - namePos.yPct) - textYOffset),
-            size: 10, font, color: rgb(0, 0, 0),
-          });
+          const fx = f.xPct * pdfW;
+          const fw = f.wPct * pdfW;
+          const fh = f.hPct * pdfH;
+          const fy = pdfH * (1 - f.yPct) - fh; // bottom-left corner in PDF coords
+
+          if (f.type === "signature") {
+            const base64   = fv.value.replace(/^data:image\/\w+;base64,/, "");
+            const binary   = atob(base64);
+            const sigBytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) sigBytes[i] = binary.charCodeAt(i);
+            const sigImage = await pdfDoc.embedPng(sigBytes);
+            lastPage.drawImage(sigImage, { x: fx, y: fy, width: fw, height: fh });
+          } else if (f.type === "date") {
+            const formatted = new Date(fv.value + "T00:00:00").toLocaleDateString("en-US", {
+              year: "numeric", month: "short", day: "numeric",
+            });
+            lastPage.drawText(formatted, { x: fx + 2, y: fy + fh * 0.3, size: 10, font, color: rgb(0, 0, 0) });
+          } else {
+            lastPage.drawText(fv.value, { x: fx + 2, y: fy + fh * 0.3, size: 10, font, color: rgb(0, 0, 0) });
+          }
         }
+      } else {
+        // ── Legacy mode ────────────────────────────────────────────────────
+        const base64  = signatureDataUrl!.replace("data:image/png;base64,", "");
+        const binary  = atob(base64);
+        const sigBytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) sigBytes[i] = binary.charCodeAt(i);
 
-        if (dateText) {
-          const formatted = new Date(dateText + "T00:00:00").toLocaleDateString("en-US", {
-            year: "numeric", month: "short", day: "numeric",
-          });
-          lastPage.drawText(formatted, {
-            x: Math.max(0, datePos.xPct * pdfW),
-            y: Math.max(0, pdfH * (1 - datePos.yPct) - textYOffset),
-            size: 10, font, color: rgb(0, 0, 0),
-          });
+        const sigImage  = await pdfDoc.embedPng(sigBytes);
+        const sigWidth  = sigW * scaleRatio;
+        const sigHeight = sigH * scaleRatio;
+
+        lastPage.drawImage(sigImage, {
+          x: Math.max(0, sigPos.xPct * pdfW),
+          y: Math.max(0, pdfH * (1 - sigPos.yPct) - sigHeight),
+          width: sigWidth,
+          height: sigHeight,
+        });
+
+        if (nameText.trim() || dateText) {
+          const { StandardFonts } = await import("pdf-lib");
+          const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+          // TEXT_BOX_H=26px; baseline sits ~70% down the box → 18 * scaleRatio
+          const textYOffset = 18 * scaleRatio;
+
+          if (nameText.trim()) {
+            lastPage.drawText(nameText.trim(), {
+              x: Math.max(0, namePos.xPct * pdfW),
+              y: Math.max(0, pdfH * (1 - namePos.yPct) - textYOffset),
+              size: 10, font, color: rgb(0, 0, 0),
+            });
+          }
+
+          if (dateText) {
+            const formatted = new Date(dateText + "T00:00:00").toLocaleDateString("en-US", {
+              year: "numeric", month: "short", day: "numeric",
+            });
+            lastPage.drawText(formatted, {
+              x: Math.max(0, datePos.xPct * pdfW),
+              y: Math.max(0, pdfH * (1 - datePos.yPct) - textYOffset),
+              size: 10, font, color: rgb(0, 0, 0),
+            });
+          }
         }
       }
 
@@ -406,22 +514,34 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!signatureDataUrl) return;
     setSubmitting(true);
     setError("");
     try {
-      await api.signDocument(doc.id, {
-        signatureDataUrl,
-        sigPos,
-        sigScale: 1,
-        nameText: nameText.trim() || null,
-        namePos,
-        dateText: dateText || null,
-        datePos,
-        canvasW:     pageDims?.w ?? 595,
-        sigDisplayW: sigW,
-        sigDisplayH: sigH,
-      });
+      if (guidedMode) {
+        await api.signDocument(doc.id, {
+          fieldValues: fieldValues.map((fv) => ({
+            fieldId: fv.fieldId,
+            value: fv.value,
+            sigW: fv.sigW,
+            sigH: fv.sigH,
+            canvasW: pageDims?.w,
+          })),
+        });
+      } else {
+        if (!signatureDataUrl) return;
+        await api.signDocument(doc.id, {
+          signatureDataUrl,
+          sigPos,
+          sigScale: 1,
+          nameText: nameText.trim() || null,
+          namePos,
+          dateText: dateText || null,
+          datePos,
+          canvasW:     pageDims?.w ?? 595,
+          sigDisplayW: sigW,
+          sigDisplayH: sigH,
+        });
+      }
       setStep("success");
       setTimeout(() => onSigned(), 2500);
     } catch (err: any) {
@@ -515,30 +635,58 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
       {step === "fill" && (
         <div className="rounded-2xl bg-white p-6 shadow dark:bg-gray-dark">
           <h3 className="mb-1 text-lg font-semibold text-black dark:text-white">Fill &amp; Place Fields</h3>
-          <p className="mb-5 text-sm text-body-color">
-            Select a field type below, then tap anywhere on the document to place it.
-          </p>
+          {guidedMode ? (
+            <p className="mb-4 text-sm text-body-color">
+              Click on the highlighted zones to fill in each field. Required fields are marked <span className="text-red-500 font-medium">*</span>.
+            </p>
+          ) : (
+            <p className="mb-5 text-sm text-body-color">
+              Select a field type below, then tap anywhere on the document to place it.
+            </p>
+          )}
 
-          {/* Tool selector */}
-          <div className="mb-4 flex flex-wrap gap-2">
-            {(["sig", "name", "date"] as const).map((tool) => {
-              const labels = { sig: "✍ Signature", name: "A  Full Name", date: "📅 Date" };
-              const colors = {
-                sig:  activeTool === "sig"  ? "bg-primary text-white" : "border-primary text-primary hover:bg-primary/5",
-                name: activeTool === "name" ? "bg-blue-500 text-white" : "border-blue-500 text-blue-600 hover:bg-blue-50",
-                date: activeTool === "date" ? "bg-green-600 text-white" : "border-green-600 text-green-700 hover:bg-green-50",
-              };
-              return (
-                <button key={tool}
-                  onClick={() => setActiveTool(activeTool === tool ? null : tool)}
-                  className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition ${colors[tool]}`}>
-                  {labels[tool]}
-                </button>
-              );
-            })}
-          </div>
+          {/* ── Guided mode: field completion status pills ──────────────── */}
+          {guidedMode && (
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {(doc.fields ?? []).filter((f) => f.assignedTo === "user").map((f) => {
+                const filled = fieldValues.some((fv) => fv.fieldId === f.id && fv.value);
+                const color  = filled ? "#22c55e" : f.required ? "#ef4444" : "#94a3b8";
+                return (
+                  <span
+                    key={f.id}
+                    style={{ border: `1.5px solid ${color}`, color }}
+                    className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  >
+                    {GUIDED_ICONS[f.type]} {f.type}{f.required ? " *" : ""}
+                    {filled && " ✓"}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
-          {activeTool && (
+          {/* ── Legacy mode: tool selector ─────────────────────────────── */}
+          {!guidedMode && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(["sig", "name", "date"] as const).map((tool) => {
+                const labels = { sig: "✍ Signature", name: "A  Full Name", date: "📅 Date" };
+                const colors = {
+                  sig:  activeTool === "sig"  ? "bg-primary text-white" : "border-primary text-primary hover:bg-primary/5",
+                  name: activeTool === "name" ? "bg-blue-500 text-white" : "border-blue-500 text-blue-600 hover:bg-blue-50",
+                  date: activeTool === "date" ? "bg-green-600 text-white" : "border-green-600 text-green-700 hover:bg-green-50",
+                };
+                return (
+                  <button key={tool}
+                    onClick={() => setActiveTool(activeTool === tool ? null : tool)}
+                    className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition ${colors[tool]}`}>
+                    {labels[tool]}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {!guidedMode && activeTool && (
             <p className="mb-3 rounded-lg bg-yellow-50 px-3 py-2 text-xs font-medium text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
               {activeTool === "sig"  && "Click on the document where you want your signature"}
               {activeTool === "name" && "Click on the document where you want your name"}
@@ -546,11 +694,11 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
             </p>
           )}
 
-          {/* PDF canvas + draggable overlays */}
+          {/* PDF canvas + overlays */}
           <div
             ref={posContainerRef}
             className="relative mb-3 overflow-hidden rounded-xl border border-stroke bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-            style={{ userSelect: "none", touchAction: "none", cursor: activeTool ? "crosshair" : "default" }}
+            style={{ userSelect: "none", touchAction: "none", cursor: (!guidedMode && activeTool) ? "crosshair" : "default" }}
             onClick={onCanvasClick}
             onMouseMove={onDragMove}
             onMouseUp={onDragEnd}
@@ -579,8 +727,70 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
               </div>
             )}
 
-            {/* Draggable + resizable signature */}
-            {signatureDataUrl && pageDims && (() => {
+            {/* ── GUIDED MODE: locked field zone overlays ──────────────────── */}
+            {guidedMode && pageDims && (doc.fields ?? []).map((f) => {
+              const clr        = GUIDED_COLORS[f.assignedTo];
+              const isUserField = f.assignedTo === "user";
+              const filled     = fieldValues.some((fv) => fv.fieldId === f.id && fv.value);
+              const isActive   = activeGuidedFieldId === f.id;
+              const fw         = f.wPct * pageDims.w;
+              const fh         = f.hPct * pageDims.h;
+              // Required unfilled user fields → red border
+              const borderColor = isUserField && f.required && !filled ? "#ef4444" : clr.border;
+
+              return (
+                <div
+                  key={f.id}
+                  style={{
+                    position: "absolute",
+                    left: f.xPct * pageDims.w,
+                    top:  f.yPct * pageDims.h,
+                    width: fw, height: fh,
+                    border: `2px ${isActive ? "solid" : "dashed"} ${borderColor}`,
+                    background: isActive ? "rgba(59,130,246,0.20)" : filled ? "rgba(34,197,94,0.10)" : clr.bg,
+                    borderRadius: 4,
+                    cursor: isUserField ? "pointer" : "not-allowed",
+                    touchAction: "none",
+                    boxShadow: isActive ? "0 0 0 3px rgba(59,130,246,0.3)" : undefined,
+                    transition: "background 0.15s",
+                  }}
+                  onClick={(e) => { e.stopPropagation(); onGuidedFieldClick(f); }}
+                >
+                  {filled ? (
+                    // Show filled content preview
+                    f.type === "signature" ? (
+                      <img
+                        src={fieldValues.find((fv) => fv.fieldId === f.id)?.value}
+                        alt="sig"
+                        className="h-full w-full object-contain p-0.5"
+                        draggable={false}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center overflow-hidden px-1">
+                        <span className="truncate font-medium text-gray-800" style={{ fontSize: Math.max(8, fh * 0.38) }}>
+                          {f.type === "date"
+                            ? new Date(fieldValues.find((fv) => fv.fieldId === f.id)!.value + "T00:00:00")
+                                .toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                            : fieldValues.find((fv) => fv.fieldId === f.id)?.value}
+                        </span>
+                      </div>
+                    )
+                  ) : (
+                    // Show placeholder label
+                    <div className="flex h-full items-center justify-center overflow-hidden px-1">
+                      <span style={{ fontSize: Math.max(8, fh * 0.38), color: isUserField ? borderColor : "#9ca3af", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        {isUserField
+                          ? `${GUIDED_ICONS[f.type]} ${f.type}${f.required ? " *" : ""}`
+                          : "🔒 Admin Only"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* ── LEGACY MODE: draggable + resizable signature ─────────────── */}
+            {!guidedMode && signatureDataUrl && pageDims && (() => {
               const HANDLES: Array<{
                 id: "n"|"ne"|"e"|"se"|"s"|"sw"|"w"|"nw";
                 cursor: string;
@@ -642,8 +852,8 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
               );
             })()}
 
-            {/* Draggable name */}
-            {nameText && pageDims && (
+            {/* ── LEGACY MODE: draggable name ──────────────────────────────── */}
+            {!guidedMode && nameText && pageDims && (
               <div
                 style={{
                   position: "absolute",
@@ -666,8 +876,8 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
               </div>
             )}
 
-            {/* Draggable date */}
-            {dateText && pageDims && (
+            {/* ── LEGACY MODE: draggable date ──────────────────────────────── */}
+            {!guidedMode && dateText && pageDims && (
               <div
                 style={{
                   position: "absolute",
@@ -693,28 +903,48 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
             )}
           </div>
 
-          {/* Legend + sig size slider */}
-          <div className="mb-1 flex items-center gap-3 text-xs text-body-color">
-            <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm border border-primary bg-primary/20" /> Signature
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm border border-blue-500 bg-blue-100" /> Name
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm border border-green-500 bg-green-100" /> Date
-            </span>
-            <span className="ml-auto text-xs text-body-color">Drag to reposition · ✎ to edit</span>
-          </div>
+          {/* Legend */}
+          {guidedMode ? (
+            <div className="mb-1 flex flex-wrap items-center gap-3 text-xs text-body-color">
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ border: "1.5px solid #3b82f6", background: "rgba(59,130,246,0.12)" }} />
+                Your fields (click to fill)
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ border: "1.5px solid #8b5cf6", background: "rgba(139,92,246,0.12)" }} />
+                Admin only
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm border border-red-400 bg-red-50" />
+                Required unfilled
+              </span>
+            </div>
+          ) : (
+            <div className="mb-1 flex items-center gap-3 text-xs text-body-color">
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm border border-primary bg-primary/20" /> Signature
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm border border-blue-500 bg-blue-100" /> Name
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-sm border border-green-500 bg-green-100" /> Date
+              </span>
+              <span className="ml-auto text-xs text-body-color">Drag to reposition · ✎ to edit</span>
+            </div>
+          )}
 
-          {/* ── Inline panels ─────────────────────────────────────────────── */}
+          {/* ── Inline panels (legacy mode only — guided mode uses the modal below) ── */}
 
           {/* Signature panel */}
-          {openPanel === "sig" && (
+          {!guidedMode && openPanel === "sig" && (
             <div className="mb-4 rounded-xl border border-stroke bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
               <div className="mb-3 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-black dark:text-white">Draw Your Signature</h4>
-                <button onClick={() => setOpenPanel(null)} className="text-body-color hover:text-black dark:hover:text-white">✕</button>
+                <button
+                  onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+                  className="text-body-color hover:text-black dark:hover:text-white"
+                >✕</button>
               </div>
               <div className="relative overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-white">
                 <canvas ref={canvasRef} className="block h-40 w-full cursor-crosshair bg-white" style={{ touchAction: "none" }} />
@@ -736,10 +966,19 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
                     }
                     setError("");
                     const dataUrl = padRef.current.toDataURL("image/png");
-                    // Measure the actual drawn image so sigH matches its real proportions
                     const img = new window.Image();
                     img.onload = () => {
-                      setSigH(Math.max(20, Math.round(sigW * img.height / img.width)));
+                      const newSigH = Math.max(20, Math.round(sigW * img.height / img.width));
+                      setSigH(newSigH);
+                      if (guidedMode && activeGuidedFieldId) {
+                        // Store value in fieldValues for the active guided field
+                        const fid = activeGuidedFieldId;
+                        setFieldValues((prev) => [
+                          ...prev.filter((fv) => fv.fieldId !== fid),
+                          { fieldId: fid, value: dataUrl, sigW, sigH: newSigH },
+                        ]);
+                        setActiveGuidedFieldId(null);
+                      }
                     };
                     img.src = dataUrl;
                     setSignatureDataUrl(dataUrl);
@@ -753,11 +992,14 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
           )}
 
           {/* Name panel */}
-          {openPanel === "name" && (
+          {!guidedMode && openPanel === "name" && (
             <div className="mb-4 rounded-xl border border-stroke bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
               <div className="mb-3 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-black dark:text-white">Full Name</h4>
-                <button onClick={() => setOpenPanel(null)} className="text-body-color hover:text-black dark:hover:text-white">✕</button>
+                <button
+                  onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+                  className="text-body-color hover:text-black dark:hover:text-white"
+                >✕</button>
               </div>
               <input
                 type="text"
@@ -768,7 +1010,19 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
                 className="w-full rounded-lg border border-stroke bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
               />
               <button
-                onClick={() => setOpenPanel(null)}
+                onClick={() => {
+                  if (guidedMode && activeGuidedFieldId) {
+                    if (nameText.trim()) {
+                      const fid = activeGuidedFieldId;
+                      setFieldValues((prev) => [
+                        ...prev.filter((fv) => fv.fieldId !== fid),
+                        { fieldId: fid, value: nameText.trim() },
+                      ]);
+                    }
+                    setActiveGuidedFieldId(null);
+                  }
+                  setOpenPanel(null);
+                }}
                 className="mt-3 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600">
                 Place Name
               </button>
@@ -776,11 +1030,14 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
           )}
 
           {/* Date panel */}
-          {openPanel === "date" && (
+          {!guidedMode && openPanel === "date" && (
             <div className="mb-4 rounded-xl border border-stroke bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
               <div className="mb-3 flex items-center justify-between">
                 <h4 className="text-sm font-semibold text-black dark:text-white">Date</h4>
-                <button onClick={() => setOpenPanel(null)} className="text-body-color hover:text-black dark:hover:text-white">✕</button>
+                <button
+                  onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+                  className="text-body-color hover:text-black dark:hover:text-white"
+                >✕</button>
               </div>
               <input
                 type="date"
@@ -790,12 +1047,26 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
                 className="w-full rounded-lg border border-stroke bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-green-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
               />
               <button
-                onClick={() => setOpenPanel(null)}
+                onClick={() => {
+                  if (guidedMode && activeGuidedFieldId) {
+                    if (dateText) {
+                      const fid = activeGuidedFieldId;
+                      setFieldValues((prev) => [
+                        ...prev.filter((fv) => fv.fieldId !== fid),
+                        { fieldId: fid, value: dateText },
+                      ]);
+                    }
+                    setActiveGuidedFieldId(null);
+                  }
+                  setOpenPanel(null);
+                }}
                 className="mt-3 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
                 Place Date
               </button>
             </div>
           )}
+
+          {/* Text panel — moved to guided modal below */}
 
           {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
 
@@ -804,8 +1075,11 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
               className="rounded-xl border border-stroke px-5 py-2.5 text-sm font-medium text-black hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800">
               ← Back to Review
             </button>
-            <button onClick={goToPreview}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90">
+            <button
+              onClick={goToPreview}
+              disabled={guidedMode ? !guidedAllRequiredFilled : !signatureDataUrl}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
               Preview Signed Document
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -890,6 +1164,335 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Guided mode field-fill modal ──────────────────────────────────────── */}
+      {/* Mobile: bottom-sheet sliding up. Desktop: centred dialog. */}
+      {guidedMode && openPanel && (
+        <div
+          className="fixed inset-0 z-[999] flex flex-col justify-end bg-black/60 sm:items-center sm:justify-center sm:p-4"
+          onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+        >
+          <div
+            className="w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl dark:bg-gray-dark sm:max-w-lg sm:rounded-2xl"
+            style={{ maxHeight: "92dvh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drag pill — visible on mobile only */}
+            <div className="flex justify-center pb-1 pt-3 sm:hidden">
+              <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-stroke px-5 py-4 sm:px-6 dark:border-gray-700">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-body-color">
+                  {openPanel === "sig" ? "Signature" : openPanel === "name" ? "Full Name" : openPanel === "date" ? "Date" : "Text Field"}
+                </p>
+                <h3 className="mt-0.5 text-base font-bold text-black dark:text-white sm:text-lg">
+                  {openPanel === "sig"  && "✍ Draw Your Signature"}
+                  {openPanel === "name" && "Enter Your Full Name"}
+                  {openPanel === "date" && "📅 Select a Date"}
+                  {openPanel === "text" && "Enter Text"}
+                </h3>
+              </div>
+              <button
+                onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
+                style={{ fontSize: 16 }}
+              >✕</button>
+            </div>
+
+            <div className="px-5 pb-8 pt-5 sm:px-6 sm:pb-6">
+
+              {/* ── Signature ── */}
+              {openPanel === "sig" && (
+                <>
+                  {/* Draw / Upload tab switcher */}
+                  <div className="mb-4 flex overflow-hidden rounded-xl border border-stroke dark:border-gray-700">
+                    <button
+                      onClick={() => setSigInputMode("draw")}
+                      className={`flex-1 py-2.5 text-sm font-medium transition ${
+                        sigInputMode === "draw"
+                          ? "bg-primary text-white"
+                          : "text-body-color hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      ✏ Draw
+                    </button>
+                    <button
+                      onClick={() => setSigInputMode("upload")}
+                      className={`flex-1 border-l border-stroke py-2.5 text-sm font-medium transition dark:border-gray-700 ${
+                        sigInputMode === "upload"
+                          ? "bg-primary text-white"
+                          : "text-body-color hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      📷 Upload Image
+                    </button>
+                  </div>
+
+                  {/* Draw pad */}
+                  {sigInputMode === "draw" && (
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-white">
+                      <canvas
+                        ref={canvasRef}
+                        className="block w-full cursor-crosshair bg-white"
+                        style={{ touchAction: "none", height: "clamp(160px, 38vw, 220px)" }}
+                      />
+                      <p className="pointer-events-none absolute inset-0 flex items-end justify-center pb-3 text-sm text-gray-300 select-none">
+                        Sign here with your finger or mouse
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Upload zone */}
+                  {sigInputMode === "upload" && (
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                      onDragLeave={() => setIsDragOver(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragOver(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file && file.type.startsWith("image/")) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setUploadedSigPreview((ev.target?.result as string) ?? null);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      onClick={() => uploadSigInputRef.current?.click()}
+                      className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed transition ${
+                        isDragOver
+                          ? "border-primary bg-primary/5"
+                          : "border-gray-300 bg-gray-50 hover:border-primary/50 dark:bg-gray-800"
+                      }`}
+                      style={{ minHeight: "clamp(160px, 38vw, 220px)" }}
+                    >
+                      {uploadedSigPreview ? (
+                        <>
+                          <img
+                            src={uploadedSigPreview}
+                            alt="Signature preview"
+                            className="max-h-36 max-w-full object-contain px-4"
+                            draggable={false}
+                          />
+                          <p className="text-xs text-body-color">Tap to change image</p>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <div className="px-4 text-center">
+                            <p className="text-sm font-medium text-body-color">Drag &amp; drop your signature here</p>
+                            <p className="mt-1 text-xs text-gray-400">or tap to browse your device</p>
+                            <p className="mt-0.5 text-xs text-gray-400">PNG, JPG, GIF, WebP accepted</p>
+                          </div>
+                        </>
+                      )}
+                      <input
+                        ref={uploadSigInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setUploadedSigPreview((ev.target?.result as string) ?? null);
+                            reader.readAsDataURL(file);
+                          }
+                          // reset so selecting same file again fires onChange
+                          e.target.value = "";
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+
+                  <div className="mt-5 flex gap-3">
+                    {/* Left action: clear (draw) or remove (upload) */}
+                    {sigInputMode === "draw" ? (
+                      <button
+                        onClick={() => padRef.current?.clear()}
+                        className="flex h-12 items-center justify-center rounded-xl border border-stroke px-5 text-sm font-medium text-black hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800"
+                      >
+                        Clear
+                      </button>
+                    ) : uploadedSigPreview ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setUploadedSigPreview(null); }}
+                        className="flex h-12 items-center justify-center rounded-xl border border-stroke px-5 text-sm font-medium text-black hover:bg-gray-50 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800"
+                      >
+                        Remove
+                      </button>
+                    ) : null}
+
+                    {/* Confirm */}
+                    <button
+                      onClick={() => {
+                        const confirm = (dataUrl: string) => {
+                          setError("");
+                          const img = new window.Image();
+                          img.onload = () => {
+                            // Always normalise to PNG so pdf-lib embedPng always works
+                            const tmpCanvas = document.createElement("canvas");
+                            tmpCanvas.width  = img.naturalWidth  || img.width;
+                            tmpCanvas.height = img.naturalHeight || img.height;
+                            const ctx = tmpCanvas.getContext("2d");
+                            if (ctx) ctx.drawImage(img, 0, 0);
+                            const pngDataUrl = tmpCanvas.toDataURL("image/png");
+
+                            const newSigH = Math.max(20, Math.round(sigW * img.height / img.width));
+                            setSigH(newSigH);
+                            if (activeGuidedFieldId) {
+                              const fid = activeGuidedFieldId;
+                              setFieldValues((prev) => [
+                                ...prev.filter((fv) => fv.fieldId !== fid),
+                                { fieldId: fid, value: pngDataUrl, sigW, sigH: newSigH },
+                              ]);
+                              setActiveGuidedFieldId(null);
+                            }
+                            setSignatureDataUrl(pngDataUrl);
+                            setOpenPanel(null);
+                          };
+                          img.src = dataUrl;
+                        };
+
+                        if (sigInputMode === "upload") {
+                          if (!uploadedSigPreview) { setError("Please upload a signature image."); return; }
+                          confirm(uploadedSigPreview);
+                        } else {
+                          if (!padRef.current || padRef.current.isEmpty()) { setError("Please draw your signature first."); return; }
+                          confirm(padRef.current.toDataURL("image/png"));
+                        }
+                      }}
+                      className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"
+                    >
+                      {sigInputMode === "draw" ? "Save Signature" : "Use This Image"}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* ── Full Name ── */}
+              {openPanel === "name" && (
+                <>
+                  <input
+                    type="text"
+                    value={nameText}
+                    onChange={(e) => setNameText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && nameText.trim() && activeGuidedFieldId) {
+                        const fid = activeGuidedFieldId;
+                        setFieldValues((prev) => [...prev.filter((fv) => fv.fieldId !== fid), { fieldId: fid, value: nameText.trim() }]);
+                        setActiveGuidedFieldId(null);
+                        setOpenPanel(null);
+                      }
+                    }}
+                    placeholder="e.g. John Doe"
+                    autoFocus
+                    className="h-12 w-full rounded-xl border border-stroke bg-white px-4 text-base text-black outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                  />
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+                      className="flex h-12 flex-1 items-center justify-center rounded-xl border border-stroke text-sm font-medium text-black dark:border-gray-700 dark:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (activeGuidedFieldId && nameText.trim()) {
+                          const fid = activeGuidedFieldId;
+                          setFieldValues((prev) => [...prev.filter((fv) => fv.fieldId !== fid), { fieldId: fid, value: nameText.trim() }]);
+                          setActiveGuidedFieldId(null);
+                        }
+                        setOpenPanel(null);
+                      }}
+                      className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"
+                    >
+                      Confirm Name
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* ── Date ── */}
+              {openPanel === "date" && (
+                <>
+                  <input
+                    type="date"
+                    value={dateText}
+                    onChange={(e) => setDateText(e.target.value)}
+                    autoFocus
+                    className="h-12 w-full rounded-xl border border-stroke bg-white px-4 text-base text-black outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                  />
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+                      className="flex h-12 flex-1 items-center justify-center rounded-xl border border-stroke text-sm font-medium text-black dark:border-gray-700 dark:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (activeGuidedFieldId && dateText) {
+                          const fid = activeGuidedFieldId;
+                          setFieldValues((prev) => [...prev.filter((fv) => fv.fieldId !== fid), { fieldId: fid, value: dateText }]);
+                          setActiveGuidedFieldId(null);
+                        }
+                        setOpenPanel(null);
+                      }}
+                      className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"
+                    >
+                      Confirm Date
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* ── Text ── */}
+              {openPanel === "text" && (
+                <>
+                  <textarea
+                    value={textValue}
+                    onChange={(e) => setTextValue(e.target.value)}
+                    placeholder="Enter your text…"
+                    rows={4}
+                    autoFocus
+                    className="w-full rounded-xl border border-stroke bg-white px-4 py-3 text-base text-black outline-none focus:border-primary dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                  />
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={() => { setOpenPanel(null); setActiveGuidedFieldId(null); }}
+                      className="flex h-12 flex-1 items-center justify-center rounded-xl border border-stroke text-sm font-medium text-black dark:border-gray-700 dark:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (activeGuidedFieldId && textValue.trim()) {
+                          const fid = activeGuidedFieldId;
+                          setFieldValues((prev) => [...prev.filter((fv) => fv.fieldId !== fid), { fieldId: fid, value: textValue.trim() }]);
+                          setActiveGuidedFieldId(null);
+                        }
+                        setOpenPanel(null);
+                      }}
+                      className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </>
+              )}
+
             </div>
           </div>
         </div>

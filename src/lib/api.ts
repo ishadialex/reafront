@@ -1088,16 +1088,19 @@ export class ApiClient {
   }
 
   async signDocument(id: string, payload: {
-    signatureDataUrl: string;
-    sigPos: { xPct: number; yPct: number };
-    sigScale: number;
+    // Legacy free-placement mode
+    signatureDataUrl?: string;
+    sigPos?: { xPct: number; yPct: number };
+    sigScale?: number;
     nameText?: string | null;
-    namePos: { xPct: number; yPct: number };
+    namePos?: { xPct: number; yPct: number };
     dateText?: string | null;
-    datePos: { xPct: number; yPct: number };
+    datePos?: { xPct: number; yPct: number };
     canvasW?: number;
     sigDisplayW?: number;
     sigDisplayH?: number;
+    // Guided mode (admin-defined fields)
+    fieldValues?: Array<{ fieldId: string; value: string; sigW?: number; sigH?: number; canvasW?: number }>;
   }) {
     const response = await this.axiosInstance.post<ApiResponse<any>>(
       `/api/documents/${id}/sign`,
