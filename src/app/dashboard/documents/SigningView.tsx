@@ -18,6 +18,7 @@ interface DocField {
   required: boolean;
   xPct: number; yPct: number;
   wPct: number; hPct: number;
+  pageNum?: number; // 1-based; optional for backward compat (old docs default to last page)
 }
 
 const GUIDED_COLORS: Record<DocField["assignedTo"], { border: string; bg: string }> = {
@@ -166,6 +167,32 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   const [isDragOver, setIsDragOver]                 = useState(false);
   const uploadSigInputRef                           = useRef<HTMLInputElement>(null);
 
+  // ── Authenticated PDF blob URL ─────────────────────────────────────────
+  // Cloudinary returns 401 when fetched directly from the browser.
+  // We fetch once via the backend proxy and use the local blob URL everywhere.
+
+  const [docBlobUrl, setDocBlobUrl]             = useState<string | null>(null);
+  const [docBlobFetching, setDocBlobFetching]   = useState(true);
+  const docBlobUrlRef                           = useRef<string | null>(null);
+
+  useEffect(() => {
+    setDocBlobFetching(true);
+    api.downloadDocumentFile(doc.id, false)
+      .then((blob) => {
+        const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+        docBlobUrlRef.current = url;
+        setDocBlobUrl(url);
+      })
+      .catch(() => setPageRenderError(true))
+      .finally(() => setDocBlobFetching(false));
+    return () => {
+      if (docBlobUrlRef.current) {
+        URL.revokeObjectURL(docBlobUrlRef.current);
+        docBlobUrlRef.current = null;
+      }
+    };
+  }, [doc.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Derived: guided mode ─────────────────────────────────────────────────
 
   const guidedMode = (doc.fields ?? []).length > 0;
@@ -218,9 +245,11 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
   }, [step, openPanel]);
 
   // ── Render last PDF page to canvas when entering fill step ────────────────
+  // Depends on docBlobUrl (the authenticated proxy blob) instead of the raw
+  // Cloudinary URL which the browser cannot fetch without auth (401).
 
   useEffect(() => {
-    if (step !== "fill") return;
+    if (step !== "fill" || !docBlobUrl) return; // wait until blob URL is ready
     setPageRenderError(false);
     setPageDims(null);
 
@@ -229,7 +258,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
         const pdfjsLib = await import("pdfjs-dist");
         (pdfjsLib as any).GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
-        const pdfDoc = await (pdfjsLib as any).getDocument(doc.documentUrl).promise;
+        const pdfDoc = await (pdfjsLib as any).getDocument(docBlobUrl).promise;
         const page   = await pdfDoc.getPage(pdfDoc.numPages);
 
         const container = posContainerRef.current;
@@ -255,7 +284,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
         setPageRenderError(true);
       }
     })();
-  }, [step, doc.documentUrl]);
+  }, [step, docBlobUrl]);
 
   // ── Derived text-box sizes ────────────────────────────────────────────────
 
@@ -410,7 +439,8 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     setStep("preview");
 
     try {
-      const pdfResponse = await fetch(doc.documentUrl);
+      // Use the authenticated blob URL — the raw Cloudinary URL returns 401 from the browser
+      const pdfResponse = await fetch(docBlobUrl!);
       if (!pdfResponse.ok) throw new Error("Failed to fetch document");
       const pdfBytes = await pdfResponse.arrayBuffer();
 
@@ -419,13 +449,14 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
 
       const pages    = pdfDoc.getPages();
       const lastPage = pages[pages.length - 1];
-      const { width: pdfW, height: pdfH } = lastPage.getSize();
 
+      // Legacy mode still uses last-page dimensions for scale ratio
+      const { width: pdfW, height: pdfH } = lastPage.getSize();
       const canvasW    = pageDims?.w ?? pdfW;
       const scaleRatio = pdfW / canvasW;
 
       if (guidedMode) {
-        // ── Render fields at admin-defined positions ───────────────────────
+        // ── Render fields at admin-defined positions (each on its own page) ─
         const { StandardFonts } = await import("pdf-lib");
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
@@ -434,10 +465,15 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
           const fv = fieldValues.find((v) => v.fieldId === f.id);
           if (!fv?.value) continue;
 
-          const fx = f.xPct * pdfW;
-          const fw = f.wPct * pdfW;
-          const fh = f.hPct * pdfH;
-          const fy = pdfH * (1 - f.yPct) - fh; // bottom-left corner in PDF coords
+          // Use the page the admin placed this field on (fall back to last page for old docs)
+          const pageIdx  = f.pageNum != null ? f.pageNum - 1 : pages.length - 1;
+          const targetPage = pages[Math.max(0, Math.min(pageIdx, pages.length - 1))];
+          const { width: pgW, height: pgH } = targetPage.getSize();
+
+          const fx = f.xPct * pgW;
+          const fw = f.wPct * pgW;
+          const fh = f.hPct * pgH;
+          const fy = pgH * (1 - f.yPct) - fh; // bottom-left corner in PDF coords
 
           if (f.type === "signature") {
             const base64   = fv.value.replace(/^data:image\/\w+;base64,/, "");
@@ -445,18 +481,18 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
             const sigBytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) sigBytes[i] = binary.charCodeAt(i);
             const sigImage = await pdfDoc.embedPng(sigBytes);
-            lastPage.drawImage(sigImage, { x: fx, y: fy, width: fw, height: fh });
+            targetPage.drawImage(sigImage, { x: fx, y: fy, width: fw, height: fh });
           } else if (f.type === "date") {
             const formatted = new Date(fv.value + "T00:00:00").toLocaleDateString("en-US", {
               year: "numeric", month: "short", day: "numeric",
             });
-            lastPage.drawText(formatted, { x: fx + 2, y: fy + fh * 0.3, size: 10, font, color: rgb(0, 0, 0) });
+            targetPage.drawText(formatted, { x: fx + 2, y: fy + fh * 0.3, size: 10, font, color: rgb(0, 0, 0) });
           } else {
-            lastPage.drawText(fv.value, { x: fx + 2, y: fy + fh * 0.3, size: 10, font, color: rgb(0, 0, 0) });
+            targetPage.drawText(fv.value, { x: fx + 2, y: fy + fh * 0.3, size: 10, font, color: rgb(0, 0, 0) });
           }
         }
       } else {
-        // ── Legacy mode ────────────────────────────────────────────────────
+        // ── Legacy mode (free-placement always on last page) ───────────────
         const base64  = signatureDataUrl!.replace("data:image/png;base64,", "");
         const binary  = atob(base64);
         const sigBytes = new Uint8Array(binary.length);
@@ -597,31 +633,47 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
           <div className="mb-5 overflow-hidden rounded-2xl border border-stroke bg-white shadow dark:border-gray-700 dark:bg-gray-dark">
             <div className="flex items-center justify-between border-b border-stroke px-5 py-3 dark:border-gray-700">
               <p className="font-medium text-black dark:text-white">Document Preview</p>
-              <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-primary hover:underline">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download
-              </a>
+              {docBlobUrl && (
+                <a href={docBlobUrl} download={`${doc.title}.pdf`}
+                  className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download
+                </a>
+              )}
             </div>
             <div style={{ height: "620px" }}>
-              <Worker workerUrl="/pdf.worker.min.js">
-                <Viewer fileUrl={doc.documentUrl} />
-              </Worker>
+              {docBlobFetching ? (
+                <div className="flex h-full items-center justify-center gap-3 text-body-color">
+                  <svg className="h-6 w-6 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  <span className="text-sm">Loading document…</span>
+                </div>
+              ) : docBlobUrl ? (
+                <Worker workerUrl="/pdf.worker.min.js">
+                  <Viewer fileUrl={docBlobUrl} />
+                </Worker>
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-body-color">
+                  Could not load document. Please go back and try again.
+                </div>
+              )}
             </div>
           </div>
 
           <label className="mb-5 flex cursor-pointer items-start gap-3 rounded-xl border border-stroke p-4 transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
             <input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 cursor-pointer accent-primary" />
+              className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer accent-primary" />
             <span className="text-sm text-black dark:text-white">
               I have fully read and understood this document and agree to sign it electronically.
               I understand my electronic signature is legally binding.
             </span>
           </label>
 
-          <button onClick={() => setStep("fill")} disabled={!reviewed}
+          <button onClick={() => setStep("fill")} disabled={!reviewed || docBlobFetching || !docBlobUrl}
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40">
             Fill &amp; Sign
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

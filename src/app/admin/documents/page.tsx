@@ -310,6 +310,7 @@ interface DocField {
   required: boolean;
   xPct: number; yPct: number;
   wPct: number; hPct: number;
+  pageNum: number; // 1-based page index
 }
 
 const FIELD_COLORS: Record<DocField["assignedTo"], { border: string; bg: string; label: string }> = {
@@ -360,9 +361,13 @@ function SendDocumentModal({ onClose, onSent }: { onClose: () => void; onSent: (
   const [activeType, setActiveType]       = useState<DocField["type"] | null>(null);
   const [activeAssignee, setActiveAssignee] = useState<DocField["assignedTo"]>("user");
   const [isRequired, setIsRequired]       = useState(true);
+  const [currentPage, setCurrentPage]     = useState(1);
+  const [totalPageCount, setTotalPageCount] = useState(1);
+  const [pdfLoaded, setPdfLoaded]         = useState(false);
 
   const posContainerRef = useRef<HTMLDivElement>(null);
   const pageCanvasRef   = useRef<HTMLCanvasElement>(null);
+  const pdfDocRef       = useRef<any>(null);
 
   // Drag / resize refs
   const isDragging       = useRef(false);
@@ -390,17 +395,37 @@ function SendDocumentModal({ onClose, onSent }: { onClose: () => void; onSent: (
   // Cleanup object URL on unmount
   useEffect(() => () => { if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl); }, [pdfObjectUrl]);
 
-  // Render PDF when step 2 opens
+  // Load PDF document once when step 2 opens (or when file changes)
   useEffect(() => {
     if (modalStep !== "fields" || !pdfObjectUrl) return;
+    pdfDocRef.current = null;
+    setPdfLoaded(false);
     setPageRenderError(false);
     setPageDims(null);
+    setCurrentPage(1);
+    setTotalPageCount(1);
     (async () => {
       try {
         const pdfjsLib = await import("pdfjs-dist");
         (pdfjsLib as any).GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-        const pdf  = await (pdfjsLib as any).getDocument(pdfObjectUrl).promise;
-        const page = await pdf.getPage(pdf.numPages);
+        const pdf = await (pdfjsLib as any).getDocument(pdfObjectUrl).promise;
+        pdfDocRef.current = pdf;
+        setTotalPageCount(pdf.numPages);
+        setPdfLoaded(true); // triggers the render effect below
+      } catch {
+        setPageRenderError(true);
+      }
+    })();
+  }, [modalStep, pdfObjectUrl]);
+
+  // Re-render whenever the current page changes (or when PDF first loads)
+  useEffect(() => {
+    if (!pdfLoaded || !pdfDocRef.current || modalStep !== "fields") return;
+    setPageRenderError(false);
+    setPageDims(null);
+    (async () => {
+      try {
+        const page      = await pdfDocRef.current.getPage(currentPage);
         const container = posContainerRef.current;
         const canvas    = pageCanvasRef.current;
         if (!container || !canvas) return;
@@ -415,7 +440,7 @@ function SendDocumentModal({ onClose, onSent }: { onClose: () => void; onSent: (
         setPageRenderError(true);
       }
     })();
-  }, [modalStep, pdfObjectUrl]);
+  }, [pdfLoaded, currentPage, modalStep]);
 
   const filteredUsers = users.filter(
     (u) => !userSearch || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(userSearch.toLowerCase()),
@@ -471,6 +496,7 @@ function SendDocumentModal({ onClose, onSent }: { onClose: () => void; onSent: (
       id: crypto.randomUUID(),
       type: activeType, assignedTo: assignTo, required: isRequired,
       xPct, yPct, wPct: isBig ? 0.28 : 0.20, hPct: isBig ? 0.08 : 0.05,
+      pageNum: currentPage,
     }]);
   };
 
@@ -663,13 +689,40 @@ function SendDocumentModal({ onClose, onSent }: { onClose: () => void; onSent: (
                 <input type="checkbox" checked={isRequired} onChange={(e) => setIsRequired(e.target.checked)} className="accent-primary" />
                 Required
               </label>
-              <span className="ml-auto text-xs text-body-color">{fields.length} field{fields.length !== 1 ? "s" : ""}</span>
+              <span className="ml-auto text-xs text-body-color">
+                {totalPageCount > 1
+                  ? `${fields.filter(f => f.pageNum === currentPage).length}/${fields.length} field${fields.length !== 1 ? "s" : ""}`
+                  : `${fields.length} field${fields.length !== 1 ? "s" : ""}`}
+              </span>
             </div>
 
             {activeType && (
               <p className="mb-2 rounded-lg bg-yellow-50 px-3 py-1.5 text-xs text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                 Click on the document to place a <strong>{activeType}</strong> field assigned to <strong>{activeType === "stamp" ? "admin" : activeAssignee}</strong>
               </p>
+            )}
+
+            {/* Page navigation */}
+            {totalPageCount > 1 && (
+              <div className="mb-2 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-stroke px-3 py-1 text-xs font-medium text-black hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800"
+                >
+                  ← Prev
+                </button>
+                <span className="text-sm font-semibold text-black dark:text-white">
+                  Page {currentPage} of {totalPageCount}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPageCount, p + 1))}
+                  disabled={currentPage === totalPageCount}
+                  className="rounded-lg border border-stroke px-3 py-1 text-xs font-medium text-black hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800"
+                >
+                  Next →
+                </button>
+              </div>
             )}
 
             {/* PDF canvas */}
@@ -694,8 +747,8 @@ function SendDocumentModal({ onClose, onSent }: { onClose: () => void; onSent: (
                 <div className="flex h-64 items-center justify-center text-sm text-body-color">Could not render PDF preview.</div>
               )}
 
-              {/* Field overlays */}
-              {pageDims && fields.map((field) => {
+              {/* Field overlays — only show fields belonging to the current page */}
+              {pageDims && fields.filter(f => f.pageNum === currentPage).map((field) => {
                 const clr = FIELD_COLORS[field.assignedTo];
                 const fw  = field.wPct * pageDims.w;
                 const fh  = field.hPct * pageDims.h;
