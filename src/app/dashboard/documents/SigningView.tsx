@@ -213,7 +213,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
     let pad: any;
     import("signature_pad").then((mod) => {
       pad = new mod.default(canvasRef.current!, {
-        backgroundColor: "rgb(255,255,255)",
+        backgroundColor: "rgba(0,0,0,0)",
         penColor: "rgb(0,0,0)",
         minWidth: 1,
         maxWidth: 3,
@@ -871,7 +871,7 @@ export default function SigningView({ doc, onBack, onSigned }: Props) {
                   onMouseDown={makeDragStart("sig")}
                   onTouchStart={makeDragStart("sig")}
                 >
-                  <div className="h-full w-full rounded border-2 border-primary bg-white/85 p-1 shadow-lg">
+                  <div className="h-full w-full rounded border-2 border-primary p-1 shadow-lg">
                     <img src={signatureDataUrl} alt="signature" className="h-full w-full object-contain" draggable={false} />
                   </div>
 

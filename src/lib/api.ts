@@ -1073,9 +1073,38 @@ export class ApiClient {
     return this._fetchUpload("POST", "/api/admin/documents/send", formData);
   }
 
+  async adminUpdateDocument(id: string, data: {
+    title?: string;
+    description?: string;
+    userMessage?: string;
+    status?: string;
+  }) {
+    const response = await this.axiosInstance.patch<ApiResponse<any>>(
+      `/api/admin/documents/${encodeURIComponent(id)}`,
+      data,
+    );
+    return response.data;
+  }
+
+  async adminUpdateDocumentWithFile(id: string, formData: FormData) {
+    return this._fetchUpload("PATCH", `/api/admin/documents/${encodeURIComponent(id)}`, formData);
+  }
+
   async adminDeleteDocument(id: string) {
     const response = await this.axiosInstance.delete<ApiResponse<null>>(
       `/api/admin/documents/${id}`
+    );
+    return response.data;
+  }
+
+  async adminSignDocument(id: string, payload: {
+    fieldValues?: Array<{ fieldId: string; value: string; sigW?: number; sigH?: number }>;
+    freePlacements?: Array<{ type: string; value: string; xPct: number; yPct: number; wPct: number; hPct: number; pageNum: number; rotation?: number }>;
+    canvasW?: number;
+  }) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(
+      `/api/admin/documents/${encodeURIComponent(id)}/admin-sign`,
+      payload,
     );
     return response.data;
   }
