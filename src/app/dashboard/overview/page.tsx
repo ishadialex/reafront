@@ -9,6 +9,9 @@ interface UserData {
   name: string;
   email: string;
   accountBalance: number;
+  profits: number;
+  bonus: number;
+  referralCommissions: number;
   kycStatus: "not_started" | "in_progress" | "documents_uploaded" | "pending_review" | "verified" | "rejected" | "pending";
   twoFactorEnabled: boolean;
 }
@@ -47,6 +50,7 @@ interface Transaction {
   status: "completed" | "pending" | "failed";
   date: string;
   description: string;
+  reference?: string;
 }
 
 interface FeaturedProperty {
@@ -101,6 +105,9 @@ const fetchUserData = async (): Promise<UserData> => {
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         accountBalance: user.balance || 0,
+        profits: user.profits || 0,
+        bonus: user.bonus || 0,
+        referralCommissions: user.referralCommissions || 0,
         kycStatus: user.kycStatus || "not_started",
         twoFactorEnabled: user.twoFactorEnabled || false,
       };
@@ -114,6 +121,9 @@ const fetchUserData = async (): Promise<UserData> => {
     name: "User",
     email: "",
     accountBalance: 0,
+    profits: 0,
+    bonus: 0,
+    referralCommissions: 0,
     kycStatus: "not_started",
     twoFactorEnabled: false,
   };
@@ -150,9 +160,13 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
     ]);
 
     const transactions: Transaction[] = [];
+    // Track references already covered by a real transaction record
+    const txReferences = new Set<string>();
 
     if (txResult.success && txResult.data) {
       txResult.data.forEach((tx: any) => {
+        const ref = tx.reference || tx.id;
+        txReferences.add(ref);
         transactions.push({
           id: tx.id,
           type: tx.type,
@@ -160,26 +174,25 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
           status: tx.status,
           date: tx.createdAt,
           description: tx.description || tx.type.replace(/_/g, " "),
+          reference: ref,
         });
       });
     }
 
     if (fundOpsResult.success && fundOpsResult.data) {
       fundOpsResult.data.forEach((op: any) => {
-        // Skip if a matching completed transaction already exists
-        const alreadyRecorded = transactions.some(
-          (t) => t.description?.includes(op.reference)
-        );
-        if (!alreadyRecorded) {
-          transactions.push({
-            id: op.id,
-            type: op.type,
-            amount: op.amount,
-            status: op.status === "approved" ? "completed" : op.status,
-            date: op.createdAt,
-            description: `${op.method ? op.method.charAt(0).toUpperCase() + op.method.slice(1) + " " : ""}${op.type.charAt(0).toUpperCase() + op.type.slice(1)} (${op.reference})`,
-          });
-        }
+        // Skip fund operations that already have a matching transaction (approved
+        // deposits/withdrawals create a transaction with the same reference)
+        if (op.reference && txReferences.has(op.reference)) return;
+        transactions.push({
+          id: op.id,
+          type: op.type,
+          amount: op.amount,
+          status: op.status === "approved" ? "completed" : op.status,
+          date: op.createdAt,
+          description: `${op.method ? op.method.charAt(0).toUpperCase() + op.method.slice(1) + " " : ""}${op.type.charAt(0).toUpperCase() + op.type.slice(1)} (${op.reference})`,
+          reference: op.reference,
+        });
       });
     }
 
@@ -575,7 +588,7 @@ export default function DashboardOverviewPage() {
     }, 0);
 
     return {
-      accountBalance: data.balanceSummary?.balance ?? data.user?.accountBalance ?? 0,
+      accountBalance: data.balanceSummary?.balance ?? 0,
       totalInvested,
       totalROI,
       generatedIncome,

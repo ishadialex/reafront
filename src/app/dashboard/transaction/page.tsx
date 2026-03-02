@@ -73,7 +73,13 @@ const MobileCardSkeleton = () => (
 
 function normalizeRows(txList: any[], fundOps: any[]): TxRow[] {
   const rows: TxRow[] = [];
+
+  // Track references already covered by a real transaction record
+  const txReferences = new Set<string>();
+
   for (const tx of txList) {
+    const ref = tx.reference || tx.id;
+    txReferences.add(ref);
     rows.push({
       id: tx.id,
       type: tx.type,
@@ -81,11 +87,16 @@ function normalizeRows(txList: any[], fundOps: any[]): TxRow[] {
       status: tx.status || "completed",
       date: tx.createdAt,
       description: tx.description || tx.type.replace(/_/g, " "),
-      reference: tx.reference || tx.id,
+      reference: ref,
       source: "transaction",
     });
   }
+
   for (const op of fundOps) {
+    // Skip fund operations that already have a matching transaction (approved/rejected
+    // creates a transaction with the same reference — avoid duplicates)
+    if (op.reference && txReferences.has(op.reference)) continue;
+
     const label = op.type === "deposit" ? "Deposit" : "Withdrawal";
     const methodLabel = op.method ? ` (${op.method.charAt(0).toUpperCase() + op.method.slice(1)})` : "";
     rows.push({
@@ -100,6 +111,7 @@ function normalizeRows(txList: any[], fundOps: any[]): TxRow[] {
       source: "fund_operation",
     });
   }
+
   return rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
