@@ -148,6 +148,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+              Tawk_API.customStyle = { visibility: { bubble: { show: false } } };
               Tawk_API.onLoad = function() {
                 var authPages = ['/signin', '/signup'];
                 if (authPages.indexOf(window.location.pathname) !== -1 ||
@@ -155,13 +156,8 @@ export default function RootLayout({
                   Tawk_API.hideWidget();
                   return;
                 }
-                // Only allow greeting on first visit per browser session.
-                // On refresh/navigation, immediately minimize so triggers can't pop it open.
-                if (sessionStorage.getItem('tawkSeen')) {
-                  Tawk_API.minimize();
-                } else {
-                  sessionStorage.setItem('tawkSeen', '1');
-                }
+                // Always start minimized — shows only the chat bubble icon, no attention grabber text.
+                Tawk_API.minimize();
               };
               (function(){
                 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];

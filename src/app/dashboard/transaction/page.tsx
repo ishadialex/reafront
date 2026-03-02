@@ -173,7 +173,7 @@ function TransactionContent() {
   useEffect(() => { setCurrentPage(1); }, [selectedFilter, selectedStatus, searchQuery]);
 
   const isCredit = (type: string, amount: number) =>
-    type === "admin_bonus"
+    type.startsWith("admin_")
       ? amount > 0
       : ["deposit", "referral", "profit", "transfer_received"].includes(type);
 

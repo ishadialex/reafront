@@ -26,6 +26,9 @@ interface UserDetail {
   twoFactorEnabled: boolean;
   kycStatus: string;
   balance: number;
+  profits: number;
+  referralCommissions: number;
+  bonus: number;
   referralCode?: string;
   isActive: boolean;
   createdAt: string;
@@ -68,6 +71,19 @@ export default function AdminUserDetailPage() {
   const [balanceAmount, setBalanceAmount] = useState("");
   const [balanceNote, setBalanceNote] = useState("");
   const [balanceError, setBalanceError] = useState("");
+  const [balanceCategory, setBalanceCategory] = useState("balance");
+
+  // Reset user state
+  const [resetModal, setResetModal] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState<string | null>(null);
+
+  // Assign Referral modal state
+  const [referralModal, setReferralModal] = useState(false);
+  const [referrerIdentifier, setReferrerIdentifier] = useState("");
+  const [referralReward, setReferralReward] = useState("10");
+  const [referralError, setReferralError] = useState("");
+  const [referralLoading, setReferralLoading] = useState(false);
 
   const fetchUser = async () => {
     setLoading(true);
@@ -107,7 +123,7 @@ export default function AdminUserDetailPage() {
     setActionLoading(true);
     try {
       const finalAmount = balanceModal === "deduct" ? -amount : amount;
-      await api.adminUpdateUserBalance(id, finalAmount, balanceNote || undefined);
+      await api.adminUpdateUserBalance(id, finalAmount, balanceNote || undefined, balanceCategory);
       setBalanceModal(null);
       setBalanceAmount("");
       setBalanceNote("");
@@ -119,7 +135,38 @@ export default function AdminUserDetailPage() {
     }
   };
 
-  if (loading) {
+  const handleResetUser = async () => {
+    setResetLoading(true);
+    setResetResult(null);
+    try {
+      const res = await api.adminResetUser(id);
+      const d = res.data?.deleted;
+      setResetResult(
+        `Done. Deleted: ${d?.transactions ?? 0} transactions, ${d?.fundOperations ?? 0} fund ops, ${d?.referrals ?? 0} referrals, ${d?.investments ?? 0} investments. Balance reset to $0.`
+      );
+      await fetchUser();
+    } catch (err: any) {
+      setResetResult(err?.response?.data?.message ?? "Failed to reset user.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleAssignReferral = async () => {
+    if (!referrerIdentifier.trim()) { setReferralError("Enter referrer email or referral code"); return; }
+    const reward = parseFloat(referralReward);
+    if (isNaN(reward) || reward < 0) { setReferralError("Enter a valid reward amount (0 or more)"); return; }
+    setReferralError(""); setReferralLoading(true);
+    try {
+      await api.adminAssignReferral(id, referrerIdentifier.trim(), reward);
+      setReferralModal(false); setReferrerIdentifier(""); setReferralReward("10");
+      await fetchUser();
+    } catch (err: any) {
+      setReferralError(err?.response?.data?.message ?? "Failed to assign referral.");
+    } finally { setReferralLoading(false); }
+  };
+
+    if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -195,26 +242,47 @@ export default function AdminUserDetailPage() {
               {user.isActive ? "Deactivate" : "Activate"}
             </button>
             <button
-              onClick={() => { setBalanceModal("add"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); }}
+              onClick={() => { setBalanceModal("add"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); setBalanceCategory("balance"); }}
               className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
             >
               Add Balance
             </button>
             <button
-              onClick={() => { setBalanceModal("deduct"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); }}
+              onClick={() => { setBalanceModal("deduct"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); setBalanceCategory("balance"); }}
               className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
             >
               Deduct Balance
             </button>
+            <button
+              onClick={() => { setReferralModal(true); setReferrerIdentifier(""); setReferralReward("10"); setReferralError(""); }}
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
+            >
+              Assign Referral
+            </button>
+            <button
+              onClick={() => { setResetModal(true); setResetResult(null); }}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+            >
+              Reset User
+            </button>
           </div>
         </div>
 
-        {/* Balance */}
-        <div className="mt-6 rounded-xl border border-stroke bg-gray-50 px-6 py-4 dark:border-gray-700 dark:bg-gray-800/50">
-          <p className="text-xs text-body-color dark:text-gray-400">Current Balance</p>
-          <p className="text-3xl font-bold text-black dark:text-white">
-            ${Number(user.balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+        {/* Balances */}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {([
+            { label: "Balance", value: user.balance },
+            { label: "Profits", value: user.profits },
+            { label: "Referral Commissions", value: user.referralCommissions },
+            { label: "Bonus", value: user.bonus },
+          ] as { label: string; value: number }[]).map((b) => (
+            <div key={b.label} className="rounded-xl border border-stroke bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+              <p className="text-xs text-body-color dark:text-gray-400">{b.label}</p>
+              <p className="text-xl font-bold text-black dark:text-white">
+                ${Number(b.value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -344,6 +412,17 @@ export default function AdminUserDetailPage() {
               placeholder="0.00"
               className="mb-3 w-full rounded-lg border border-stroke bg-gray-50 px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
+            <label className="mb-1 block text-xs font-medium text-black dark:text-white">Category</label>
+            <select
+              value={balanceCategory}
+              onChange={(e) => setBalanceCategory(e.target.value)}
+              className="mb-3 w-full rounded-lg border border-stroke bg-gray-50 px-3 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="balance">Balance</option>
+              <option value="profits">Profits</option>
+              <option value="referralCommissions">Referral Commissions</option>
+              <option value="bonus">Bonus</option>
+            </select>
             <label className="mb-1 block text-xs font-medium text-black dark:text-white">Note (optional)</label>
             <input
               type="text"
@@ -366,6 +445,107 @@ export default function AdminUserDetailPage() {
                 className={`flex-1 rounded-lg py-2 text-sm font-medium text-white transition disabled:opacity-50 ${balanceModal === "add" ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {actionLoading ? "Processing…" : balanceModal === "add" ? "Add" : "Deduct"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Reset User Modal */}
+      {resetModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-dark">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-black dark:text-white">Reset User Account</h2>
+            </div>
+            {!resetResult ? (
+              <>
+                <p className="mb-2 text-sm text-body-color dark:text-gray-400">
+                  This will permanently delete all data for <span className="font-semibold text-black dark:text-white">{user.firstName} {user.lastName}</span>:
+                </p>
+                <ul className="mb-4 ml-4 list-disc space-y-1 text-sm text-red-600 dark:text-red-400">
+                  <li>All transactions</li>
+                  <li>All deposit &amp; withdrawal requests</li>
+                  <li>All referral relationships</li>
+                  <li>All investments in properties</li>
+                  <li>Balance reset to $0</li>
+                </ul>
+                <p className="mb-5 text-xs font-semibold text-red-500">This action cannot be undone.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setResetModal(false)}
+                    className="flex-1 rounded-lg border border-stroke py-2 text-sm font-medium text-black transition hover:bg-gray-50 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleResetUser}
+                    disabled={resetLoading}
+                    className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {resetLoading ? "Resetting…" : "Yes, Reset"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mb-5 text-sm text-body-color dark:text-gray-400">{resetResult}</p>
+                <button
+                  onClick={() => setResetModal(false)}
+                  className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-white transition hover:bg-primary/90"
+                >
+                  Close
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Assign Referral Modal */}
+      {referralModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-dark">
+            <h2 className="mb-4 text-lg font-bold text-black dark:text-white">Assign Referral</h2>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-black dark:text-white">Referrer Email or Referral Code</label>
+              <input
+                type="text"
+                value={referrerIdentifier}
+                onChange={(e) => setReferrerIdentifier(e.target.value)}
+                placeholder="e.g. user@example.com or a1b2c3d4"
+                className="w-full rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm text-black outline-none transition focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-black dark:text-white">Reward Amount ($)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={referralReward}
+                onChange={(e) => setReferralReward(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm text-black outline-none transition focus:border-primary dark:border-gray-700 dark:text-white"
+              />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Set to 0 to create the relationship without awarding any bonus.</p>
+            </div>
+            {referralError && <p className="mb-3 text-sm text-red-500">{referralError}</p>}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setReferralModal(false)}
+                className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-black transition hover:bg-gray-50 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssignReferral}
+                disabled={referralLoading}
+                className="flex-1 rounded-lg bg-purple-600 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60"
+              >
+                {referralLoading ? "Assigning..." : "Assign"}
               </button>
             </div>
           </div>

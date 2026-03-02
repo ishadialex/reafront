@@ -27,6 +27,14 @@ interface UserReferralInfo {
   referralLink: string;
 }
 
+interface CommissionTx {
+  id: string;
+  description: string;
+  amount: number;
+  createdAt: string;
+  type: string;
+}
+
 // Skeleton Components
 const StatCardSkeleton = () => (
   <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-800 dark:bg-gray-dark">
@@ -70,6 +78,14 @@ const MyReferralPage = () => {
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Commission history
+  const [commissions, setCommissions] = useState<CommissionTx[]>([]);
+  const [loadingCommissions, setLoadingCommissions] = useState(true);
+
   // Loading states
   const [loadingUserInfo, setLoadingUserInfo] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -83,10 +99,11 @@ const MyReferralPage = () => {
     const loadData = async () => {
       try {
         // Fetch data in parallel for better performance
-        const [userInfoRes, statsRes, referralsRes] = await Promise.all([
+        const [userInfoRes, statsRes, referralsRes, commissionsRes] = await Promise.all([
           api.getReferralInfo().finally(() => setLoadingUserInfo(false)),
           api.getReferralStats().finally(() => setLoadingStats(false)),
           api.getReferralList().finally(() => setLoadingReferrals(false)),
+          api.getTransactions(50, "referral").finally(() => setLoadingCommissions(false)),
         ]);
 
         if (userInfoRes.success && userInfoRes.data) {
@@ -100,11 +117,15 @@ const MyReferralPage = () => {
           const referralData = Array.isArray(referralsRes.data) ? referralsRes.data : [];
           setReferrals(referralData as Referral[]);
         }
+        if (commissionsRes.success && Array.isArray(commissionsRes.data)) {
+          setCommissions(commissionsRes.data as CommissionTx[]);
+        }
       } catch (err) {
         setError("Failed to load referral data. Please try again.");
         setLoadingUserInfo(false);
         setLoadingStats(false);
         setLoadingReferrals(false);
+        setLoadingCommissions(false);
       }
     };
 
@@ -116,12 +137,14 @@ const MyReferralPage = () => {
     setLoadingUserInfo(true);
     setLoadingStats(true);
     setLoadingReferrals(true);
+    setLoadingCommissions(true);
     setError(null);
     try {
-      const [userInfoRes, statsRes, referralsRes] = await Promise.all([
+      const [userInfoRes, statsRes, referralsRes, commissionsRes] = await Promise.all([
         api.getReferralInfo(),
         api.getReferralStats(),
         api.getReferralList(),
+        api.getTransactions(50, "referral"),
       ]);
       if (userInfoRes.success && userInfoRes.data) {
         setUserInfo(userInfoRes.data);
@@ -132,12 +155,16 @@ const MyReferralPage = () => {
       if (referralsRes.success && referralsRes.data) {
         setReferrals(referralsRes.data as Referral[]);
       }
+      if (commissionsRes.success && Array.isArray(commissionsRes.data)) {
+        setCommissions(commissionsRes.data as CommissionTx[]);
+      }
     } catch (err) {
       setError("Failed to refresh data.");
     } finally {
       setLoadingUserInfo(false);
       setLoadingStats(false);
       setLoadingReferrals(false);
+      setLoadingCommissions(false);
     }
   }, []);
 
@@ -529,9 +556,16 @@ const MyReferralPage = () => {
       {/* Referrals List */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-dark">
         <div className="border-b border-stroke p-4 dark:border-gray-800 md:p-6">
-          <h3 className="text-base font-semibold text-black dark:text-white md:text-lg">
-            Your Referrals
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-black dark:text-white md:text-lg">
+              Your Referrals
+            </h3>
+            {referrals.length > 0 && (
+              <span className="text-xs text-body-color dark:text-body-color-dark">
+                {referrals.length} total
+              </span>
+            )}
+          </div>
         </div>
 
         {loadingReferrals ? (
@@ -544,7 +578,7 @@ const MyReferralPage = () => {
           <>
             {/* Mobile Card View */}
             <div className="block md:hidden">
-              {referrals.map((referral) => (
+              {referrals.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((referral) => (
                 <div
                   key={referral.id}
                   className="border-b border-stroke p-4 last:border-b-0 dark:border-gray-800"
@@ -577,7 +611,7 @@ const MyReferralPage = () => {
                         : "N/A"}
                     </span>
                     <span className="font-semibold text-black dark:text-white">
-                      ${(referral.reward ?? 0).toFixed(2)}
+                      ${(referral.reward ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
@@ -616,7 +650,7 @@ const MyReferralPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                    {referrals.map((referral) => (
+                    {referrals.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((referral) => (
                       <tr
                         key={referral.id}
                         className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -653,7 +687,7 @@ const MyReferralPage = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <p className="font-semibold text-black dark:text-white">
-                            ${(referral.reward ?? 0).toFixed(2)}
+                            ${(referral.reward ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         </td>
                       </tr>
@@ -662,6 +696,38 @@ const MyReferralPage = () => {
                 </table>
               )}
             </div>
+
+            {/* Pagination */}
+            {referrals.length > PAGE_SIZE && (
+              <div className="flex items-center justify-between border-t border-stroke px-4 py-4 dark:border-gray-800 md:px-6">
+                <p className="text-sm text-body-color dark:text-body-color-dark">
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, referrals.length)} of {referrals.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-800 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <span className="text-sm font-medium text-black dark:text-white">
+                    {currentPage} / {Math.ceil(referrals.length / PAGE_SIZE)}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(referrals.length / PAGE_SIZE), p + 1))}
+                    disabled={currentPage === Math.ceil(referrals.length / PAGE_SIZE)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-black transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-800 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="px-6 py-12 text-center">
@@ -686,6 +752,58 @@ const MyReferralPage = () => {
                 Start sharing your referral link to earn rewards
               </p>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Commission History */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-dark md:mt-8">
+        <div className="border-b border-stroke p-4 dark:border-gray-800 md:p-6">
+          <h3 className="text-base font-semibold text-black dark:text-white md:text-lg">
+            Commission History
+          </h3>
+        </div>
+
+        {loadingCommissions ? (
+          <div className="space-y-3 p-4 md:p-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-3 w-1/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                </div>
+                <div className="h-5 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+              </div>
+            ))}
+          </div>
+        ) : commissions.length > 0 ? (
+          <div className="divide-y divide-gray-200 dark:divide-gray-800">
+            {commissions.map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between px-4 py-4 md:px-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                    <svg className="h-4 w-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-black dark:text-white line-clamp-1">
+                      {tx.description || "Referral commission"}
+                    </p>
+                    <p className="text-xs text-body-color dark:text-body-color-dark">
+                      {new Date(tx.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                    </p>
+                  </div>
+                </div>
+                <span className="ml-4 text-sm font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
+                  +${(tx.amount ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="px-6 py-10 text-center">
+            <p className="text-sm text-body-color dark:text-body-color-dark">No commission transactions yet</p>
           </div>
         )}
       </div>

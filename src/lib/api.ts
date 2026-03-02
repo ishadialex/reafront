@@ -274,6 +274,9 @@ export class ApiClient {
   async getBalanceSummary() {
     const response = await this.axiosInstance.get<ApiResponse<{
       balance: number;
+      profits: number;
+      referralCommissions: number;
+      bonus: number;
       pendingDeposits: number;
       pendingWithdrawals: number;
       breakdown: {
@@ -769,6 +772,9 @@ export class ApiClient {
       twoFactorEnabled: boolean;
       kycStatus: string;
       balance: number;
+      profits: number;
+      referralCommissions: number;
+      bonus: number;
       referralCode?: string;
       isActive: boolean;
       createdAt: string;
@@ -802,10 +808,25 @@ export class ApiClient {
     return response.data;
   }
 
-  async adminUpdateUserBalance(id: string, amount: number, note?: string) {
-    const response = await this.axiosInstance.patch<ApiResponse<{ id: string; balance: number }>>(
+  async adminUpdateUserBalance(id: string, amount: number, note?: string, category = "balance") {
+    const response = await this.axiosInstance.patch<ApiResponse<{ id: string; balance: number; profits: number; referralCommissions: number; bonus: number }>>(
       `/api/admin/users/${id}/balance`,
-      { amount, note }
+      { amount, note, category }
+    );
+    return response.data;
+  }
+
+  async adminAssignReferral(id: string, referrerIdentifier: string, reward: number) {
+    const response = await this.axiosInstance.post<ApiResponse<{ referrerId: string; referredUserId: string; reward: number }>>(
+      `/api/admin/users/${id}/assign-referral`,
+      { referrerIdentifier, reward }
+    );
+    return response.data;
+  }
+
+  async adminResetUser(id: string) {
+    const response = await this.axiosInstance.post<ApiResponse<{ deleted: { transactions: number; fundOperations: number; referrals: number; investments: number } }>>(
+      `/api/admin/users/${id}/reset`
     );
     return response.data;
   }
@@ -1195,6 +1216,42 @@ export class ApiClient {
     const response = await this.axiosInstance.patch<ApiResponse<any>>(
       `/api/admin/support/${encodeURIComponent(id)}/status`,
       { status }
+    );
+    return response.data;
+  }
+
+  // ── Admin: Header Documents (PdfDocument) ──────────────────────────────
+  async adminGetHeaderDocuments() {
+    const response = await this.axiosInstance.get<ApiResponse<any[]>>("/api/pdf/documents");
+    return response.data;
+  }
+
+  async adminCreateHeaderDocument(formData: FormData) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(
+      "/api/pdf/documents",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  }
+
+  async adminUpdateHeaderDocument(id: string, data: {
+    title?: string;
+    description?: string;
+    displayOrder?: number;
+    category?: string;
+    isActive?: boolean;
+  }) {
+    const response = await this.axiosInstance.put<ApiResponse<any>>(
+      `/api/pdf/documents/${encodeURIComponent(id)}`,
+      data
+    );
+    return response.data;
+  }
+
+  async adminDeleteHeaderDocument(id: string) {
+    const response = await this.axiosInstance.delete<ApiResponse<null>>(
+      `/api/pdf/documents/${encodeURIComponent(id)}`
     );
     return response.data;
   }

@@ -138,14 +138,11 @@ export default function AdminSupportPage() {
     socketRef.current = socket;
 
     socket.on("support_new_reply", ({ ticketId, reply }: { ticketId: string; reply: Reply }) => {
-      // Append reply to open ticket detail
       setSelected((prev) => {
         if (!prev || prev.id !== ticketId) return prev;
-        // Avoid duplicates (admin's own replies are already appended optimistically)
         if (prev.replies.some((r) => r.id === reply.id)) return prev;
         return { ...prev, replies: [...prev.replies, reply] };
       });
-      // Update message count in the list
       setTickets((prev) =>
         prev.map((t) =>
           t.id === ticketId ? { ...t, messageCount: t.messageCount + 1, updatedAt: reply.createdAt } : t
@@ -215,13 +212,11 @@ export default function AdminSupportPage() {
             ? {
                 ...prev,
                 replies: [...prev.replies, res.data],
-                // Automatically move to in_progress if was open
                 status: prev.status === "open" ? "in_progress" : prev.status,
               }
             : prev
         );
         setReplyText("");
-        // Refresh ticket list to reflect status change
         fetchTickets();
       }
     } finally {
@@ -248,23 +243,32 @@ export default function AdminSupportPage() {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <div className="flex h-full min-h-screen bg-gray-50 dark:bg-gray-900">
+    /* Fixed-height container so inner panels scroll independently */
+    <div className="flex h-[calc(100dvh-64px)] overflow-hidden bg-gray-50 dark:bg-gray-900">
+
       {/* ── Left Panel: ticket list ──────────────────────────────────────────── */}
       <div
-        className={`flex flex-col ${selected ? "hidden lg:flex lg:w-1/2 xl:w-2/5" : "w-full"} border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800`}
+        className={`
+          flex flex-col overflow-hidden
+          border-r border-gray-200 dark:border-gray-700
+          bg-white dark:bg-gray-800
+          ${selected || detailLoading
+            ? "hidden lg:flex lg:w-[42%] xl:w-2/5"
+            : "w-full lg:w-[42%] xl:w-2/5"}
+        `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-5 py-4">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Support Tickets</h1>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{total} total</span>
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3 shrink-0">
+          <h1 className="text-base font-semibold text-gray-900 dark:text-white">Support Tickets</h1>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{total} total</span>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap gap-2 px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 shrink-0">
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All statuses</option>
             {STATUS_OPTIONS.map((s) => (
@@ -275,7 +279,7 @@ export default function AdminSupportPage() {
           <select
             value={priorityFilter}
             onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All priorities</option>
             {["low", "medium", "high", "urgent"].map((p) => (
@@ -285,24 +289,24 @@ export default function AdminSupportPage() {
 
           <button
             onClick={() => { setStatusFilter(""); setPriorityFilter(""); setPage(1); }}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-300 px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             Clear
           </button>
         </div>
 
-        {/* Ticket list */}
+        {/* Ticket list — scrolls independently */}
         <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-gray-500">Loading…</div>
+            <div className="flex items-center justify-center py-16 text-gray-500 text-sm">Loading…</div>
           ) : tickets.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-gray-500">No tickets found</div>
+            <div className="flex items-center justify-center py-16 text-gray-500 text-sm">No tickets found</div>
           ) : (
             tickets.map((ticket) => (
               <button
                 key={ticket.id}
                 onClick={() => openTicket(ticket.id)}
-                className={`w-full text-left px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
                   selected?.id === ticket.id ? "bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500" : ""
                 }`}
               >
@@ -314,8 +318,8 @@ export default function AdminSupportPage() {
                     {statusLabel(ticket.status)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  <span>{ticket.user?.firstName ?? "Deleted"} {ticket.user?.lastName ?? "User"}</span>
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <span className="truncate max-w-[120px]">{ticket.user?.firstName ?? "Deleted"} {ticket.user?.lastName ?? "User"}</span>
                   <span>·</span>
                   <span className={`rounded px-1.5 py-0.5 font-medium ${priorityBadge(ticket.priority)}`}>
                     {ticket.priority}
@@ -337,7 +341,7 @@ export default function AdminSupportPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-400 shrink-0">
             <button
               disabled={page === 1}
               onClick={() => setPage((p) => p - 1)}
@@ -345,7 +349,7 @@ export default function AdminSupportPage() {
             >
               ← Prev
             </button>
-            <span>Page {page} of {totalPages}</span>
+            <span className="text-xs">Page {page} of {totalPages}</span>
             <button
               disabled={page === totalPages}
               onClick={() => setPage((p) => p + 1)}
@@ -359,12 +363,14 @@ export default function AdminSupportPage() {
 
       {/* ── Right Panel: ticket detail ────────────────────────────────────────── */}
       {selected || detailLoading ? (
-        <div className="flex flex-1 flex-col bg-white dark:bg-gray-800 min-h-screen lg:min-h-0">
+        <div className="flex flex-1 flex-col overflow-hidden bg-white dark:bg-gray-800">
+
           {/* Detail header */}
-          <div className="flex items-center gap-3 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+          <div className="flex items-start gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-3 shrink-0">
+            {/* Back button — mobile only */}
             <button
               onClick={() => setSelected(null)}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
+              className="lg:hidden mt-0.5 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 shrink-0"
               aria-label="Back"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -373,52 +379,50 @@ export default function AdminSupportPage() {
             </button>
 
             {selected && (
-              <>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold text-gray-900 dark:text-white truncate">
-                    {selected.subject}
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {selected.user?.firstName ?? "Deleted"} {selected.user?.lastName ?? "User"} · {selected.user?.email ?? "—"}
-                  </p>
-                </div>
-
-                {/* Status selector */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <select
-                    value={selected.status}
-                    disabled={statusUpdating}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-                  >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{statusLabel(s)}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
+              <div className="flex flex-1 min-w-0 flex-col gap-1.5">
+                {/* Row 1: subject */}
+                <h2 className="font-semibold text-sm text-gray-900 dark:text-white leading-tight line-clamp-2">
+                  {selected.subject}
+                </h2>
+                {/* Row 2: user info */}
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {selected.user?.firstName ?? "Deleted"} {selected.user?.lastName ?? "User"}
+                  {selected.user?.email ? ` · ${selected.user.email}` : ""}
+                </p>
+                {/* Row 3: status selector */}
+                <select
+                  value={selected.status}
+                  disabled={statusUpdating}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className="self-start rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>{statusLabel(s)}</option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
 
           {detailLoading ? (
-            <div className="flex flex-1 items-center justify-center text-gray-500">Loading…</div>
+            <div className="flex flex-1 items-center justify-center text-gray-500 text-sm">Loading…</div>
           ) : selected ? (
             <>
               {/* Ticket meta */}
-              <div className="flex flex-wrap gap-2 px-5 py-3 border-b border-gray-100 dark:border-gray-700 text-xs">
+              <div className="flex flex-wrap gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 text-xs shrink-0">
                 <span className={`rounded-full px-2.5 py-1 font-medium ${priorityBadge(selected.priority)}`}>
                   Priority: {selected.priority}
                 </span>
                 <span className="rounded-full px-2.5 py-1 font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                   Category: {selected.category}
                 </span>
-                <span className="text-gray-400 dark:text-gray-500 ml-auto">
+                <span className="hidden sm:inline text-gray-400 dark:text-gray-500 ml-auto self-center">
                   Opened {fmt(selected.createdAt)}
                 </span>
               </div>
 
-              {/* Message thread */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              {/* Message thread — scrolls independently */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                 {/* Original message */}
                 <div className="flex gap-3">
                   <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
@@ -426,14 +430,14 @@ export default function AdminSupportPage() {
                       {selected.user?.firstName?.[0] ?? "U"}
                     </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-baseline gap-2 mb-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1">
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {selected.user?.firstName ?? "Deleted"} {selected.user?.lastName ?? "User"}
                       </span>
                       <span className="text-xs text-gray-400">{fmt(selected.createdAt)}</span>
                     </div>
-                    <div className="rounded-xl bg-gray-100 dark:bg-gray-700 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
+                    <div className="rounded-xl bg-gray-100 dark:bg-gray-700 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words">
                       {selected.message}
                     </div>
                   </div>
@@ -462,15 +466,15 @@ export default function AdminSupportPage() {
                         {reply.isStaff ? "S" : reply.authorName?.[0] ?? "U"}
                       </span>
                     </div>
-                    <div className={`flex-1 ${reply.isStaff ? "items-end" : "items-start"} flex flex-col`}>
-                      <div className={`flex items-baseline gap-2 mb-1 ${reply.isStaff ? "flex-row-reverse" : ""}`}>
+                    <div className={`flex-1 min-w-0 flex flex-col ${reply.isStaff ? "items-end" : "items-start"}`}>
+                      <div className={`flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1 ${reply.isStaff ? "flex-row-reverse" : ""}`}>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {reply.authorName}
                         </span>
                         <span className="text-xs text-gray-400">{fmt(reply.createdAt)}</span>
                       </div>
                       <div
-                        className={`rounded-xl px-4 py-3 text-sm whitespace-pre-wrap ${
+                        className={`rounded-xl px-4 py-3 text-sm whitespace-pre-wrap break-words max-w-[85%] ${
                           reply.isStaff
                             ? "bg-indigo-600 text-white"
                             : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
@@ -486,19 +490,23 @@ export default function AdminSupportPage() {
 
               {/* Reply box */}
               {selected.status !== "closed" && selected.status !== "resolved" ? (
-                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
+                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 shrink-0">
                   <textarea
                     rows={3}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleReply();
+                    }}
                     placeholder="Type your reply…"
                     className="w-full resize-none rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                  <div className="mt-2 flex justify-end">
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-400 hidden sm:block">Ctrl+Enter to send</span>
                     <button
                       onClick={handleReply}
                       disabled={replying || !replyText.trim()}
-                      className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="ml-auto flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {replying ? (
                         <>
@@ -520,7 +528,7 @@ export default function AdminSupportPage() {
                   </div>
                 </div>
               ) : (
-                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 text-center text-sm text-gray-500">
+                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 text-center text-sm text-gray-500 shrink-0">
                   This ticket is {selected.status}. Change status to reply.
                 </div>
               )}
@@ -528,7 +536,7 @@ export default function AdminSupportPage() {
           ) : null}
         </div>
       ) : (
-        /* Empty state when no ticket is selected (desktop) */
+        /* Empty state — desktop only */
         <div className="hidden lg:flex flex-1 items-center justify-center text-gray-400 dark:text-gray-600 flex-col gap-3">
           <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}

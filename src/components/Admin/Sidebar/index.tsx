@@ -68,6 +68,15 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       ),
     },
     {
+      name: "Header Documents",
+      href: "/admin/header-documents",
+      icon: (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h6" />
+        </svg>
+      ),
+    },
+    {
       name: "Support",
       href: "/admin/support",
       icon: (

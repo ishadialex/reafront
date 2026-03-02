@@ -24,7 +24,9 @@ const InvestmentModal = ({
   existingInvestment = null,
 }: InvestmentModalProps) => {
   const router = useRouter();
-  const [investmentAmount, setInvestmentAmount] = useState(initialAmount.toString());
+  const [investmentAmount, setInvestmentAmount] = useState(
+    initialAmount > 0 ? initialAmount.toLocaleString("en-US") : ""
+  );
   const [paymentMethod, setPaymentMethod] = useState<"wallet" | "deposit" | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -33,7 +35,7 @@ const InvestmentModal = ({
 
   if (!isOpen) return null;
 
-  const amount = parseFloat(investmentAmount) || 0;
+  const amount = parseFloat(investmentAmount.replace(/,/g, "")) || 0;
   const isTopUp = !!existingInvestment;
   const remainingAmount =
     property.investmentType === "pooled"
@@ -213,11 +215,21 @@ const InvestmentModal = ({
               {isTopUp ? "Top-Up Amount" : "Investment Amount"} <span className="text-red-500">*</span>
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={investmentAmount}
-              onChange={(e) => setInvestmentAmount(e.target.value)}
-              min={property.minInvestment}
-              max={property.investmentType === "pooled" ? Math.min(property.maxInvestment, remainingAmount) : property.maxInvestment}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9.]/g, "");
+                const dotIndex = raw.indexOf(".");
+                if (dotIndex === -1) {
+                  setInvestmentAmount(raw === "" ? "" : Number(raw).toLocaleString("en-US"));
+                } else {
+                  const intStr = raw.slice(0, dotIndex);
+                  const decStr = raw.slice(dotIndex + 1);
+                  const formattedInt = intStr === "" ? "" : Number(intStr).toLocaleString("en-US");
+                  setInvestmentAmount(formattedInt + "." + decStr);
+                }
+              }}
               placeholder={`Min: $${property.minInvestment.toLocaleString()}`}
               className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-lg font-semibold text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
             />
@@ -245,7 +257,7 @@ const InvestmentModal = ({
                     Monthly Earnings
                   </p>
                   <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                    ${monthlyEarnings.toFixed(2)}
+                    ${monthlyEarnings.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p className="text-xs text-blue-800 dark:text-blue-400">
                     {property.monthlyReturn}% per month
@@ -256,7 +268,7 @@ const InvestmentModal = ({
                     Annual Earnings
                   </p>
                   <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                    ${annualEarnings.toFixed(2)}
+                    ${annualEarnings.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p className="text-xs text-blue-800 dark:text-blue-400">
                     {property.expectedROI}% ROI

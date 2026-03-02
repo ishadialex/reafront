@@ -15,10 +15,12 @@ interface UserData {
 
 interface BalanceSummary {
   balance: number;
+  profits: number;
+  referralCommissions: number;
+  bonus: number;
   pendingDeposits: number;
   pendingWithdrawals: number;
   deposits: number;
-  profits: number;
   adminBonuses: number;
   referralBonuses: number;
   withdrawals: number;
@@ -40,7 +42,7 @@ interface Investment {
 
 interface Transaction {
   id: string;
-  type: "deposit" | "withdrawal" | "investment" | "transfer" | "referral" | "profit" | "admin_bonus" | "transfer_sent" | "transfer_received";
+  type: string;
   amount: number;
   status: "completed" | "pending" | "failed";
   date: string;
@@ -71,20 +73,22 @@ const fetchBalanceSummary = async (): Promise<BalanceSummary> => {
     if (result.success && result.data) {
       return {
         balance: result.data.balance,
+        profits: result.data.profits ?? 0,
+        referralCommissions: result.data.referralCommissions ?? 0,
+        bonus: result.data.bonus ?? 0,
         pendingDeposits: result.data.pendingDeposits ?? 0,
         pendingWithdrawals: result.data.pendingWithdrawals ?? 0,
-        deposits: result.data.breakdown.deposits,
-        profits: result.data.breakdown.profits,
-        adminBonuses: result.data.breakdown.adminBonuses,
-        referralBonuses: result.data.breakdown.referralBonuses,
-        withdrawals: result.data.breakdown.withdrawals,
-        investedFunds: result.data.breakdown.investedFunds,
+        deposits: result.data.breakdown?.deposits ?? 0,
+        adminBonuses: result.data.breakdown?.adminBonuses ?? 0,
+        referralBonuses: result.data.referralCommissions ?? result.data.breakdown?.referralBonuses ?? 0,
+        withdrawals: result.data.breakdown?.withdrawals ?? 0,
+        investedFunds: result.data.breakdown?.investedFunds ?? 0,
       };
     }
   } catch {
     // ignore
   }
-  return { balance: 0, pendingDeposits: 0, pendingWithdrawals: 0, deposits: 0, profits: 0, adminBonuses: 0, referralBonuses: 0, withdrawals: 0, investedFunds: 0 };
+  return { balance: 0, profits: 0, referralCommissions: 0, bonus: 0, pendingDeposits: 0, pendingWithdrawals: 0, deposits: 0, adminBonuses: 0, referralBonuses: 0, withdrawals: 0, investedFunds: 0 };
 };
 
 // Mock API functions - Replace these with actual API calls
@@ -555,8 +559,8 @@ export default function DashboardOverviewPage() {
     const totalInvested = data.investments.reduce((sum, inv) => sum + inv.amount, 0);
     const generatedIncome =
       (data.balanceSummary?.profits ?? 0) +
-      (data.balanceSummary?.referralBonuses ?? 0) +
-      (data.balanceSummary?.adminBonuses ?? 0);
+      (data.balanceSummary?.referralCommissions ?? 0) +
+      (data.balanceSummary?.bonus ?? 0);
     const activeInvestments = data.investments.filter((inv) => inv.status === "active");
     // Count unique properties (not individual investment transactions)
     const uniquePropertyTitles = new Set(activeInvestments.map(inv => inv.propertyTitle));
@@ -942,12 +946,12 @@ export default function DashboardOverviewPage() {
                     <div className="flex-shrink-0 text-right">
                       <p
                         className={`whitespace-nowrap text-sm font-semibold ${
-                          (transaction.type === "admin_bonus" ? transaction.amount > 0 : ["deposit", "referral", "profit", "transfer_received"].includes(transaction.type))
+                          (transaction.type.startsWith("admin_") ? transaction.amount > 0 : ["deposit", "referral", "profit", "transfer_received"].includes(transaction.type))
                             ? "text-green-600 dark:text-green-400"
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        {(transaction.type === "admin_bonus" ? transaction.amount > 0 : ["deposit", "referral", "profit", "transfer_received"].includes(transaction.type)) ? "+" : "-"}$
+                        {(transaction.type.startsWith("admin_") ? transaction.amount > 0 : ["deposit", "referral", "profit", "transfer_received"].includes(transaction.type)) ? "+" : "-"}$
                         {Math.abs(transaction.amount).toLocaleString()}
                       </p>
                       <span

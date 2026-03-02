@@ -237,3 +237,14 @@ body {
     touch-action: manipulation;
   }
 }
+
+/* Hide Tawk.to attention grabber / teaser balloon */
+.tawk-attention-grabber,
+[class*="tawk"][class*="attention"],
+[class*="tawk"][class*="grab"],
+[class*="tawk"][class*="teaser"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
