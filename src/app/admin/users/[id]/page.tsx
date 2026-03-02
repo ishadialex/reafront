@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
@@ -60,7 +60,6 @@ function Badge({ label, color }: { label: string; color: string }) {
 
 export default function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -208,77 +207,76 @@ export default function AdminUserDetailPage() {
       </Link>
 
       {/* Profile card */}
-      <div className="rounded-2xl bg-white p-6 shadow-sm dark:bg-gray-dark">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            {user.profilePhoto ? (
-              <img src={user.profilePhoto} alt="Avatar" className="h-16 w-16 rounded-full object-cover" />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
-                {user.firstName[0]}{user.lastName[0]}
-              </div>
-            )}
-            <div>
-              <h2 className="text-xl font-bold text-black dark:text-white">{user.firstName} {user.lastName}</h2>
-              <p className="text-sm text-body-color dark:text-gray-400">{user.email}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge label={user.role} color={roleBg[user.role] ?? roleBg.user} />
-                <Badge label={`KYC: ${user.kycStatus}`} color={kycBg[user.kycStatus] ?? kycBg.none} />
-                <Badge
-                  label={user.isActive ? "Active" : "Inactive"}
-                  color={user.isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}
-                />
-              </div>
+      <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-dark sm:p-6">
+        {/* Avatar + info */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          {user.profilePhoto ? (
+            <img src={user.profilePhoto} alt="Avatar" className="h-14 w-14 shrink-0 rounded-full object-cover sm:h-16 sm:w-16" />
+          ) : (
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary sm:h-16 sm:w-16 sm:text-xl">
+              {user.firstName[0]}{user.lastName[0]}
             </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleToggleStatus}
-              disabled={actionLoading}
-              className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:opacity-50 ${user.isActive ? "bg-red-500 hover:bg-red-600" : "bg-green-600 hover:bg-green-700"}`}
-            >
-              {user.isActive ? "Deactivate" : "Activate"}
-            </button>
-            <button
-              onClick={() => { setBalanceModal("add"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); setBalanceCategory("balance"); }}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
-            >
-              Add Balance
-            </button>
-            <button
-              onClick={() => { setBalanceModal("deduct"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); setBalanceCategory("balance"); }}
-              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
-            >
-              Deduct Balance
-            </button>
-            <button
-              onClick={() => { setReferralModal(true); setReferrerIdentifier(""); setReferralReward("10"); setReferralError(""); }}
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
-            >
-              Assign Referral
-            </button>
-            <button
-              onClick={() => { setResetModal(true); setResetResult(null); }}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
-            >
-              Reset User
-            </button>
+          )}
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-lg font-bold text-black dark:text-white sm:text-xl">{user.firstName} {user.lastName}</h2>
+            <p className="truncate text-xs text-body-color dark:text-gray-400 sm:text-sm">{user.email}</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <Badge label={user.role} color={roleBg[user.role] ?? roleBg.user} />
+              <Badge label={`KYC: ${user.kycStatus}`} color={kycBg[user.kycStatus] ?? kycBg.none} />
+              <Badge
+                label={user.isActive ? "Active" : "Inactive"}
+                color={user.isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}
+              />
+            </div>
           </div>
         </div>
 
+        {/* Action buttons — stack on mobile, flex-wrap on sm+ */}
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <button
+            onClick={handleToggleStatus}
+            disabled={actionLoading}
+            className={`w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:opacity-50 sm:w-auto ${user.isActive ? "bg-red-500 hover:bg-red-600" : "bg-green-600 hover:bg-green-700"}`}
+          >
+            {user.isActive ? "Deactivate" : "Activate"}
+          </button>
+          <button
+            onClick={() => { setBalanceModal("add"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); setBalanceCategory("balance"); }}
+            className="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 sm:w-auto"
+          >
+            Add Balance
+          </button>
+          <button
+            onClick={() => { setBalanceModal("deduct"); setBalanceAmount(""); setBalanceNote(""); setBalanceError(""); setBalanceCategory("balance"); }}
+            className="w-full rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 sm:w-auto"
+          >
+            Deduct Balance
+          </button>
+          <button
+            onClick={() => { setReferralModal(true); setReferrerIdentifier(""); setReferralReward("10"); setReferralError(""); }}
+            className="w-full rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 sm:w-auto"
+          >
+            Assign Referral
+          </button>
+          <button
+            onClick={() => { setResetModal(true); setResetResult(null); }}
+            className="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 sm:w-auto"
+          >
+            Reset User
+          </button>
+        </div>
+
         {/* Balances */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:mt-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
           {([
-            { label: "Balance", value: user.balance },
-            { label: "Profits", value: user.profits },
-            { label: "Referral Commissions", value: user.referralCommissions },
-            { label: "Bonus", value: user.bonus },
-          ] as { label: string; value: number }[]).map((b) => (
-            <div key={b.label} className="rounded-xl border border-stroke bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+            { label: "Balance", value: user.balance, color: "text-black dark:text-white" },
+            { label: "Profits", value: user.profits, color: "text-green-600 dark:text-green-400" },
+            { label: "Referral Commissions", value: user.referralCommissions, color: "text-blue-600 dark:text-blue-400" },
+            { label: "Bonus", value: user.bonus, color: "text-purple-600 dark:text-purple-400" },
+          ] as { label: string; value: number; color: string }[]).map((b) => (
+            <div key={b.label} className="rounded-xl border border-stroke bg-gray-50 px-3 py-3 dark:border-gray-700 dark:bg-gray-800/50 sm:px-4">
               <p className="text-xs text-body-color dark:text-gray-400">{b.label}</p>
-              <p className="text-xl font-bold text-black dark:text-white">
+              <p className={`mt-0.5 text-base font-bold sm:text-lg ${b.color}`}>
                 ${Number(b.value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>

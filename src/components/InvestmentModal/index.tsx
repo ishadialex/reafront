@@ -52,7 +52,7 @@ const InvestmentModal = ({
     if (!isTopUp && amount < property.minInvestment) {
       return {
         valid: false,
-        error: `Minimum investment is $${property.minInvestment.toLocaleString()}`,
+        error: `Minimum bid is $${property.minInvestment.toLocaleString()}`,
       };
     }
 

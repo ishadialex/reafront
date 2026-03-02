@@ -309,7 +309,7 @@ export default function PropertyDetailPage() {
             <h2 className="mb-4 text-xl font-bold text-black dark:text-white">Investment Overview</h2>
             <div className="mb-4 space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-body-color dark:text-body-color-dark">{property.category === "for_sale" ? "Expected Annual ROI" : "Expected ROI"}</span>
+                <span className="text-sm text-body-color dark:text-body-color-dark">{property.category === "for_sale" ? "Possible Annual ROI" : "Expected ROI"}</span>
                 <span className="text-lg font-bold text-green-600 dark:text-green-400">{property.expectedROI}%</span>
               </div>
               <div className="flex justify-between">
@@ -332,6 +332,10 @@ export default function PropertyDetailPage() {
                   </div>
                   {property.category === "for_sale" ? (
                     <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-body-color dark:text-body-color-dark">Minimum Bid</span>
+                        <span className="font-semibold text-primary">${property.minInvestment.toLocaleString()}</span>
+                      </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-body-color dark:text-body-color-dark">Number of Bids</span>
                         <span className="font-semibold text-black dark:text-white">{property.bidCount ?? property.investorCount ?? 0}</span>
@@ -473,7 +477,7 @@ export default function PropertyDetailPage() {
 
             {property.status.toLowerCase() === "available" && amount < property.minInvestment && amount > 0 && (
               <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                Minimum investment is ${property.minInvestment.toLocaleString()}
+                Minimum bid is ${property.minInvestment.toLocaleString()}
               </p>
             )}
           </div>

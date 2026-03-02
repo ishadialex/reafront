@@ -52,7 +52,7 @@ const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
       ),
     },
     {
-      name: "Property Market",
+      name: "Portfolio Market",
       href: "/dashboard/property-market",
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,7 +63,7 @@ const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
       subItems: [
         { name: "Listed Properties", href: "/dashboard/property-market/properties" },
         { name: "Power Projects", href: "/dashboard/property-market/power-projects" },
-        { name: "My Invested Properties", href: "/dashboard/investments" },
+        { name: "My Portfolio", href: "/dashboard/investments" },
       ],
     },
     {
@@ -103,7 +103,7 @@ const DashboardSidebar = ({ isOpen, onClose }: DashboardSidebarProps) => {
       ),
     },
     {
-      name: "Referral System",
+      name: "Referrals/Commissions",
       href: "/dashboard/my-referral",
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

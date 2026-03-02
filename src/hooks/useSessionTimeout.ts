@@ -44,6 +44,7 @@ export function useSessionTimeout(isAuthPage: boolean = false) {
     } finally {
       // Clear local data and redirect (tokens are cleared by server via httpOnly cookies)
       localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('rememberMe');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
       localStorage.removeItem('userProfilePicture');
@@ -196,6 +197,13 @@ export function useSessionTimeout(isAuthPage: boolean = false) {
 
     // Fetch user's session timeout preference
     const fetchSessionTimeout = async () => {
+      // If the user logged in with Remember Me, their session lasts 3 days —
+      // no idle countdown is needed, so skip all timer setup.
+      if (localStorage.getItem('rememberMe') === 'true') {
+        console.log('⏭️ Remember Me session — session timeout countdown disabled');
+        return;
+      }
+
       console.log('📡 Fetching session timeout settings...');
       try {
         const result = await api.getSettings();

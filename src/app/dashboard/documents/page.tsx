@@ -200,8 +200,8 @@ export default function DocumentsPage() {
         <div className="space-y-4">
           {displayed.map((doc) => (
             <div key={doc.id} className="rounded-2xl bg-white p-5 shadow dark:bg-gray-dark">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <h3 className="font-semibold text-black dark:text-white">{doc.title}</h3>
                     {doc.status === "pending" && (
@@ -229,18 +229,18 @@ export default function DocumentsPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-shrink-0 flex-col gap-2 sm:flex-row">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-shrink-0">
                   <button
                     onClick={() => openForViewing(doc)}
                     disabled={viewLoading === doc.id}
-                    className="rounded-xl border border-stroke px-4 py-2 text-center text-sm font-medium text-black hover:bg-gray-50 disabled:opacity-60 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800"
+                    className="w-full rounded-xl border border-stroke px-4 py-2 text-center text-sm font-medium text-black hover:bg-gray-50 disabled:opacity-60 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800 sm:w-auto"
                   >
                     {viewLoading === doc.id ? "Loading…" : "View PDF"}
                   </button>
                   {doc.status === "pending" && (
                     <button
                       onClick={() => setSigningDoc(doc)}
-                      className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                      className="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 sm:w-auto"
                     >
                       Sign Document
                     </button>
@@ -249,7 +249,7 @@ export default function DocumentsPage() {
                     <button
                       onClick={() => downloadSigned(doc)}
                       disabled={downloading === doc.id}
-                      className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-60"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-60 sm:w-auto"
                     >
                       {downloading === doc.id ? (
                         <>

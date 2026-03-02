@@ -46,7 +46,7 @@ const Footer = () => {
         </section>
       )}
 
-      <footer className="relative z-10 rounded-t-3xl border-t-2 border-gray-700 bg-black py-10 shadow-2xl md:py-12 lg:py-16 dark:border-gray-600">
+      <footer className="relative z-10 bg-black py-10 md:py-12 lg:py-16">
         <div className="container">
           {/* Logo */}
           <div className="mb-6 flex justify-center">

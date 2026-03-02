@@ -25,7 +25,7 @@ export default function RootLayout({
   const isPDFViewer = pathname?.startsWith("/pdf-viewer");
   const isDashboard = pathname?.startsWith("/dashboard");
   const isAdmin = pathname?.startsWith("/admin");
-  const isAuthPage = pathname === "/signin" || pathname === "/signup";
+  const isAuthPage = pathname === "/signin" || pathname === "/signup" || pathname === "/forgot-password";
   const [showNewsletterPopup, setShowNewsletterPopup] = useState(false);
   const hasShownPopupRef = useRef(false);
 

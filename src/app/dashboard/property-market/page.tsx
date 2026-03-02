@@ -4,7 +4,7 @@ export default function PropertyMarketPage() {
   return (
     <div>
       <h1 className="mb-6 text-3xl font-bold text-black dark:text-white">
-        Property Market
+        Portfolio Market
       </h1>
 
       <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-dark">

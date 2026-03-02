@@ -1,11 +1,67 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { InvestmentProperty } from "@/types/investment";
 import PropertyCard from "@/components/PropertyCard";
 import PropertyCardSkeleton from "@/components/PropertyCardSkeleton";
 import StatCardSkeleton from "@/components/StatCardSkeleton";
 import { api } from "@/lib/api";
+
+function CustomSelect({ value, onChange, options }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-left text-sm text-black transition-colors hover:border-gray-300 focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      >
+        <span>{selected?.label}</span>
+        <svg className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <ul className="absolute left-0 right-0 z-[100] mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                  value === opt.value ? "font-medium text-primary" : "text-black dark:text-white"
+                }`}
+              >
+                <span>{opt.label}</span>
+                {value === opt.value && (
+                  <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<InvestmentProperty[]>([]);
@@ -105,66 +161,45 @@ export default function PropertiesPage() {
         )}
       </div>
 
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-dark">
+      <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-dark">
         <div className="grid gap-4 md:grid-cols-4">
           <div>
             <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Category</label>
-            <div className="relative">
-              <select
-                value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 pr-10 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="all">All Categories</option>
-                <option value="airbnb_arbitrage">Airbnb Arbitrage</option>
-                <option value="airbnb_mortgage">Airbnb Mortgage</option>
-                <option value="for_sale">For Sale</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <CustomSelect
+              value={filters.category}
+              onChange={(v) => setFilters({ ...filters, category: v })}
+              options={[
+                { value: "all", label: "All Categories" },
+                { value: "airbnb_arbitrage", label: "Airbnb Arbitrage" },
+                { value: "airbnb_mortgage", label: "Airbnb Mortgage" },
+                { value: "for_sale", label: "For Sale" },
+              ]}
+            />
           </div>
           <div>
             <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Investment Type</label>
-            <div className="relative">
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 pr-10 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="all">All Types</option>
-                <option value="individual">Individual</option>
-                <option value="pooled">Pooled</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <CustomSelect
+              value={filters.type}
+              onChange={(v) => setFilters({ ...filters, type: v })}
+              options={[
+                { value: "all", label: "All Types" },
+                { value: "individual", label: "Individual" },
+                { value: "pooled", label: "Pooled" },
+              ]}
+            />
           </div>
           <div>
             <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Status</label>
-            <div className="relative">
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 pr-10 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="all">All Status</option>
-                <option value="available">Available</option>
-                <option value="fully-funded">Fully Funded</option>
-                <option value="coming-soon">Coming Soon</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <CustomSelect
+              value={filters.status}
+              onChange={(v) => setFilters({ ...filters, status: v })}
+              options={[
+                { value: "all", label: "All Status" },
+                { value: "available", label: "Available" },
+                { value: "fully-funded", label: "Fully Funded" },
+                { value: "coming-soon", label: "Coming Soon" },
+              ]}
+            />
           </div>
           <div>
             <label className="mb-2 block text-sm font-semibold text-black dark:text-white">Search</label>
@@ -173,7 +208,7 @@ export default function PropertiesPage() {
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               placeholder="Search properties..."
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-black outline-none focus:border-primary dark:border-gray-800 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-black outline-none transition-colors hover:border-gray-300 focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>

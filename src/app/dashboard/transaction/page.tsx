@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, Suspense } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { SearchParamsWrapper } from "./SearchParamsWrapper";
@@ -19,22 +19,94 @@ interface TxRow {
   source: "transaction" | "fund_operation";
 }
 
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onOutsideClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => document.removeEventListener("mousedown", onOutsideClick);
+  }, []);
+
+  const displayLabel = value.charAt(0).toUpperCase() + value.slice(1);
+
+  return (
+    <div ref={ref} className="min-w-0 flex-1">
+      <p className="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-black outline-none transition-all hover:border-gray-300 hover:bg-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700/60"
+        >
+          <span className="truncate">{displayLabel}</span>
+          <svg
+            className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 dark:text-gray-500 ${open ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[100] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+            <ul className="max-h-52 overflow-y-auto py-1">
+              {options.map((opt) => {
+                const isSelected = value === opt;
+                return (
+                  <li key={opt}>
+                    <button
+                      type="button"
+                      onClick={() => { onChange(opt); setOpen(false); }}
+                      className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors ${
+                        isSelected
+                          ? "bg-primary/8 font-semibold text-primary dark:bg-primary/15 dark:text-primary"
+                          : "text-black hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700/50"
+                      }`}
+                    >
+                      {isSelected && (
+                        <svg className="h-3.5 w-3.5 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                      <span className={isSelected ? "" : "pl-5"}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const FilterSkeleton = () => (
-  <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark md:p-6">
-    <div className="flex flex-col gap-4">
-      <div className="h-12 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+  <div className="mb-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-dark sm:mb-6">
+    <div className="p-4 sm:p-5">
+      <div className="mb-4 h-11 w-full animate-pulse rounded-xl bg-gray-100 dark:bg-gray-700" />
       <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="flex-1">
-          <div className="mb-2 h-4 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-9 w-20 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />)}
-          </div>
+        <div className="flex-1 min-w-0">
+          <div className="mb-1.5 h-3 w-28 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+          <div className="h-10 w-full animate-pulse rounded-xl bg-gray-100 dark:bg-gray-700" />
         </div>
-        <div className="flex-1">
-          <div className="mb-2 h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3].map((i) => <div key={i} className="h-9 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />)}
-          </div>
+        <div className="flex-1 min-w-0">
+          <div className="mb-1.5 h-3 w-16 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+          <div className="h-10 w-full animate-pulse rounded-xl bg-gray-100 dark:bg-gray-700" />
         </div>
       </div>
     </div>
@@ -242,7 +314,7 @@ function TransactionContent() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen w-full overflow-x-hidden">
       {/* Search params synchronization */}
       <Suspense fallback={null}>
         <SearchParamsWrapper
@@ -254,55 +326,72 @@ function TransactionContent() {
         />
       </Suspense>
 
-      <div className="mb-6 flex items-center justify-between md:mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-black dark:text-white md:text-3xl">Transactions</h1>
-          <p className="mt-2 text-sm text-body-color dark:text-body-color-dark md:text-base">View and manage your transaction history</p>
+      <div className="mb-4 flex items-center justify-between gap-3 md:mb-8">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-black dark:text-white sm:text-2xl md:text-3xl">Transactions</h1>
+          <p className="mt-1 text-xs text-body-color dark:text-body-color-dark sm:text-sm md:text-base">View and manage your transaction history</p>
         </div>
         <button onClick={handleRefresh} disabled={isRefreshing || loading}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-black transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-black transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 sm:h-10 sm:w-10"
           aria-label="Refresh">
-          <svg className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className={`h-4 w-4 sm:h-5 sm:w-5 ${isRefreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
       </div>
 
+      {!loading && filtered.length > 0 && (
+        <div className="mb-4 grid grid-cols-3 gap-2 sm:mb-6 sm:gap-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
+            <p className="text-xs text-body-color dark:text-body-color-dark">Total</p>
+            <p className="mt-0.5 text-lg font-bold text-black dark:text-white sm:text-2xl">{filtered.length}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
+            <p className="text-xs text-body-color dark:text-body-color-dark">Credits</p>
+            <p className="mt-0.5 truncate text-lg font-bold text-green-600 dark:text-green-400 sm:text-2xl">
+              ${filtered.filter((r) => isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
+            <p className="text-xs text-body-color dark:text-body-color-dark">Debits</p>
+            <p className="mt-0.5 truncate text-lg font-bold text-red-600 dark:text-red-400 sm:text-2xl">
+              ${filtered.filter((r) => !isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+      )}
+
       {loading ? <FilterSkeleton /> : (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark md:p-6">
-          <div className="flex flex-col gap-4">
-            <div className="relative">
-              <input type="text" placeholder="Search by reference, description, or amount..."
+        <div className="mb-4 rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-dark sm:mb-6">
+          <div className="p-4 sm:p-5">
+            {/* Search input */}
+            <div className="relative mb-4">
+              <input
+                type="text"
+                placeholder="Search by reference, description or amount…"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); updateFilters(selectedFilter, selectedStatus, e.target.value); }}
-                className="w-full rounded-lg border border-gray-200 bg-transparent px-4 py-3 pl-11 text-sm text-black outline-none transition focus:border-primary dark:border-gray-800 dark:text-white" />
-              <svg className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-body-color dark:text-body-color-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-black placeholder-gray-400 outline-none transition-all focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-primary dark:focus:bg-gray-800/80"
+              />
+              <svg className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
+
+            {/* Dropdowns */}
             <div className="flex flex-col gap-3 sm:flex-row">
-              <div className="flex-1">
-                <label className="mb-2 block text-xs font-semibold text-black dark:text-white">Transaction Type</label>
-                <div className="flex flex-wrap gap-2">
-                  {VALID_TYPES.map((f) => (
-                    <button key={f} onClick={() => { setSelectedFilter(f); updateFilters(f, selectedStatus, searchQuery); }}
-                      className={`rounded-lg px-4 py-2 text-xs font-medium transition ${selectedFilter === f ? "bg-primary text-white" : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"}`}>
-                      {f.charAt(0).toUpperCase() + f.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-1">
-                <label className="mb-2 block text-xs font-semibold text-black dark:text-white">Status</label>
-                <div className="flex flex-wrap gap-2">
-                  {VALID_STATUSES.map((s) => (
-                    <button key={s} onClick={() => { setSelectedStatus(s); updateFilters(selectedFilter, s, searchQuery); }}
-                      className={`rounded-lg px-4 py-2 text-xs font-medium transition ${selectedStatus === s ? "bg-primary text-white" : "bg-gray-100 text-black hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"}`}>
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <CustomSelect
+                label="Transaction Type"
+                value={selectedFilter}
+                onChange={(v) => { setSelectedFilter(v); updateFilters(v, selectedStatus, searchQuery); }}
+                options={VALID_TYPES}
+              />
+              <CustomSelect
+                label="Status"
+                value={selectedStatus}
+                onChange={(v) => { setSelectedStatus(v); updateFilters(selectedFilter, v, searchQuery); }}
+                options={VALID_STATUSES}
+              />
             </div>
           </div>
         </div>
@@ -373,31 +462,33 @@ function TransactionContent() {
             </div>
           </div>
 
-          <div className="space-y-4 lg:hidden">
+          <div className="space-y-3 lg:hidden">
             {paginated.map((row) => (
               <div key={row.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-dark">
-                <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-black/20">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${getTypeColor(row.type)}`}>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{getTypeIcon(row.type)}</svg>
+                {/* Card header: icon + type/date + status badge */}
+                <div className="flex items-center justify-between gap-2 border-b border-gray-200 bg-gray-50 px-3 py-3 dark:border-gray-800 dark:bg-black/20 sm:px-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${getTypeColor(row.type)}`}>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">{getTypeIcon(row.type)}</svg>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-black dark:text-white">{formatType(row.type)}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-black dark:text-white">{formatType(row.type)}</p>
                       <p className="text-xs text-body-color dark:text-body-color-dark">{formatDate(row.date)}</p>
                     </div>
                   </div>
-                  {getStatusBadge(row.status)}
+                  <div className="shrink-0">{getStatusBadge(row.status)}</div>
                 </div>
-                <div className="p-4">
+                {/* Card body: description + reference + amount */}
+                <div className="px-3 py-3 sm:px-4">
                   <p className="mb-3 text-sm text-body-color dark:text-body-color-dark">{row.description}</p>
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs text-body-color dark:text-body-color-dark">Reference</p>
-                      <p className="font-mono text-xs font-medium text-black dark:text-white">{row.reference}</p>
+                      <p className="break-all font-mono text-xs font-medium text-black dark:text-white">{row.reference}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="shrink-0 text-right">
                       <p className="text-xs text-body-color dark:text-body-color-dark">Amount</p>
-                      <p className={`text-lg font-bold ${isCredit(row.type, row.amount) ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                      <p className={`text-base font-bold sm:text-lg ${isCredit(row.type, row.amount) ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                         {isCredit(row.type, row.amount) ? "+" : "-"}${Math.abs(row.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -444,26 +535,6 @@ function TransactionContent() {
         </>
       )}
 
-      {!loading && filtered.length > 0 && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark">
-            <p className="text-xs text-body-color dark:text-body-color-dark">Total Transactions</p>
-            <p className="mt-1 text-2xl font-bold text-black dark:text-white">{filtered.length}</p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark">
-            <p className="text-xs text-body-color dark:text-body-color-dark">Total Credits</p>
-            <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
-              ${filtered.filter((r) => isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-dark">
-            <p className="text-xs text-body-color dark:text-body-color-dark">Total Debits</p>
-            <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
-              ${filtered.filter((r) => !isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AxiosError } from "axios";
 import { api } from "@/lib/api";
@@ -22,6 +22,80 @@ interface ActiveSession {
   location: string;
   lastActive: string;
   current: boolean;
+}
+
+function CustomSelectOption({
+  value,
+  label,
+  onChange,
+  options,
+}: {
+  value: number;
+  label: string;
+  onChange: (v: number) => void;
+  options: { value: number; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-black outline-none transition-all hover:border-gray-300 hover:bg-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700/60"
+      >
+        <span className="truncate">{selected?.label ?? label}</span>
+        <svg
+          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 dark:text-gray-500 ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-[100] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+          <ul className="max-h-52 overflow-y-auto py-1">
+            {options.map((opt) => {
+              const isSelected = value === opt.value;
+              return (
+                <li key={opt.value}>
+                  <button
+                    type="button"
+                    onClick={() => { onChange(opt.value); setOpen(false); }}
+                    className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors ${
+                      isSelected
+                        ? "bg-primary/8 font-semibold text-primary dark:bg-primary/15 dark:text-primary"
+                        : "text-black hover:bg-gray-50 dark:text-white dark:hover:bg-gray-700/50"
+                    }`}
+                  >
+                    {isSelected ? (
+                      <svg className="h-3.5 w-3.5 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <span className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                    <span>{opt.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function SettingsContent() {
@@ -866,18 +940,19 @@ function SettingsContent() {
                       </p>
                     </div>
                   </div>
-                  <select
+                  <CustomSelectOption
                     value={settings.sessionTimeout}
-                    onChange={(e) => handleSettingChange("sessionTimeout", parseInt(e.target.value))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value={2}>2 minutes (Testing)</option>
-                    <option value={15}>15 minutes</option>
-                    <option value={30}>30 minutes</option>
-                    <option value={60}>1 hour</option>
-                    <option value={120}>2 hours</option>
-                    <option value={0}>Never (Not recommended)</option>
-                  </select>
+                    label="Select timeout"
+                    onChange={(v) => handleSettingChange("sessionTimeout", v)}
+                    options={[
+                      { value: 2,   label: "2 minutes" },
+                      { value: 15,  label: "15 minutes" },
+                      { value: 30,  label: "30 minutes" },
+                      { value: 60,  label: "1 hour" },
+                      { value: 120, label: "2 hours" },
+                      { value: 0,   label: "Never (Not recommended)" },
+                    ]}
+                  />
                 </div>
               </div>
             </div>

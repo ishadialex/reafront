@@ -126,23 +126,23 @@ export default function AdminDocumentsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-black dark:text-white">Documents</h1>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-black dark:text-white sm:text-3xl">Documents</h1>
         <button
           onClick={() => setSendOpen(true)}
-          className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary/90"
+          className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90 sm:px-5 sm:py-2.5 sm:text-sm"
         >
           + Send Document
         </button>
       </div>
 
       {/* Filter tabs */}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {["", "pending", "signed", "rejected"].map((s) => (
           <button
             key={s}
             onClick={() => { setStatusFilter(s); setPage(1); }}
-            className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+            className={`shrink-0 rounded-lg px-4 py-1.5 text-sm font-medium transition ${
               statusFilter === s
                 ? "bg-primary text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
@@ -153,99 +153,169 @@ export default function AdminDocumentsPage() {
         ))}
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-2xl bg-white shadow dark:bg-gray-dark">
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-body-color">Loading…</div>
-        ) : docs.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-body-color">
-            No documents found.
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-stroke dark:border-gray-700">
-              <tr className="text-left text-xs font-semibold uppercase text-body-color dark:text-gray-400">
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Document</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Sent</th>
-                <th className="px-4 py-3">Signed</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {docs.map((doc) => (
-                <tr
-                  key={doc.id}
-                  className="border-b border-stroke last:border-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                >
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-black dark:text-white">
+      {/* Loading / empty */}
+      {loading ? (
+        <div className="flex items-center justify-center rounded-2xl bg-white py-20 shadow dark:bg-gray-dark">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      ) : docs.length === 0 ? (
+        <div className="flex items-center justify-center rounded-2xl bg-white py-20 shadow dark:bg-gray-dark">
+          <p className="text-body-color">No documents found.</p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile card list */}
+          <div className="space-y-3 sm:hidden">
+            {docs.map((doc) => (
+              <div key={doc.id} className="rounded-2xl bg-white p-4 shadow dark:bg-gray-dark">
+                {/* User + status row */}
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-black dark:text-white">
                       {doc.user.firstName} {doc.user.lastName}
                     </p>
-                    <p className="text-xs text-body-color">{doc.user.email}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-black dark:text-white">{doc.title}</p>
-                    {doc.description && (
-                      <p className="max-w-[200px] truncate text-xs text-body-color">
-                        {doc.description}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(doc.status)}`}
+                    <p className="truncate text-xs text-body-color">{doc.user.email}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusBadge(doc.status)}`}>
+                    {doc.status}
+                  </span>
+                </div>
+                {/* Document title + description */}
+                <p className="mb-1 text-sm font-medium text-black dark:text-white">{doc.title}</p>
+                {doc.description && (
+                  <p className="mb-2 truncate text-xs text-body-color">{doc.description}</p>
+                )}
+                {/* Dates */}
+                <div className="mb-3 flex gap-4 text-xs text-body-color">
+                  <span>Sent: {fmt(doc.createdAt)}</span>
+                  {doc.signedAt && <span>Signed: {fmt(doc.signedAt)}</span>}
+                </div>
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => openPdf(doc, false)}
+                    disabled={loadingPdf === `${doc.id}-false`}
+                    className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300"
+                  >
+                    {loadingPdf === `${doc.id}-false` ? "Loading…" : "Original"}
+                  </button>
+                  {doc.signedDocumentUrl && (
+                    <button
+                      onClick={() => openPdf(doc, true)}
+                      disabled={loadingPdf === `${doc.id}-true`}
+                      className="rounded-lg bg-green-100 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-300"
                     >
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-body-color">{fmt(doc.createdAt)}</td>
-                  <td className="px-4 py-3 text-body-color">{fmt(doc.signedAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => openPdf(doc, false)}
-                        disabled={loadingPdf === `${doc.id}-false`}
-                        className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300"
-                      >
-                        {loadingPdf === `${doc.id}-false` ? "Loading…" : "Original"}
-                      </button>
-                      {doc.signedDocumentUrl && (
-                        <button
-                          onClick={() => openPdf(doc, true)}
-                          disabled={loadingPdf === `${doc.id}-true`}
-                          className="rounded-lg bg-green-100 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-300"
-                        >
-                          {loadingPdf === `${doc.id}-true` ? "Loading…" : "Signed PDF"}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setEditTarget(doc)}
-                        className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setSigningTarget(doc)}
-                        className="rounded-lg bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300"
-                      >
-                        Sign/Stamp
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(doc)}
-                        className="rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+                      {loadingPdf === `${doc.id}-true` ? "Loading…" : "Signed PDF"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setEditTarget(doc)}
+                    className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setSigningTarget(doc)}
+                    className="rounded-lg bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300"
+                  >
+                    Sign/Stamp
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(doc)}
+                    className="rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto rounded-2xl bg-white shadow dark:bg-gray-dark sm:block">
+            <table className="w-full text-sm">
+              <thead className="border-b border-stroke dark:border-gray-700">
+                <tr className="text-left text-xs font-semibold uppercase text-body-color dark:text-gray-400">
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">Document</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Sent</th>
+                  <th className="px-4 py-3">Signed</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {docs.map((doc) => (
+                  <tr
+                    key={doc.id}
+                    className="border-b border-stroke last:border-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-black dark:text-white">
+                        {doc.user.firstName} {doc.user.lastName}
+                      </p>
+                      <p className="text-xs text-body-color">{doc.user.email}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-black dark:text-white">{doc.title}</p>
+                      {doc.description && (
+                        <p className="max-w-[200px] truncate text-xs text-body-color">
+                          {doc.description}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(doc.status)}`}>
+                        {doc.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-body-color">{fmt(doc.createdAt)}</td>
+                    <td className="px-4 py-3 text-body-color">{fmt(doc.signedAt)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => openPdf(doc, false)}
+                          disabled={loadingPdf === `${doc.id}-false`}
+                          className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300"
+                        >
+                          {loadingPdf === `${doc.id}-false` ? "Loading…" : "Original"}
+                        </button>
+                        {doc.signedDocumentUrl && (
+                          <button
+                            onClick={() => openPdf(doc, true)}
+                            disabled={loadingPdf === `${doc.id}-true`}
+                            className="rounded-lg bg-green-100 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-300"
+                          >
+                            {loadingPdf === `${doc.id}-true` ? "Loading…" : "Signed PDF"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setEditTarget(doc)}
+                          className="rounded-lg bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setSigningTarget(doc)}
+                          className="rounded-lg bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300"
+                        >
+                          Sign/Stamp
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(doc)}
+                          className="rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

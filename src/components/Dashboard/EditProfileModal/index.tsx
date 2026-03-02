@@ -43,6 +43,53 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Address autocomplete state
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const addressBoxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (addressBoxRef.current && !addressBoxRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, []);
+
+  const fetchAddressSuggestions = (query: string) => {
+    if (addressDebounceRef.current) clearTimeout(addressDebounceRef.current);
+    if (query.trim().length < 4) { setAddressSuggestions([]); setShowSuggestions(false); return; }
+    addressDebounceRef.current = setTimeout(async () => {
+      setAddressLoading(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const data = await res.json();
+        setAddressSuggestions(data);
+        setShowSuggestions(data.length > 0);
+      } catch { setAddressSuggestions([]); }
+      finally { setAddressLoading(false); }
+    }, 400);
+  };
+
+  const selectAddressSuggestion = (item: any) => {
+    const a = item.address ?? {};
+    const street = [a.house_number, a.road].filter(Boolean).join(" ") || item.display_name.split(",")[0];
+    const city = a.city || a.town || a.village || a.municipality || a.county || "";
+    const state = a.state || "";
+    const postalCode = a.postcode || "";
+    const country = a.country || "";
+    setFormData((prev) => ({ ...prev, address: street, city, state, postalCode, country }));
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+  };
+
   const [formData, setFormData] = useState<UpdateProfileRequest>({
     firstName: profile.firstName,
     lastName: profile.lastName,
@@ -262,9 +309,17 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
         // Store the full user object
         localStorage.setItem("user", JSON.stringify(result.data));
 
-        // Emit event to notify ProfileDropdown
+        // Emit event to notify ProfileDropdown — merge formData fields so
+        // firstName/lastName are always present even if result.data wraps them differently
         window.dispatchEvent(new CustomEvent('profileUpdated', {
-          detail: { profile: result.data }
+          detail: {
+            profile: {
+              ...result.data,
+              firstName: formData.firstName ?? result.data?.firstName,
+              lastName: formData.lastName ?? result.data?.lastName,
+              profilePhoto: result.data?.profilePhoto ?? formData.profilePhoto ?? null,
+            }
+          }
         }));
 
         // Call onSuccess to trigger parent to fetch fresh profile data
@@ -479,22 +534,64 @@ const EditProfileModal = ({ isOpen, onClose, profile, onSuccess }: EditProfileMo
                   value={formData.occupation}
                   onChange={(e) => handleInputChange("occupation", e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="Investment Manager"
+                  placeholder="Lawyer, Engineer, etc"
                 />
               </div>
 
-              {/* Address */}
-              <div className="mb-4">
+              {/* Address with autocomplete */}
+              <div className="mb-4" ref={addressBoxRef}>
                 <label className="mb-2 block text-sm font-medium text-black dark:text-white">
                   Street Address
                 </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  placeholder="123 Main Street"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => {
+                      handleInputChange("address", e.target.value);
+                      fetchAddressSuggestions(e.target.value);
+                    }}
+                    onFocus={() => { if (addressSuggestions.length > 0) setShowSuggestions(true); }}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 pr-9 text-sm text-black outline-none focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                    placeholder="Start typing an address…"
+                    autoComplete="off"
+                  />
+                  {/* Loading spinner / pin icon */}
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                    {addressLoading ? (
+                      <svg className="h-4 w-4 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Suggestions dropdown */}
+                  {showSuggestions && addressSuggestions.length > 0 && (
+                    <ul className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                      {addressSuggestions.map((item, i) => (
+                        <li key={i}>
+                          <button
+                            type="button"
+                            onClick={() => selectAddressSuggestion(item)}
+                            className="flex w-full items-start gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                          >
+                            <svg className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="text-black dark:text-white">{item.display_name}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
 
               {/* City & State */}

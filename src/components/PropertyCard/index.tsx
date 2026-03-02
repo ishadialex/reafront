@@ -175,13 +175,13 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
             </p>
             {property.investmentType === "individual" && (
               <p className="mt-1 text-xs text-body-color dark:text-body-color-dark">
-                Amount Required: <span className="font-semibold text-primary">${property.minInvestment.toLocaleString()}</span>
+                {property.category === "for_sale" ? "Minimum Bid" : "Amount Required"}: <span className="font-semibold text-primary">${property.minInvestment.toLocaleString()}</span>
               </p>
             )}
           </div>
           <div className="text-right">
             <p className="text-sm text-body-color dark:text-body-color-dark">
-              Annual ROI
+              {property.category === "for_sale" ? "Possible Annual ROI" : "Annual ROI"}
             </p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               {property.expectedROI}%
