@@ -534,12 +534,12 @@ export default function DashboardOverviewPage() {
       ? [noInvestmentOptions[dayOfMonth % noInvestmentOptions.length]]
       : [];
 
-    // ── Assemble slides: activity first, then weather, then event/contextual ──
+    // ── Assemble slides: casual/contextual → weather → no-investment CTA → account activity ──
     const subtitles: string[] = [
-      ...activitySlides,
-      ...noInvestmentSlides,
-      ...(weatherSlide ? [weatherSlide] : []),
       ...(eventSlide ? [eventSlide.slide] : [contextualSlide]),
+      ...(weatherSlide ? [weatherSlide] : []),
+      ...noInvestmentSlides,
+      ...activitySlides,
     ];
 
     return {
