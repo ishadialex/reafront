@@ -341,20 +341,20 @@ function TransactionContent() {
       </div>
 
       {!loading && filtered.length > 0 && (
-        <div className="mb-4 grid grid-cols-3 gap-2 sm:mb-6 sm:gap-4">
+        <div className="mb-4 grid grid-cols-[auto_1fr_1fr] gap-2 sm:mb-6 sm:gap-4">
           <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
             <p className="text-xs text-body-color dark:text-body-color-dark">Total</p>
             <p className="mt-0.5 text-lg font-bold text-black dark:text-white sm:text-2xl">{filtered.length}</p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
+          <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
             <p className="text-xs text-body-color dark:text-body-color-dark">Credits</p>
-            <p className="mt-0.5 truncate text-lg font-bold text-green-600 dark:text-green-400 sm:text-2xl">
+            <p className="mt-0.5 text-xs font-bold leading-tight text-green-600 dark:text-green-400 sm:text-xl md:text-2xl">
               ${filtered.filter((r) => isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
+          <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-dark sm:p-4">
             <p className="text-xs text-body-color dark:text-body-color-dark">Debits</p>
-            <p className="mt-0.5 truncate text-lg font-bold text-red-600 dark:text-red-400 sm:text-2xl">
+            <p className="mt-0.5 text-xs font-bold leading-tight text-red-600 dark:text-red-400 sm:text-xl md:text-2xl">
               ${filtered.filter((r) => !isCredit(r.type, r.amount) && ["completed", "approved"].includes(r.status)).reduce((s, r) => s + Math.abs(r.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </p>
           </div>
