@@ -238,10 +238,10 @@ function PostCard({ post, isLoggedIn }: { post: ForumPost; isLoggedIn: boolean }
       )}
 
       {/* Action row — Skool style: icon + count inline */}
-      <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-800 flex items-center gap-5">
+      <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-800 flex items-center gap-3 sm:gap-5">
         <button
           onClick={(e) => { e.stopPropagation(); handleLike(); }}
-          className={`flex items-center gap-1.5 text-sm font-semibold transition-all ${
+          className={`flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold transition-all flex-shrink-0 ${
             liked ? "text-primary" : "text-body-color hover:text-primary"
           } ${heartAnim ? "scale-110" : ""}`}
         >
@@ -251,13 +251,13 @@ function PostCard({ post, isLoggedIn }: { post: ForumPost; isLoggedIn: boolean }
         <Link
           href={`/forum/${post.id}#comments`}
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1.5 text-sm font-semibold text-body-color hover:text-primary transition-colors"
+          className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold text-body-color hover:text-primary transition-colors flex-shrink-0"
         >
           <CommentIcon />
           <span>{post.commentsCount.toLocaleString()} {post.commentsCount === 1 ? "comment" : "comments"}</span>
         </Link>
         {post.lastCommentAt && (
-          <span className="ml-auto text-xs text-body-color">
+          <span className="ml-auto text-[11px] sm:text-xs text-body-color whitespace-nowrap">
             {(() => { const t = timeAgo(post.lastCommentAt!); return `Last comment ${t === "just now" ? t : `${t} ago`}`; })()}
           </span>
         )}
@@ -474,10 +474,10 @@ export default function ForumPage() {
                   <div className="h-3 w-4/6 bg-gray-100 dark:bg-gray-800 rounded-full" />
                 </div>
                 {/* Action row: like | comment | last comment */}
-                <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-800 flex items-center gap-5">
-                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                  <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                  <div className="h-3 w-28 bg-gray-100 dark:bg-gray-800 rounded-full ml-auto" />
+                <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-800 flex items-center gap-3 sm:gap-5">
+                  <div className="h-4 w-14 sm:w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                  <div className="h-4 w-20 sm:w-24 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                  <div className="h-3 w-24 sm:w-28 bg-gray-100 dark:bg-gray-800 rounded-full ml-auto" />
                 </div>
               </div>
             ))}
