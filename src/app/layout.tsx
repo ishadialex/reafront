@@ -26,6 +26,7 @@ export default function RootLayout({
   const isDashboard = pathname?.startsWith("/dashboard");
   const isAdmin = pathname?.startsWith("/admin");
   const isAuthPage = pathname === "/signin" || pathname === "/signup" || pathname === "/forgot-password";
+  const isForum = pathname?.startsWith("/forum");
   const [showNewsletterPopup, setShowNewsletterPopup] = useState(false);
   const hasShownPopupRef = useRef(false);
 
@@ -50,16 +51,16 @@ export default function RootLayout({
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // Hide Tawk.to on auth pages
+  // Hide Tawk.to on auth pages and forum pages
   useEffect(() => {
     const tawk = (window as any).Tawk_API;
     if (!tawk) return;
-    if (isAuthPage) {
+    if (isAuthPage || isForum) {
       tawk.hideWidget?.();
     } else {
       tawk.showWidget?.();
     }
-  }, [isAuthPage]);
+  }, [isAuthPage, isForum]);
 
   // Handle closing the popup
   const handleClosePopup = () => {
@@ -134,9 +135,9 @@ export default function RootLayout({
           <div className="isolate">
             {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && <Header />}
             {children}
-            {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && <Footer />}
+            {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && !isForum && <Footer />}
           </div>
-          {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && <ScrollToTop />}
+          {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && !isForum && <ScrollToTop />}
           <NewsletterPopup
             isOpen={showNewsletterPopup}
             onClose={handleClosePopup}

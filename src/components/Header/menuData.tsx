@@ -57,6 +57,12 @@ const menuData: Menu[] = [
     newTab: false,
     submenu: [], // Will be populated dynamically from API
   },
+  {
+    id: 5,
+    title: "Forum",
+    path: "/forum",
+    newTab: false,
+  },
 ];
 
 export default menuData;

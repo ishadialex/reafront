@@ -2,6 +2,9 @@
 
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { io, Socket } from "socket.io-client";
+
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
 import Link from "next/link";
 import DashboardSidebar from "@/components/Dashboard/Sidebar";
 import ThemeToggler from "@/components/Header/ThemeToggler";
@@ -95,7 +98,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [activeDropdown, setActiveDropdown] = useState<'notification' | 'profile' | null>(null);
   const [showSecurityPrompt, setShowSecurityPrompt] = useState(false);
   const router = useRouter();
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   // Check authentication immediately (synchronously) to avoid flash
   // Tokens are in httpOnly cookies, just check the login flag
@@ -135,49 +138,43 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setShowSecurityPrompt(false);
   };
 
-  // Poll to detect if session was revoked from another device
+  // Listen for session_revoked via socket — instant logout when another device
+  // force-logs in, replacing the old polling approach.
   useEffect(() => {
-    let checkInterval = 5000; // Default to 5 seconds as specified by backend
+    if (!isAuthenticated) return;
 
-    const checkSession = async () => {
-      try {
-        const response = await api.validateSession();
+    const token = localStorage.getItem("_at");
+    if (!token) return;
 
-        // Update interval if backend provides one
-        if (response.data?.checkInterval) {
-          checkInterval = response.data.checkInterval;
-        }
-      } catch (err: any) {
-        // If we get a 401, session has been revoked - logout immediately
-        if (err.response?.status === 401) {
-          api.clearTokens();
-          localStorage.removeItem("isLoggedIn");
-          localStorage.removeItem("user");
-          localStorage.removeItem("userEmail");
-          localStorage.removeItem("userName");
-          localStorage.removeItem("userProfilePicture");
-          window.dispatchEvent(new Event("authStateChanged"));
-          router.push("/signin?reason=session_revoked");
-        }
-        // For network errors or server errors, continue polling silently
-      }
-    };
+    const socket = io(SOCKET_URL, {
+      auth: { token },
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+    });
 
-    // Start polling every 5 seconds (or checkInterval from backend)
-    const startPolling = () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      pollingRef.current = setInterval(checkSession, checkInterval);
-    };
+    socketRef.current = socket;
 
-    // Check immediately on mount
-    checkSession();
-    // Start polling
-    startPolling();
+    socket.on("session_revoked", () => {
+      api.clearTokens();
+      localStorage.removeItem("isLoggedIn");
+      localStorage.removeItem("rememberMe");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userProfilePicture");
+      window.dispatchEvent(new Event("authStateChanged"));
+      router.push("/signin?reason=session_revoked");
+    });
+
+    socket.on("connect_error", () => {
+      // Silent — JWT expiry (15 min) is the safety net if socket is unavailable
+    });
 
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, [router]);
+  }, [isAuthenticated, router]);
 
   // Don't render dashboard if not authenticated
   if (!isAuthenticated) {
