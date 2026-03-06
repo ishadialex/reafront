@@ -8,7 +8,7 @@ import "react-international-phone/style.css";
 import "./SignupForm/phoneInput.css";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "") + "/api";
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const SESSION_KEY = "chat_session_token";
 
 interface ChatMsg {
