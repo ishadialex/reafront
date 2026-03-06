@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, ChangeEvent } from "react";
 import { io, Socket } from "socket.io-client";
 import { api } from "@/lib/api";
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "") + "/api";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -19,6 +21,7 @@ interface Reply {
   isStaff: boolean;
   authorName: string;
   createdAt: string;
+  images?: string[];
 }
 
 interface TicketSummary {
@@ -99,9 +102,13 @@ export default function AdminSupportPage() {
   const [replying, setReplying] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
+  const [attachedImages, setAttachedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
   const socketRef = useRef<Socket | null>(null);
   const currentTicketIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const LIMIT = 20;
 
@@ -129,13 +136,18 @@ export default function AdminSupportPage() {
 
   // ── Socket.io connection ─────────────────────────────────────────────────
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("_at") : null;
-    if (!token) return;
-
     const socket = io(SOCKET_URL, {
-      auth: { token },
-      reconnectionAttempts: 5,
+      // Callback form: reads the LATEST localStorage token on every reconnect
+      // attempt — avoids "expired token on reconnect" auth failure
+      auth: (cb: (data: object) => void) => {
+        cb({ token: localStorage.getItem("_at") ?? "" });
+      },
+      // Send httpOnly cookies as fallback auth (for when _at isn't in localStorage)
+      withCredentials: true,
+      // Never stop retrying — Render deploys/restarts disconnect all sockets
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
     });
     socketRef.current = socket;
 
@@ -163,6 +175,12 @@ export default function AdminSupportPage() {
         return [ticket, ...prev];
       });
       setTotal((prev) => prev + 1);
+    });
+
+    // Re-join current ticket room after reconnect so room-based events still work
+    socket.on("connect", () => {
+      const ticketId = currentTicketIdRef.current;
+      if (ticketId) socket.emit("join_ticket", ticketId);
     });
 
     socket.on("connect_error", () => { /* silent */ });
@@ -211,17 +229,66 @@ export default function AdminSupportPage() {
     }
   }
 
+  function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []).slice(0, 5 - attachedImages.length);
+    if (!files.length) return;
+    setAttachedImages((prev) => [...prev, ...files].slice(0, 5));
+    files.forEach((f) => {
+      const url = URL.createObjectURL(f);
+      setImagePreviews((prev) => [...prev, url].slice(0, 5));
+    });
+    e.target.value = "";
+  }
+
+  function removeImage(index: number) {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
   async function handleReply() {
-    if (!selected || !replyText.trim()) return;
+    if (!selected || (!replyText.trim() && attachedImages.length === 0)) return;
     setReplying(true);
+
+    const currentFiles = [...attachedImages];
+    const currentPreviews = [...imagePreviews];
+    setAttachedImages([]);
+    setImagePreviews([]);
+
     try {
-      const res = await api.adminReplyToTicket(selected.id, replyText.trim());
-      if (res.success && res.data) {
+      let data: any;
+
+      if (currentFiles.length > 0) {
+        // Use FormData so multer on the server can parse the images
+        const token = typeof window !== "undefined" ? localStorage.getItem("_at") : null;
+        const fd = new FormData();
+        if (replyText.trim()) fd.append("message", replyText.trim());
+        currentFiles.forEach((f) => fd.append("images", f));
+        const res = await fetch(
+          `${API_BASE}/admin/support/${encodeURIComponent(selected.id)}/reply`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: fd,
+          }
+        );
+        const json = await res.json();
+        data = json.success ? json.data : null;
+        currentPreviews.forEach((u) => URL.revokeObjectURL(u));
+      } else {
+        const res = await api.adminReplyToTicket(selected.id, replyText.trim());
+        data = res.success ? res.data : null;
+      }
+
+      if (data) {
         setSelected((prev) =>
           prev
             ? {
                 ...prev,
-                replies: [...prev.replies, res.data],
+                replies: [...prev.replies, data],
                 status: prev.status === "open" ? "in_progress" : prev.status,
               }
             : prev
@@ -501,15 +568,30 @@ export default function AdminSupportPage() {
                         </span>
                         <span className="text-xs text-gray-400">{fmt(reply.createdAt)}</span>
                       </div>
-                      <div
-                        className={`rounded-xl px-4 py-3 text-sm whitespace-pre-wrap break-words max-w-[85%] ${
-                          reply.isStaff
-                            ? "bg-indigo-600 text-white"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
-                        }`}
-                      >
-                        {reply.message}
-                      </div>
+                      {reply.message && (
+                        <div
+                          className={`rounded-xl px-4 py-3 text-sm whitespace-pre-wrap break-words max-w-[85%] ${
+                            reply.isStaff
+                              ? "bg-indigo-600 text-white"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                          }`}
+                        >
+                          {reply.message}
+                        </div>
+                      )}
+                      {reply.images && reply.images.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1 max-w-[85%]">
+                          {reply.images.map((url, i) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt="attachment"
+                              className="rounded-xl max-h-48 max-w-[200px] object-cover cursor-pointer border border-gray-200 dark:border-gray-700"
+                              onClick={() => window.open(url, "_blank")}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -519,6 +601,25 @@ export default function AdminSupportPage() {
               {/* Reply box */}
               {selected.status !== "closed" && selected.status !== "resolved" ? (
                 <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 shrink-0">
+                  {/* Image previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {imagePreviews.map((url, i) => (
+                        <div key={i} className="relative">
+                          <img src={url} alt="" className="h-16 w-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                          <button
+                            onClick={() => removeImage(i)}
+                            className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                            aria-label="Remove image"
+                          >
+                            <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <textarea
                     rows={3}
                     value={replyText}
@@ -529,12 +630,34 @@ export default function AdminSupportPage() {
                     placeholder="Type your reply…"
                     className="w-full resize-none rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-xs text-gray-400 hidden sm:block">Ctrl+Enter to send</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={attachedImages.length >= 5}
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 px-2.5 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 transition-colors"
+                        title="Attach image (max 5)"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        Image{attachedImages.length > 0 ? ` (${attachedImages.length})` : ""}
+                      </button>
+                      <span className="text-xs text-gray-400 hidden sm:block">Ctrl+Enter to send</span>
+                    </div>
                     <button
                       onClick={handleReply}
-                      disabled={replying || !replyText.trim()}
-                      className="ml-auto flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={replying || (!replyText.trim() && attachedImages.length === 0)}
+                      className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {replying ? (
                         <>
