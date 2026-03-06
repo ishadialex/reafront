@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, ChangeEvent } from "react";
+import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { usePathname } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { PhoneInput } from "react-international-phone";
@@ -80,12 +80,43 @@ export default function SupportWidget() {
     return () => clearTimeout(t);
   }, [offlineSent]);
 
-  // Fetch online/offline status on mount
+  // Fetch online/offline status on mount and connect socket immediately
+  // (socket must be alive even when widget is closed so chat_status events are received in real-time)
   useEffect(() => {
+    const token = getOrCreateToken();
+    sessionTokenRef.current = token;
+
+    // Fetch initial status
     fetch(`${API_BASE}/chat/status`)
       .then((r) => r.json())
       .then((res) => { if (res.success) setIsOnline(res.data.isOnline); })
       .catch(() => {});
+
+    // Persistent socket connection — keeps chat_status & chat_reply live at all times
+    const socket = io(`${SOCKET_URL}/chat`, {
+      auth: { sessionToken: token },
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
+    socket.on("chat_status", ({ isOnline }: { isOnline: boolean }) => {
+      setIsOnline(isOnline);
+    });
+    socket.on("chat_reply", (msg: ChatMsg) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fire-and-forget page update on every navigation (only if session exists)
@@ -104,56 +135,22 @@ export default function SupportWidget() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, open]);
 
-  const connectSocket = useCallback((token: string) => {
-    if (socketRef.current?.connected) return;
-
-    const socket = io(`${SOCKET_URL}/chat`, {
-      auth: { sessionToken: token },
-      transports: ["websocket", "polling"],
-    });
-
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
-
-    socket.on("chat_status", ({ isOnline }: { isOnline: boolean }) => {
-      setIsOnline(isOnline);
-    });
-
-    socket.on("chat_reply", (msg: ChatMsg) => {
-      setMessages((prev) => {
-        // deduplicate by id
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        return [...prev, msg];
-      });
-    });
-
-    socketRef.current = socket;
-  }, []);
-
-  // Initialise session + socket when widget opens for the first time
+  // Load chat history when widget opens for the first time
+  const historyLoadedRef = useRef(false);
   useEffect(() => {
-    if (!open) return;
+    if (!open || historyLoadedRef.current) return;
+    historyLoadedRef.current = true;
 
-    const token = getOrCreateToken();
-    sessionTokenRef.current = token;
-
-    // Load history
+    const token = sessionTokenRef.current || getOrCreateToken();
     fetch(`${API_BASE}/chat/history/${token}`)
       .then((r) => r.json())
       .then((res) => {
         if (res.success && res.data.length > 0) {
           setMessages(res.data);
-          setNameSubmitted(true); // already chatted before
+          setNameSubmitted(true);
         }
       })
       .catch(() => {});
-
-    connectSocket(token);
-
-    return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
