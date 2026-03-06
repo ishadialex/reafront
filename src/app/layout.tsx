@@ -4,10 +4,10 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
 import NewsletterPopup from "@/components/NewsletterPopup";
+import SupportWidget from "@/components/SupportWidget";
 import { Inter } from "next/font/google";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import Script from "next/script";
 import {
   shouldShowNewsletterPopup,
   markNewsletterPopupShown,
@@ -50,17 +50,6 @@ export default function RootLayout({
 
     return () => clearTimeout(timer);
   }, [pathname]);
-
-  // Hide Tawk.to on auth pages and forum pages
-  useEffect(() => {
-    const tawk = (window as any).Tawk_API;
-    if (!tawk) return;
-    if (isAuthPage || isForum) {
-      tawk.hideWidget?.();
-    } else {
-      tawk.showWidget?.();
-    }
-  }, [isAuthPage, isForum]);
 
   // Handle closing the popup
   const handleClosePopup = () => {
@@ -142,35 +131,10 @@ export default function RootLayout({
             isOpen={showNewsletterPopup}
             onClose={handleClosePopup}
           />
+          {!isPDFViewer && !isAdmin && !isAuthPage && !isForum && (
+            <SupportWidget />
+          )}
         </Providers>
-        <Script
-          id="tawk-to"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              Tawk_API.customStyle = { visibility: { bubble: { show: false } } };
-              Tawk_API.onLoad = function() {
-                var authPages = ['/signin', '/signup'];
-                if (authPages.indexOf(window.location.pathname) !== -1 ||
-                    window.location.pathname.startsWith('/admin')) {
-                  Tawk_API.hideWidget();
-                  return;
-                }
-                // Always start minimized — shows only the chat bubble icon, no attention grabber text.
-                Tawk_API.minimize();
-              };
-              (function(){
-                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-                s1.async=true;
-                s1.src='https://embed.tawk.to/69973ff873d8cb1c357e6198/1jhrd3pkj';
-                s1.charset='UTF-8';
-                s1.setAttribute('crossorigin','*');
-                s0.parentNode.insertBefore(s1,s0);
-              })();
-            `,
-          }}
-        />
       </body>
     </html>
   );

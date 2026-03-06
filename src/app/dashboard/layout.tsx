@@ -100,24 +100,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const socketRef = useRef<Socket | null>(null);
 
-  // Check authentication immediately (synchronously) to avoid flash
-  // Tokens are in httpOnly cookies, just check the login flag
-  const isLoggedIn = typeof window !== 'undefined' ? localStorage.getItem("isLoggedIn") : null;
-  const [isAuthenticated] = useState(
-    isLoggedIn === "true"
-  );
+  // null = not yet checked (SSR / first render), false = not logged in, true = authenticated
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // Redirect if not authenticated
+  // Resolve auth state client-side only to avoid SSR/hydration mismatch
   useEffect(() => {
-    if (isLoggedIn !== "true") {
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (!loggedIn) {
       router.push("/signin");
+    } else {
+      setIsAuthenticated(true);
     }
-  }, [router, isLoggedIn]);
+  }, [router]);
 
   // Show security prompt only once per session (not on every page refresh)
   // sessionStorage is cleared when the browser tab is closed, so it resets on each new login session
   useEffect(() => {
-    if (isLoggedIn !== "true") return;
+    if (!isAuthenticated) return;
     if (sessionStorage.getItem("securityPromptChecked")) return;
     sessionStorage.setItem("securityPromptChecked", "true");
 
@@ -132,7 +131,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       .catch(() => {
         // silently fail
       });
-  }, [isLoggedIn]);
+  }, [isAuthenticated]);
 
   const dismissSecurityPrompt = () => {
     setShowSecurityPrompt(false);
@@ -176,7 +175,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, [isAuthenticated, router]);
 
-  // Don't render dashboard if not authenticated
+  // Don't render dashboard until auth is resolved (null = still checking)
   if (!isAuthenticated) {
     return null;
   }

@@ -92,7 +92,6 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (v: stri
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3 space-y-3">
-      {/* Date row */}
       <div>
         <p className="text-[10px] font-semibold text-body-color uppercase tracking-wider mb-1.5">Date</p>
         <div className="flex gap-2">
@@ -107,7 +106,6 @@ function DateTimePicker({ value, onChange }: { value: string; onChange: (v: stri
           </SBox>
         </div>
       </div>
-      {/* Time row */}
       <div>
         <p className="text-[10px] font-semibold text-body-color uppercase tracking-wider mb-1.5">Time (UTC)</p>
         <div className="flex items-center gap-2">
@@ -172,13 +170,13 @@ function EditPostModal({ post, onClose, onSaved }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-[#1c1c2e] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-0 sm:px-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white dark:bg-[#1c1c2e] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl border-t border-gray-200 dark:border-gray-700 sm:border overflow-hidden">
+        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <h2 className="font-bold text-dark dark:text-white text-sm">Edit Post</h2>
-          <button onClick={onClose} className="text-body-color hover:text-dark dark:hover:text-white text-lg leading-none">✕</button>
+          <button onClick={onClose} className="text-body-color hover:text-dark dark:hover:text-white text-lg leading-none p-1">✕</button>
         </div>
-        <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-4 sm:p-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {err && <p className="text-xs text-red-500">{err}</p>}
           <div>
             <label className="block text-xs font-semibold text-body-color uppercase tracking-wider mb-1">Title</label>
@@ -199,8 +197,8 @@ function EditPostModal({ post, onClose, onSaved }: {
             </div>
           </div>
         </div>
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-          <button onClick={onClose} className="text-sm text-body-color hover:text-dark dark:hover:text-white transition-colors">Cancel</button>
+        <div className="px-4 sm:px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="text-sm text-body-color hover:text-dark dark:hover:text-white transition-colors px-3 py-2">Cancel</button>
           <button onClick={save} disabled={saving} className="text-sm font-semibold bg-primary text-white px-5 py-2 rounded-full hover:bg-primary/90 disabled:opacity-50 transition-colors">
             {saving ? "Saving…" : "Save"}
           </button>
@@ -235,15 +233,15 @@ function EditCommentModal({ comment, onClose, onSaved }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-[#1c1c2e] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-0 sm:px-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white dark:bg-[#1c1c2e] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl border-t border-gray-200 dark:border-gray-700 sm:border overflow-hidden">
+        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <h2 className="font-bold text-dark dark:text-white text-sm">
             Edit {comment.parentId ? "Reply" : "Comment"}
           </h2>
-          <button onClick={onClose} className="text-body-color hover:text-dark dark:hover:text-white text-lg leading-none">✕</button>
+          <button onClick={onClose} className="text-body-color hover:text-dark dark:hover:text-white text-lg leading-none p-1">✕</button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-4 sm:p-5 space-y-4">
           {err && <p className="text-xs text-red-500">{err}</p>}
           <div>
             <label className="block text-xs font-semibold text-body-color uppercase tracking-wider mb-1">Content</label>
@@ -260,8 +258,8 @@ function EditCommentModal({ comment, onClose, onSaved }: {
             </div>
           </div>
         </div>
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-          <button onClick={onClose} className="text-sm text-body-color hover:text-dark dark:hover:text-white transition-colors">Cancel</button>
+        <div className="px-4 sm:px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="text-sm text-body-color hover:text-dark dark:hover:text-white transition-colors px-3 py-2">Cancel</button>
           <button onClick={save} disabled={saving} className="text-sm font-semibold bg-primary text-white px-5 py-2 rounded-full hover:bg-primary/90 disabled:opacity-50 transition-colors">
             {saving ? "Saving…" : "Save"}
           </button>
@@ -294,8 +292,8 @@ function CommentsPanel({ postId }: { postId: string }) {
     setDeletingId(null);
   }
 
-  if (loading) return <div className="px-6 py-4 text-xs text-body-color animate-pulse">Loading comments…</div>;
-  if (!comments.length) return <div className="px-6 py-4 text-xs text-body-color">No comments yet.</div>;
+  if (loading) return <div className="px-4 sm:px-6 py-4 text-xs text-body-color animate-pulse">Loading comments…</div>;
+  if (!comments.length) return <div className="px-4 sm:px-6 py-4 text-xs text-body-color">No comments yet.</div>;
 
   const roots = comments.filter(c => !c.parentId);
   const replies = comments.filter(c => c.parentId);
@@ -312,45 +310,49 @@ function CommentsPanel({ postId }: { postId: string }) {
       {roots.map(comment => (
         <div key={comment.id} className="border-b border-gray-50 dark:border-gray-800 last:border-0">
           {/* Root comment */}
-          <div className={`px-6 py-3 flex items-start gap-3 ${comment.isDeleted ? "opacity-50" : ""}`}>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                <span className="text-xs font-semibold text-dark dark:text-white">
-                  {comment.author.firstName} {comment.author.lastName}
-                </span>
-                <span className="text-[10px] text-body-color">{comment.author.email}</span>
-                {comment.isDeleted && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">deleted</span>}
+          <div className={`px-4 sm:px-6 py-3 ${comment.isDeleted ? "opacity-50" : ""}`}>
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                  <span className="text-xs font-semibold text-dark dark:text-white">
+                    {comment.author.firstName} {comment.author.lastName}
+                  </span>
+                  <span className="text-[10px] text-body-color truncate max-w-[160px] sm:max-w-none">{comment.author.email}</span>
+                  {comment.isDeleted && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">deleted</span>}
+                </div>
+                <p className="text-xs text-dark/80 dark:text-white/80 leading-relaxed">{comment.content}</p>
+                <p className="text-[10px] text-body-color mt-1">
+                  {fmt(comment.createdAt)} · {comment.likesCount} likes
+                </p>
               </div>
-              <p className="text-xs text-dark/80 dark:text-white/80 leading-relaxed">{comment.content}</p>
-              <p className="text-[10px] text-body-color mt-1">
-                Created: {fmt(comment.createdAt)} · Updated: {fmt(comment.updatedAt)} · {comment.likesCount} likes
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button onClick={() => setEditingComment(comment)} className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">Edit</button>
-              <button onClick={() => deleteComment(comment.id)} disabled={deletingId === comment.id} className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50">Delete</button>
+              <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+                <button onClick={() => setEditingComment(comment)} className="text-xs text-primary hover:text-primary/80 font-medium transition-colors px-2 py-1">Edit</button>
+                <button onClick={() => deleteComment(comment.id)} disabled={deletingId === comment.id} className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50 px-2 py-1">Del</button>
+              </div>
             </div>
           </div>
 
           {/* Replies */}
           {replies.filter(r => r.parentId === comment.id).map(reply => (
-            <div key={reply.id} className={`pl-12 pr-6 py-2.5 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-50 dark:border-gray-800 flex items-start gap-3 ${reply.isDeleted ? "opacity-50" : ""}`}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  <span className="text-xs font-semibold text-dark dark:text-white">
-                    {reply.author.firstName} {reply.author.lastName}
-                  </span>
-                  {reply.replyToName && <span className="text-[10px] text-primary">→ @{reply.replyToName}</span>}
-                  {reply.isDeleted && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">deleted</span>}
+            <div key={reply.id} className={`pl-6 sm:pl-12 pr-4 sm:pr-6 py-2.5 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-50 dark:border-gray-800 ${reply.isDeleted ? "opacity-50" : ""}`}>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <span className="text-xs font-semibold text-dark dark:text-white">
+                      {reply.author.firstName} {reply.author.lastName}
+                    </span>
+                    {reply.replyToName && <span className="text-[10px] text-primary">→ @{reply.replyToName}</span>}
+                    {reply.isDeleted && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">deleted</span>}
+                  </div>
+                  <p className="text-xs text-dark/80 dark:text-white/80 leading-relaxed">{reply.content}</p>
+                  <p className="text-[10px] text-body-color mt-1">
+                    {fmt(reply.createdAt)} · {reply.likesCount} likes
+                  </p>
                 </div>
-                <p className="text-xs text-dark/80 dark:text-white/80 leading-relaxed">{reply.content}</p>
-                <p className="text-[10px] text-body-color mt-1">
-                  Created: {fmt(reply.createdAt)} · Updated: {fmt(reply.updatedAt)} · {reply.likesCount} likes
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => setEditingComment(reply)} className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">Edit</button>
-                <button onClick={() => deleteComment(reply.id)} disabled={deletingId === reply.id} className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50">Delete</button>
+                <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+                  <button onClick={() => setEditingComment(reply)} className="text-xs text-primary hover:text-primary/80 font-medium transition-colors px-2 py-1">Edit</button>
+                  <button onClick={() => deleteComment(reply.id)} disabled={deletingId === reply.id} className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50 px-2 py-1">Del</button>
+                </div>
               </div>
             </div>
           ))}
@@ -412,8 +414,8 @@ export default function AdminForumPage() {
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-dark dark:text-white">Forum Management</h1>
+        <div className="mb-5 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-dark dark:text-white">Forum Management</h1>
           <p className="text-sm text-body-color mt-1">{total} total posts</p>
         </div>
 
@@ -428,7 +430,7 @@ export default function AdminForumPage() {
           />
         )}
 
-        {/* Posts table */}
+        {/* Posts list */}
         <div className="bg-white dark:bg-[#1c1c2e] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
           {loading ? (
             <div className="py-20 text-center text-sm text-body-color animate-pulse">Loading posts…</div>
@@ -438,63 +440,64 @@ export default function AdminForumPage() {
             posts.map(post => (
               <div key={post.id} className={`border-b border-gray-100 dark:border-gray-700 last:border-0 ${post.isDeleted ? "opacity-60" : ""}`}>
 
-                {/* Post row */}
-                <div className="px-5 py-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        {post.isPinned && (
-                          <span className="text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pinned</span>
-                        )}
-                        {post.isDeleted && (
-                          <span className="text-[10px] font-semibold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Deleted</span>
-                        )}
-                        <span className="text-sm font-bold text-dark dark:text-white truncate">{post.title}</span>
-                      </div>
-                      <p className="text-xs text-dark/70 dark:text-white/70 line-clamp-2 mb-2">{post.content}</p>
-                      <div className="flex items-center gap-3 flex-wrap text-[11px] text-body-color">
-                        <span className="font-medium">{post.author.firstName} {post.author.lastName}</span>
-                        <span>{post.author.email}</span>
-                        <span>👍 {post.likesCount}</span>
-                        <span>💬 {post.commentsCount}</span>
-                        <span>Created: {fmt(post.createdAt)}</span>
-                        <span>Updated: {fmt(post.updatedAt)}</span>
-                      </div>
-                    </div>
+                {/* Post row — stacks on mobile, side-by-side on sm+ */}
+                <div className="px-4 sm:px-5 py-4">
+                  {/* Badges + title */}
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    {post.isPinned && (
+                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pinned</span>
+                    )}
+                    {post.isDeleted && (
+                      <span className="text-[10px] font-semibold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Deleted</span>
+                    )}
+                    <span className="text-sm font-bold text-dark dark:text-white line-clamp-1">{post.title}</span>
+                  </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                      <button
-                        onClick={() => togglePin(post)}
-                        disabled={togglingPin === post.id}
-                        className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
-                          post.isPinned
-                            ? "border-primary text-primary hover:bg-primary/10"
-                            : "border-gray-200 dark:border-gray-600 text-body-color hover:border-primary hover:text-primary"
-                        }`}
-                      >
-                        {post.isPinned ? "Unpin" : "Pin"}
-                      </button>
-                      <button
-                        onClick={() => setEditingPost(post)}
-                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 text-body-color hover:border-primary hover:text-primary transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deletePost(post.id)}
-                        disabled={deletingId === post.id}
-                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-red-200 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => setExpandedId(expandedId === post.id ? null : post.id)}
-                        className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-dark dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                      >
-                        {expandedId === post.id ? "Hide" : `Comments (${post.commentsCount})`}
-                      </button>
-                    </div>
+                  {/* Content preview */}
+                  <p className="text-xs text-dark/70 dark:text-white/70 line-clamp-2 mb-2">{post.content}</p>
+
+                  {/* Meta row */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-body-color mb-3">
+                    <span className="font-medium">{post.author.firstName} {post.author.lastName}</span>
+                    <span className="hidden sm:inline truncate max-w-[200px]">{post.author.email}</span>
+                    <span>👍 {post.likesCount}</span>
+                    <span>💬 {post.commentsCount}</span>
+                    <span className="hidden sm:inline">Created: {fmt(post.createdAt)}</span>
+                    <span className="sm:hidden">{new Date(post.createdAt).toLocaleDateString("en-GB")}</span>
+                  </div>
+
+                  {/* Action buttons — full-width row that wraps cleanly */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => togglePin(post)}
+                      disabled={togglingPin === post.id}
+                      className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
+                        post.isPinned
+                          ? "border-primary text-primary hover:bg-primary/10"
+                          : "border-gray-200 dark:border-gray-600 text-body-color hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      {post.isPinned ? "Unpin" : "Pin"}
+                    </button>
+                    <button
+                      onClick={() => setEditingPost(post)}
+                      className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 text-body-color hover:border-primary hover:text-primary transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deletePost(post.id)}
+                      disabled={deletingId === post.id}
+                      className="text-xs font-medium px-3 py-1.5 rounded-full border border-red-200 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                    >
+                      {deletingId === post.id ? "Deleting…" : "Delete"}
+                    </button>
+                    <button
+                      onClick={() => setExpandedId(expandedId === post.id ? null : post.id)}
+                      className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-dark dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      {expandedId === post.id ? "Hide Comments" : `Comments (${post.commentsCount})`}
+                    </button>
                   </div>
                 </div>
 

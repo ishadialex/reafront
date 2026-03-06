@@ -23,6 +23,12 @@ function fmt(dateStr: string) {
   });
 }
 
+function fmtShort(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+}
+
 function toInputDatetime(dateStr: string) {
   return new Date(dateStr).toISOString().slice(0, 16);
 }
@@ -160,14 +166,14 @@ function Stars({ rating }: { rating: number }) {
 function EditReviewModal({ review, onClose, onSaved }: {
   review: Review; onClose: () => void; onSaved: (r: Review) => void;
 }) {
-  const [title, setTitle]       = useState(review.title);
-  const [body, setBody]         = useState(review.body);
-  const [rating, setRating]     = useState(String(review.rating));
-  const [approved, setApproved] = useState(review.isApproved);
+  const [title, setTitle]         = useState(review.title);
+  const [body, setBody]           = useState(review.body);
+  const [rating, setRating]       = useState(String(review.rating));
+  const [approved, setApproved]   = useState(review.isApproved);
   const [createdAt, setCreatedAt] = useState(toInputDatetime(review.createdAt));
   const [updatedAt, setUpdatedAt] = useState(toInputDatetime(review.updatedAt));
-  const [saving, setSaving]     = useState(false);
-  const [err, setErr]           = useState("");
+  const [saving, setSaving]       = useState(false);
+  const [err, setErr]             = useState("");
 
   async function save() {
     setSaving(true); setErr("");
@@ -176,8 +182,7 @@ function EditReviewModal({ review, onClose, onSaved }: {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          body,
+          title, body,
           rating: Number(rating),
           isApproved: approved,
           createdAt: new Date(createdAt).toISOString(),
@@ -192,13 +197,13 @@ function EditReviewModal({ review, onClose, onSaved }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-[#1c1c2e] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-0 sm:px-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white dark:bg-[#1c1c2e] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl border-t border-gray-200 dark:border-gray-700 sm:border overflow-hidden">
+        <div className="px-4 sm:px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <h2 className="font-bold text-dark dark:text-white text-sm">Edit Review</h2>
-          <button onClick={onClose} className="text-body-color hover:text-dark dark:hover:text-white text-lg leading-none">✕</button>
+          <button onClick={onClose} className="text-body-color hover:text-dark dark:hover:text-white text-lg leading-none p-1">✕</button>
         </div>
-        <div className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
+        <div className="p-4 sm:p-5 space-y-4 max-h-[78vh] overflow-y-auto">
           {err && <p className="text-xs text-red-500">{err}</p>}
 
           <div>
@@ -244,8 +249,8 @@ function EditReviewModal({ review, onClose, onSaved }: {
             </div>
           </div>
         </div>
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-          <button onClick={onClose} className="text-sm text-body-color hover:text-dark dark:hover:text-white transition-colors">Cancel</button>
+        <div className="px-4 sm:px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
+          <button onClick={onClose} className="text-sm text-body-color hover:text-dark dark:hover:text-white transition-colors px-3 py-2">Cancel</button>
           <button onClick={save} disabled={saving} className="text-sm font-semibold bg-primary text-white px-5 py-2 rounded-full hover:bg-primary/90 disabled:opacity-50 transition-colors">
             {saving ? "Saving…" : "Save"}
           </button>
@@ -260,13 +265,13 @@ function EditReviewModal({ review, onClose, onSaved }: {
 type Filter = "all" | "approved" | "pending";
 
 export default function AdminReviewsPage() {
-  const [reviews, setReviews]     = useState<Review[]>([]);
-  const [total, setTotal]         = useState(0);
-  const [page, setPage]           = useState(1);
-  const [pages, setPages]         = useState(1);
-  const [loading, setLoading]     = useState(true);
+  const [reviews, setReviews]       = useState<Review[]>([]);
+  const [total, setTotal]           = useState(0);
+  const [page, setPage]             = useState(1);
+  const [pages, setPages]           = useState(1);
+  const [loading, setLoading]       = useState(true);
   const [fetchError, setFetchError] = useState("");
-  const [filter, setFilter]       = useState<Filter>("all");
+  const [filter, setFilter]         = useState<Filter>("all");
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [deletingId, setDeletingId]       = useState<string | null>(null);
   const [togglingId, setTogglingId]       = useState<string | null>(null);
@@ -329,8 +334,8 @@ export default function AdminReviewsPage() {
       <div className="max-w-5xl mx-auto">
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-dark dark:text-white">Reviews Management</h1>
+        <div className="mb-5 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-dark dark:text-white">Reviews Management</h1>
           <p className="text-sm text-body-color mt-1">{total} total reviews</p>
         </div>
 
@@ -365,73 +370,69 @@ export default function AdminReviewsPage() {
           ) : reviews.length === 0 ? (
             <div className="py-20 text-center text-sm text-body-color">No reviews found.</div>
           ) : reviews.map(review => (
-            <div key={review.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0 px-5 py-4">
-              <div className="flex items-start gap-4">
-                <div className="flex-1 min-w-0">
+            <div key={review.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0 px-4 sm:px-5 py-4">
 
-                  {/* Property + user */}
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    {!review.isApproved && (
-                      <span className="text-[10px] font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-1.5 py-0.5 rounded">Pending</span>
-                    )}
-                    {review.isApproved && (
-                      <span className="text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded">Approved</span>
-                    )}
-                    <span className="text-sm font-bold text-dark dark:text-white truncate">
-                      {review.property?.title ?? review.propertyId}
-                    </span>
-                  </div>
+              {/* Status badge + property name */}
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                {review.isApproved ? (
+                  <span className="text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded">Approved</span>
+                ) : (
+                  <span className="text-[10px] font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-1.5 py-0.5 rounded">Pending</span>
+                )}
+                <span className="text-sm font-bold text-dark dark:text-white line-clamp-1">
+                  {review.property?.title ?? review.propertyId}
+                </span>
+              </div>
 
-                  {/* User info + rating */}
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <span className="text-xs font-medium text-dark/70 dark:text-white/70">
-                      {review.user ? `${review.user.firstName} ${review.user.lastName}` : "Unknown"}
-                    </span>
-                    {review.user?.email && (
-                      <span className="text-[11px] text-body-color">{review.user.email}</span>
-                    )}
-                    <Stars rating={review.rating} />
-                  </div>
+              {/* Author + rating */}
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="text-xs font-medium text-dark/70 dark:text-white/70">
+                  {review.user ? `${review.user.firstName} ${review.user.lastName}` : "Unknown"}
+                </span>
+                {review.user?.email && (
+                  <span className="text-[11px] text-body-color hidden sm:inline">{review.user.email}</span>
+                )}
+                <Stars rating={review.rating} />
+              </div>
 
-                  {/* Title + body */}
-                  {review.title && (
-                    <p className="text-sm font-semibold text-dark dark:text-white mb-0.5">{review.title}</p>
-                  )}
-                  <p className="text-xs text-dark/70 dark:text-white/70 line-clamp-2">{review.body}</p>
+              {/* Review title + body */}
+              {review.title && (
+                <p className="text-sm font-semibold text-dark dark:text-white mb-0.5">{review.title}</p>
+              )}
+              <p className="text-xs text-dark/70 dark:text-white/70 line-clamp-2 mb-2">{review.body}</p>
 
-                  {/* Dates */}
-                  <p className="text-[11px] text-body-color mt-1.5">
-                    Created: {fmt(review.createdAt)} · Updated: {fmt(review.updatedAt)}
-                  </p>
-                </div>
+              {/* Date */}
+              <p className="text-[11px] text-body-color mb-3">
+                <span className="hidden sm:inline">Created: {fmt(review.createdAt)} · Updated: {fmt(review.updatedAt)}</span>
+                <span className="sm:hidden">{fmtShort(review.createdAt)}</span>
+              </p>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                  <button
-                    onClick={() => toggleApprove(review)}
-                    disabled={togglingId === review.id}
-                    className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
-                      review.isApproved
-                        ? "border-yellow-300 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
-                        : "border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                    }`}
-                  >
-                    {review.isApproved ? "Unapprove" : "Approve"}
-                  </button>
-                  <button
-                    onClick={() => setEditingReview(review)}
-                    className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 text-body-color hover:border-primary hover:text-primary transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteReview(review.id)}
-                    disabled={deletingId === review.id}
-                    className="text-xs font-medium px-3 py-1.5 rounded-full border border-red-200 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                </div>
+              {/* Action buttons — always on their own row, wrap cleanly */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => toggleApprove(review)}
+                  disabled={togglingId === review.id}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50 ${
+                    review.isApproved
+                      ? "border-yellow-300 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                      : "border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                  }`}
+                >
+                  {togglingId === review.id ? "…" : review.isApproved ? "Unapprove" : "Approve"}
+                </button>
+                <button
+                  onClick={() => setEditingReview(review)}
+                  className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 text-body-color hover:border-primary hover:text-primary transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => deleteReview(review.id)}
+                  disabled={deletingId === review.id}
+                  className="text-xs font-medium px-3 py-1.5 rounded-full border border-red-200 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                >
+                  {deletingId === review.id ? "Deleting…" : "Delete"}
+                </button>
               </div>
             </div>
           ))}
