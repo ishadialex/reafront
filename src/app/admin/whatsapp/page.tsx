@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "") + "/api";
 
@@ -9,11 +10,24 @@ function getToken(): string {
   return localStorage.getItem("_at") ?? "";
 }
 
-function authHeaders() {
-  return { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" };
+/** Fetch wrapper that sends both the httpOnly cookie AND the Bearer header.
+ *  Cookie is the primary auth on production (cross-domain Vercel→Render).
+ *  Bearer header is the fallback for local dev. */
+function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getToken();
+  return fetch(url, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers as Record<string, string> ?? {}),
+    },
+  });
 }
 
 export default function WhatsAppAdminPage() {
+  const router = useRouter();
   const [waConnected, setWaConnected]   = useState(false);
   const [hasQR, setHasQR]               = useState(false);
   const [qrDataUrl, setQrDataUrl]       = useState<string | null>(null);
@@ -24,13 +38,22 @@ export default function WhatsAppAdminPage() {
   const [resetLoading, setResetLoading]     = useState(false);
   const [chatToggling, setChatToggling]     = useState(false);
   const [resetMsg, setResetMsg]             = useState("");
+  const [authError, setAuthError]           = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  /** Stops polling and marks auth error — call on any 401 response */
+  const handleUnauthorized = useCallback(() => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    setAuthError(true);
+    setStatusLoading(false);
+  }, []);
+
   // ── Fetch WA status ─────────────────────────────────────────────────────────
-  const fetchWaStatus = useCallback(async () => {
+  const fetchWaStatus = useCallback(async (): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_BASE}/admin/whatsapp/status`, { headers: authHeaders() });
+      const res = await authFetch(`${API_BASE}/admin/whatsapp/status`);
+      if (res.status === 401) { handleUnauthorized(); return false; }
       const data = await res.json();
       if (data.success) {
         setWaConnected(data.data.connected);
@@ -41,13 +64,14 @@ export default function WhatsAppAdminPage() {
     } catch {}
     setStatusLoading(false);
     return false;
-  }, []);
+  }, [handleUnauthorized]);
 
   // ── Fetch QR code ────────────────────────────────────────────────────────────
   const fetchQR = useCallback(async () => {
     setQrLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/whatsapp/qr`, { headers: authHeaders() });
+      const res = await authFetch(`${API_BASE}/admin/whatsapp/qr`);
+      if (res.status === 401) { handleUnauthorized(); return; }
       const data = await res.json();
       if (data.success && data.data?.qr) {
         setQrDataUrl(data.data.qr);
@@ -56,16 +80,17 @@ export default function WhatsAppAdminPage() {
       }
     } catch {}
     setQrLoading(false);
-  }, []);
+  }, [handleUnauthorized]);
 
   // ── Fetch chat widget status ─────────────────────────────────────────────────
   const fetchChatStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/chat/status`, { headers: authHeaders() });
+      const res = await authFetch(`${API_BASE}/admin/chat/status`);
+      if (res.status === 401) { handleUnauthorized(); return; }
       const data = await res.json();
       if (data.success) setChatOnline(data.data.isOnline);
     } catch {}
-  }, []);
+  }, [handleUnauthorized]);
 
   // ── Initial load ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -75,6 +100,7 @@ export default function WhatsAppAdminPage() {
 
   // ── Auto-poll QR every 6s when not connected ─────────────────────────────────
   useEffect(() => {
+    if (authError) return; // don't poll if not authenticated
     if (pollRef.current) clearInterval(pollRef.current);
 
     if (!waConnected) {
@@ -93,7 +119,7 @@ export default function WhatsAppAdminPage() {
     }
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [waConnected, fetchQR, fetchWaStatus]);
+  }, [waConnected, authError, fetchQR, fetchWaStatus]);
 
   // ── Reset WhatsApp ────────────────────────────────────────────────────────────
   async function handleReset() {
@@ -101,10 +127,7 @@ export default function WhatsAppAdminPage() {
     setResetLoading(true);
     setResetMsg("");
     try {
-      const res = await fetch(`${API_BASE}/admin/whatsapp/reset`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
+      const res = await authFetch(`${API_BASE}/admin/whatsapp/reset`, { method: "POST" });
       const data = await res.json();
       setResetMsg(data.message ?? (data.success ? "Reset successful." : "Reset failed."));
       if (data.success) {
@@ -124,15 +147,38 @@ export default function WhatsAppAdminPage() {
   async function handleChatToggle() {
     setChatToggling(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/chat/status`, {
+      const res = await authFetch(`${API_BASE}/admin/chat/status`, {
         method: "PATCH",
-        headers: authHeaders(),
         body: JSON.stringify({ isOnline: !chatOnline }),
       });
       const data = await res.json();
       if (data.success) setChatOnline(data.data.isOnline);
     } catch {}
     setChatToggling(false);
+  }
+
+  if (authError) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
+        <div className="rounded-2xl bg-white dark:bg-gray-dark shadow-sm border border-red-200 dark:border-red-700 p-8 flex flex-col items-center gap-4 text-center">
+          <div className="h-12 w-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+            <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-white">Session expired</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your admin session has expired. Please log in again.</p>
+          </div>
+          <button
+            onClick={() => router.push("/signin")}
+            className="rounded-xl bg-[#4a6cf7] text-white px-6 py-2.5 text-sm font-medium hover:bg-[#3a5ce7] transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
