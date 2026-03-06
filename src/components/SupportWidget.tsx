@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, ChangeEvent } from "react";
 import { usePathname } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { PhoneInput } from "react-international-phone";
@@ -15,6 +15,7 @@ interface ChatMsg {
   id: string;
   senderType: "visitor" | "admin";
   content: string;
+  images?: string[];
   createdAt: string;
 }
 
@@ -41,10 +42,14 @@ export default function SupportWidget() {
   const [offlineSent, setOfflineSent] = useState(false);
   const [offlineError, setOfflineError] = useState("");
 
+  const [attachedImages, setAttachedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
   const pathname = usePathname();
   const socketRef = useRef<Socket | null>(null);
   const sessionTokenRef = useRef<string>("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Notify admin on WhatsApp when a brand-new visitor lands on the site
   useEffect(() => {
@@ -170,9 +175,28 @@ export default function SupportWidget() {
     setNameSubmitted(true);
   }
 
+  function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []).slice(0, 5 - attachedImages.length);
+    if (files.length === 0) return;
+    setAttachedImages((prev) => [...prev, ...files].slice(0, 5));
+    files.forEach((f) => {
+      const url = URL.createObjectURL(f);
+      setImagePreviews((prev) => [...prev, url].slice(0, 5));
+    });
+    e.target.value = "";
+  }
+
+  function removeImage(index: number) {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
   async function handleSend() {
     const content = input.trim();
-    if (!content || sending) return;
+    if ((!content && attachedImages.length === 0) || sending) return;
 
     const token = sessionTokenRef.current;
     const name = visitorName.trim() || "Visitor";
@@ -180,27 +204,50 @@ export default function SupportWidget() {
     setSending(true);
     setInput("");
 
-    // Optimistic update
+    const currentFiles = [...attachedImages];
+    const currentPreviews = [...imagePreviews];
+    setAttachedImages([]);
+    setImagePreviews([]);
+
+    // Optimistic update — show blob URLs while uploading
     const tempMsg: ChatMsg = {
       id: `temp-${Date.now()}`,
       senderType: "visitor",
       content,
+      images: currentPreviews.length > 0 ? currentPreviews : undefined,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, tempMsg]);
 
     try {
+      let fetchBody: FormData | string;
+      const fetchHeaders: Record<string, string> = {};
+
+      if (currentFiles.length > 0) {
+        const fd = new FormData();
+        fd.append("sessionToken", token);
+        if (content) fd.append("content", content);
+        fd.append("visitorName", name);
+        fd.append("currentPage", window.location.href);
+        currentFiles.forEach((f) => fd.append("images", f));
+        fetchBody = fd;
+      } else {
+        fetchHeaders["Content-Type"] = "application/json";
+        fetchBody = JSON.stringify({ sessionToken: token, content, visitorName: name, currentPage: window.location.href });
+      }
+
       const res = await fetch(`${API_BASE}/chat/message`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionToken: token, content, visitorName: name, currentPage: window.location.href }),
+        headers: fetchHeaders,
+        body: fetchBody,
       });
       const data = await res.json();
       if (data.success && data.data) {
-        // Replace temp with real
+        // Replace temp with real (swaps blob URLs for Cloudinary URLs)
         setMessages((prev) =>
           prev.map((m) => (m.id === tempMsg.id ? { ...data.data, senderType: "visitor" } : m))
         );
+        currentPreviews.forEach((url) => URL.revokeObjectURL(url));
       }
     } catch {
       // keep the optimistic message even on error
@@ -244,8 +291,8 @@ export default function SupportWidget() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-20 right-4 z-[9998] w-[340px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
-          style={{ height: 480 }}
+          className="fixed right-4 z-[9998] w-[370px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
+          style={{ top: "4.5rem", bottom: "1rem" }}
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-[#4a6cf7] text-white shrink-0">
@@ -385,22 +432,37 @@ export default function SupportWidget() {
                     className={`flex gap-2 ${m.senderType === "admin" ? "flex-row-reverse" : ""}`}
                   >
                     <div
-                      className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold text-white
+                      className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold text-white
                         ${m.senderType === "admin" ? "bg-indigo-500" : "bg-[#4a6cf7]"}`}
                     >
-                      {m.senderType === "admin" ? "S" : "U"}
+                      {m.senderType === "admin" ? "S" : "You"}
                     </div>
-                    <div className={`flex-1 flex flex-col ${m.senderType === "admin" ? "items-end" : "items-start"}`}>
-                      <div
-                        className={`rounded-xl px-3 py-2 text-xs whitespace-pre-wrap max-w-[85%]
-                          ${m.senderType === "admin"
-                            ? "rounded-tr-none bg-indigo-600 text-white"
-                            : "rounded-tl-none bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100"
-                          }`}
-                      >
-                        {m.content}
-                      </div>
-                      <span className="text-[10px] text-gray-400 mt-0.5">{fmt(m.createdAt)}</span>
+                    <div className={`flex-1 flex flex-col gap-1 ${m.senderType === "admin" ? "items-end" : "items-start"}`}>
+                      {m.content && (
+                        <div
+                          className={`rounded-xl px-3 py-2 text-sm whitespace-pre-wrap max-w-[85%]
+                            ${m.senderType === "admin"
+                              ? "rounded-tr-none bg-indigo-600 text-white"
+                              : "rounded-tl-none bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+                            }`}
+                        >
+                          {m.content}
+                        </div>
+                      )}
+                      {m.images && m.images.length > 0 && (
+                        <div className="flex flex-wrap gap-1 max-w-[85%]">
+                          {m.images.map((url, i) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt="attachment"
+                              className="rounded-xl max-h-44 max-w-[160px] object-cover cursor-pointer border border-gray-200 dark:border-gray-700"
+                              onClick={() => window.open(url, "_blank")}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <span className="text-xs text-gray-400">{fmt(m.createdAt)}</span>
                     </div>
                   </div>
                 ))}
@@ -408,8 +470,48 @@ export default function SupportWidget() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-gray-100 dark:border-gray-700 px-3 py-2 shrink-0">
+              <div className="border-t border-gray-100 dark:border-gray-700 px-3 pt-2 pb-[4.5rem] shrink-0">
+                {/* Image previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {imagePreviews.map((url, i) => (
+                      <div key={i} className="relative">
+                        <img src={url} alt="" className="h-16 w-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                        <button
+                          onClick={() => removeImage(i)}
+                          className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                          aria-label="Remove image"
+                        >
+                          <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2 items-end">
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  {/* Paperclip button */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={attachedImages.length >= 5}
+                    className="shrink-0 h-8 w-8 rounded-full text-gray-400 hover:text-[#4a6cf7] hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center disabled:opacity-40 transition-colors"
+                    aria-label="Attach image"
+                    title="Attach image (max 5)"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                  </button>
                   <textarea
                     rows={1}
                     value={input}
@@ -426,7 +528,7 @@ export default function SupportWidget() {
                   />
                   <button
                     onClick={handleSend}
-                    disabled={sending || !input.trim()}
+                    disabled={sending || (!input.trim() && attachedImages.length === 0)}
                     className="shrink-0 h-8 w-8 rounded-full bg-[#4a6cf7] text-white flex items-center justify-center disabled:opacity-50 hover:bg-[#3a5ce7] transition-colors"
                     aria-label="Send"
                   >

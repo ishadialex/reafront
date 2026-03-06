@@ -39,7 +39,7 @@ const OurMission = () => {
   }, []);
 
   return (
-    <section className="bg-white py-16 dark:bg-bg-color-dark md:py-20 lg:py-28">
+    <section className="overflow-x-hidden bg-white py-16 dark:bg-bg-color-dark md:py-20 lg:py-28">
       <div className="container">
         {/* Top Section - Two Columns */}
         <div className="mx-auto max-w-[1200px] px-4">
@@ -82,13 +82,13 @@ const OurMission = () => {
           {/* Right Column - Overlapping Images */}
           <div
             ref={imageRef}
-            className={`w-full lg:w-[calc(50%-1.5rem)] flex justify-center overflow-hidden lg:overflow-visible transition-all duration-1000 delay-[500ms] ${
+            className={`w-full lg:w-[calc(50%-1.5rem)] flex justify-center overflow-visible transition-all duration-1000 delay-[500ms] ${
               isVisible.image
                 ? "opacity-100 translate-x-0"
                 : "opacity-0 translate-x-8"
             }`}
           >
-            <div className="relative w-full max-w-[460px] h-[360px] min-[430px]:h-[500px] sm:h-[540px] lg:h-[680px]">
+            <div className="relative w-full max-w-[460px] h-[440px] sm:h-[560px] lg:h-[680px]">
               {/* Image 1 - upper left */}
               <div className="absolute top-0 left-0 w-[75%] overflow-hidden rounded-lg shadow-2xl z-10" style={{ aspectRatio: '394/525' }}>
                 <Image
