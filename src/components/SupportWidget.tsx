@@ -426,20 +426,20 @@ export default function SupportWidget() {
                 {messages.map((m) => (
                   <div
                     key={m.id}
-                    className={`flex gap-2 ${m.senderType === "admin" ? "flex-row-reverse" : ""}`}
+                    className={`flex gap-2 ${m.senderType === "visitor" ? "flex-row-reverse" : ""}`}
                   >
                     <div
                       className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold text-white
-                        ${m.senderType === "admin" ? "bg-indigo-500" : "bg-[#4a6cf7]"}`}
+                        ${m.senderType === "visitor" ? "bg-[#4a6cf7]" : "bg-indigo-500"}`}
                     >
-                      {m.senderType === "admin" ? "S" : "You"}
+                      {m.senderType === "visitor" ? "You" : "S"}
                     </div>
-                    <div className={`flex-1 flex flex-col gap-1 ${m.senderType === "admin" ? "items-end" : "items-start"}`}>
+                    <div className={`flex-1 flex flex-col gap-1 ${m.senderType === "visitor" ? "items-end" : "items-start"}`}>
                       {m.content && (
                         <div
                           className={`rounded-xl px-3 py-2 text-sm whitespace-pre-wrap max-w-[85%]
-                            ${m.senderType === "admin"
-                              ? "rounded-tr-none bg-indigo-600 text-white"
+                            ${m.senderType === "visitor"
+                              ? "rounded-tr-none bg-[#4a6cf7] text-white"
                               : "rounded-tl-none bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100"
                             }`}
                         >
