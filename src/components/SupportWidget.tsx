@@ -289,7 +289,7 @@ export default function SupportWidget() {
       {open && (
         <div
           className="fixed right-4 z-[9998] w-[370px] max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col overflow-hidden"
-          style={{ top: "4.5rem", bottom: "1rem" }}
+          style={{ top: "4.5rem", bottom: "5rem" }}
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-[#4a6cf7] text-white shrink-0">
@@ -467,7 +467,7 @@ export default function SupportWidget() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-gray-100 dark:border-gray-700 px-3 pt-2 pb-[4.5rem] shrink-0">
+              <div className="border-t border-gray-100 dark:border-gray-700 px-3 pt-2 pb-3 shrink-0">
                 {/* Image previews */}
                 {imagePreviews.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">

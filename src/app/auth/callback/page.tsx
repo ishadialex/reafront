@@ -444,14 +444,14 @@ function AuthCallbackContent() {
             <div className="flex gap-3">
               <button
                 onClick={() => router.replace("/signin")}
-                className="flex-1 rounded-xs border border-stroke bg-transparent px-6 py-3 text-sm font-medium text-dark transition hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-gray-800"
+                className="flex-1 rounded-xl border border-stroke bg-transparent px-6 py-3 text-sm font-medium text-dark transition hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-gray-800"
               >
                 Cancel
               </button>
               <button
                 onClick={handleForceLogin}
                 disabled={isLoading}
-                className="flex-1 rounded-xs bg-primary px-6 py-3 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? "Signing in..." : "Continue on This Device"}
               </button>

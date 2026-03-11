@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { api } from "@/lib/api";
 
 interface Transaction {
   id: string;
@@ -19,87 +20,49 @@ interface TimelineEvent {
   completed: boolean;
 }
 
-// --- Mock API ---
+// --- Fetch with sessionStorage primary, API fallback ---
 
-const fetchTransactionById = async (id: string): Promise<Transaction | null> => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+const fetchTransactionById = async (id: string, source: string): Promise<Transaction | null> => {
+  // Primary: read from sessionStorage (set by list page on click)
+  try {
+    const cached = sessionStorage.getItem(`tx_${id}`);
+    if (cached) {
+      const row = JSON.parse(cached);
+      return {
+        id: row.id,
+        type: row.type,
+        amount: row.amount,
+        status: row.status,
+        date: row.date,
+        description: row.description || "",
+        reference: row.reference || row.id,
+      };
+    }
+  } catch {}
 
-  const transactions: Transaction[] = [
-    {
-      id: "TXN001",
-      type: "deposit",
-      amount: 5000,
-      status: "completed",
-      date: "2026-02-05",
-      description: "Bank Transfer Deposit",
-      reference: "BNK-20260205-001",
-    },
-    {
-      id: "TXN002",
-      type: "investment",
-      amount: 3000,
-      status: "completed",
-      date: "2026-02-04",
-      description: "Property Investment - Luxury Apartment",
-      reference: "INV-20260204-001",
-    },
-    {
-      id: "TXN003",
-      type: "withdrawal",
-      amount: 1500,
-      status: "pending",
-      date: "2026-02-03",
-      description: "Bank Withdrawal",
-      reference: "WTH-20260203-001",
-    },
-    {
-      id: "TXN004",
-      type: "referral",
-      amount: 250,
-      status: "completed",
-      date: "2026-02-02",
-      description: "Referral Bonus - John Doe",
-      reference: "REF-20260202-001",
-    },
-    {
-      id: "TXN005",
-      type: "transfer",
-      amount: 800,
-      status: "completed",
-      date: "2026-02-01",
-      description: "Transfer to Sarah Wilson",
-      reference: "TRF-20260201-001",
-    },
-    {
-      id: "TXN006",
-      type: "deposit",
-      amount: 10000,
-      status: "completed",
-      date: "2026-01-30",
-      description: "Card Payment Deposit",
-      reference: "CRD-20260130-001",
-    },
-    {
-      id: "TXN007",
-      type: "withdrawal",
-      amount: 2500,
-      status: "failed",
-      date: "2026-01-28",
-      description: "Bank Withdrawal - Insufficient Balance",
-      reference: "WTH-20260128-001",
-    },
-    {
-      id: "TXN008",
-      type: "investment",
-      amount: 7500,
-      status: "completed",
-      date: "2026-01-25",
-      description: "Solar Power Project Investment",
-      reference: "INV-20260125-001",
-    },
-  ];
-
-  return transactions.find((tx) => tx.id === id) || null;
+  // Fallback: API call (strip fo- prefix for fund operations)
+  try {
+    const rawId = source === "fund_operation" && id.startsWith("fo-") ? id.slice(3) : id;
+    let result;
+    if (source === "fund_operation") {
+      result = await api.getFundOperationById(rawId);
+    } else {
+      result = await api.getTransactionById(rawId);
+    }
+    if (!result.success || !result.data) return null;
+    const d = result.data;
+    return {
+      id: d.id || id,
+      type: d.type,
+      amount: d.amount,
+      status: d.status,
+      date: d.createdAt || d.date,
+      description: d.description || d.notes || "",
+      reference: d.reference || d.id || id,
+    };
+  } catch {
+    return null;
+  }
 };
 
 // --- Skeleton ---
@@ -279,8 +242,19 @@ const getTimeline = (transaction: Transaction): TimelineEvent[] => {
 // --- Page ---
 
 export default function TransactionDetailPage() {
+  return (
+    <Suspense fallback={<DetailSkeleton />}>
+      <TransactionDetailInner />
+    </Suspense>
+  );
+}
+
+function TransactionDetailInner() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const source = searchParams.get("source") || "transaction";
+  const from = searchParams.get("from");
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
@@ -289,7 +263,7 @@ export default function TransactionDetailPage() {
 
   const loadTransaction = useCallback(async () => {
     try {
-      const data = await fetchTransactionById(params.id as string);
+      const data = await fetchTransactionById(params.id as string, source);
       if (!data) {
         setError("Transaction not found.");
       } else {
@@ -302,7 +276,7 @@ export default function TransactionDetailPage() {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [params.id]);
+  }, [params.id, source]);
 
   useEffect(() => {
     loadTransaction();
@@ -314,9 +288,12 @@ export default function TransactionDetailPage() {
     loadTransaction();
   }, [loadTransaction]);
 
+  const backHref = from === "dashboard" ? "/dashboard/overview" : "/dashboard/transaction";
+  const backLabel = from === "dashboard" ? "Back to Dashboard" : "Back to Transactions";
+
   const handleBack = useCallback(() => {
-    router.push("/dashboard/transaction");
-  }, [router]);
+    router.push(backHref);
+  }, [router, backHref]);
 
   if (loading) {
     return <DetailSkeleton />;
@@ -332,7 +309,7 @@ export default function TransactionDetailPage() {
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to Transactions
+          {backLabel}
         </button>
         <div className="flex min-h-[400px] items-center justify-center">
           <div className="text-center">
@@ -346,7 +323,7 @@ export default function TransactionDetailPage() {
               onClick={handleBack}
               className="rounded-lg bg-primary px-6 py-2 text-white hover:bg-primary/90"
             >
-              Back to Transactions
+              {backLabel}
             </button>
           </div>
         </div>
@@ -377,7 +354,7 @@ export default function TransactionDetailPage() {
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to Transactions
+          {backLabel}
         </button>
         <button
           onClick={handleRefresh}

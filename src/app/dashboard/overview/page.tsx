@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 // Types
@@ -51,6 +52,7 @@ interface Transaction {
   date: string;
   description: string;
   reference?: string;
+  source: "transaction" | "fund_operation";
 }
 
 interface FeaturedProperty {
@@ -175,6 +177,7 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
           date: tx.createdAt,
           description: tx.description || tx.type.replace(/_/g, " "),
           reference: ref,
+          source: "transaction",
         });
       });
     }
@@ -185,13 +188,14 @@ const fetchTransactions = async (): Promise<Transaction[]> => {
         // deposits/withdrawals create a transaction with the same reference)
         if (op.reference && txReferences.has(op.reference)) return;
         transactions.push({
-          id: op.id,
+          id: `fo-${op.id}`,
           type: op.type,
           amount: op.amount,
           status: op.status === "approved" ? "completed" : op.status,
           date: op.createdAt,
           description: `${op.method ? op.method.charAt(0).toUpperCase() + op.method.slice(1) + " " : ""}${op.type.charAt(0).toUpperCase() + op.type.slice(1)} (${op.reference})`,
           reference: op.reference,
+          source: "fund_operation",
         });
       });
     }
@@ -269,6 +273,8 @@ const PropertyCardSkeleton = () => (
 );
 
 export default function DashboardOverviewPage() {
+  const router = useRouter();
+
   // State
   const [data, setData] = useState<DashboardData>({
     user: null,
@@ -937,7 +943,8 @@ export default function DashboardOverviewPage() {
                 data.transactions.slice(0, 5).map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex items-start justify-between gap-3 p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 sm:gap-4 sm:p-4"
+                    onClick={() => { try { sessionStorage.setItem(`tx_${transaction.id}`, JSON.stringify(transaction)); } catch {} router.push(`/dashboard/transaction/${transaction.id}?source=${transaction.source}&from=dashboard`); }}
+                    className="flex cursor-pointer items-start justify-between gap-3 p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 sm:gap-4 sm:p-4"
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-2 sm:gap-3">
                       <div className="flex-shrink-0 pt-0.5">

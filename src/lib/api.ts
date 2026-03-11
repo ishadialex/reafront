@@ -294,7 +294,7 @@ export class ApiClient {
   }
 
   async getNotifications() {
-    const response = await this.axiosInstance.get<ApiResponse<any[]>>("/api/notifications");
+    const response = await this.axiosInstance.get<ApiResponse<any[]>>("/api/notifications?limit=500");
     return response.data;
   }
 
@@ -567,6 +567,11 @@ export class ApiClient {
 
   async getFundOperationById(id: string) {
     const response = await this.axiosInstance.get<ApiResponse<any>>(`/api/fund-operations/${id}`);
+    return response.data;
+  }
+
+  async getTransactionById(id: string) {
+    const response = await this.axiosInstance.get<ApiResponse<any>>(`/api/transactions/${id}`);
     return response.data;
   }
 

@@ -437,7 +437,7 @@ function TransactionContent() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {paginated.map((row) => (
-                    <tr key={row.id} className="transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <tr key={row.id} onClick={() => { try { sessionStorage.setItem(`tx_${row.id}`, JSON.stringify(row)); } catch {} router.push(`/dashboard/transaction/${row.id}?source=${row.source}`); }} className="cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="px-6 py-4"><span className="font-mono text-sm text-black dark:text-white">{row.reference}</span></td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ function TransactionContent() {
 
           <div className="space-y-3 lg:hidden">
             {paginated.map((row) => (
-              <div key={row.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-dark">
+              <div key={row.id} onClick={() => { try { sessionStorage.setItem(`tx_${row.id}`, JSON.stringify(row)); } catch {} router.push(`/dashboard/transaction/${row.id}?source=${row.source}`); }} className="cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-dark">
                 {/* Card header: icon + type/date + status badge */}
                 <div className="flex items-center justify-between gap-2 border-b border-gray-200 bg-gray-50 px-3 py-3 dark:border-gray-800 dark:bg-black/20 sm:px-4">
                   <div className="flex min-w-0 flex-1 items-center gap-2">

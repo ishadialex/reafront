@@ -89,11 +89,10 @@ const NotificationPanel = ({ isOpen: controlledIsOpen, onToggle }: NotificationP
   const socketRef = useRef<Socket | null>(null);
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -131,7 +130,11 @@ const NotificationPanel = ({ isOpen: controlledIsOpen, onToggle }: NotificationP
       setErrorMsg(null);
       const result = await api.getNotifications();
       if (result.success && result.data) {
-        setNotifications(result.data.map(mapNotification));
+        const data = result.data as any;
+        const list = Array.isArray(data) ? data : (data.notifications ?? []);
+        const count = typeof data.unreadCount === "number" ? data.unreadCount : list.filter((n: any) => !n.isRead && !n.read).length;
+        setNotifications(list.map(mapNotification));
+        setUnreadCount(count);
       }
     } catch {
       setErrorMsg("Failed to load notifications");
@@ -154,7 +157,9 @@ const NotificationPanel = ({ isOpen: controlledIsOpen, onToggle }: NotificationP
     socketRef.current = socket;
 
     socket.on("notification", (data: any) => {
-      setNotifications((prev) => [mapNotification(data), ...prev]);
+      const mapped = mapNotification(data);
+      setNotifications((prev) => [mapped, ...prev]);
+      if (!mapped.read) setUnreadCount((c) => c + 1);
     });
 
     socket.on("connect_error", () => {
@@ -201,6 +206,7 @@ const NotificationPanel = ({ isOpen: controlledIsOpen, onToggle }: NotificationP
         setNotifications((prev) =>
           prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
         );
+        setUnreadCount((c) => Math.max(0, c - 1));
       } catch {
         // ignore
       }
@@ -213,6 +219,7 @@ const NotificationPanel = ({ isOpen: controlledIsOpen, onToggle }: NotificationP
   const handleMarkAllRead = async () => {
     if (unreadCount === 0) return;
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
     try {
       await api.markAllNotificationsRead();
     } catch {
