@@ -520,7 +520,7 @@ export default function SupportWidget() {
                       }
                     }}
                     placeholder="Type a message…"
-                    className="flex-1 resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6cf7]"
+                    className="min-w-0 flex-1 resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6cf7]"
                     style={{ maxHeight: 80 }}
                   />
                   <button

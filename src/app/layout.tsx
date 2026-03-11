@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
 import NewsletterPopup from "@/components/NewsletterPopup";
 import SupportWidget from "@/components/SupportWidget";
+import PageLoader from "@/components/PageLoader";
 import { Inter } from "next/font/google";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -120,6 +121,7 @@ export default function RootLayout({
 
 
       <body className={`bg-[#FCFCFC] dark:bg-black ${inter.className}`}>
+        <PageLoader />
         <Providers>
           <div className="isolate">
             {!isPDFViewer && !isDashboard && !isAdmin && !isAuthPage && <Header />}
