@@ -177,6 +177,116 @@ export default function PropertyForm({
   const [removingImage, setRemovingImage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // ── Zillow import (create mode only) ─────────────────────────────────────
+  const [zillowUrl, setZillowUrl] = useState("");
+  const [zillowLoading, setZillowLoading] = useState(false);
+  const [zillowMsg, setZillowMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [zillowFacts, setZillowFacts] = useState<Record<string, Record<string, string>> | null>(null);
+  const [zillowFactsOpen, setZillowFactsOpen] = useState(false);
+
+  async function handleZillowImport() {
+    if (!zillowUrl.trim()) return;
+    setZillowLoading(true);
+    setZillowMsg(null);
+    try {
+      const res = await api.adminImportZillow(zillowUrl.trim());
+      if (res.success && res.data) {
+        const d = res.data;
+        const arr = (v: any) => Array.isArray(v) ? v.join(", ") : (v || "");
+        const str = (v: any) => v != null ? String(v) : "";
+
+        setValues((prev) => ({
+          ...prev,
+          // ── Basic ──
+          ...(d.title       && { title:       d.title }),
+          ...(d.location    && { location:    d.location }),
+          ...(d.price       && { price:       str(d.price) }),
+          ...(d.description && { description: d.description }),
+          ...(d.highlights?.length && { features: d.highlights.join(", ") }),
+          ...(d.beds        && { bedrooms:    str(d.beds) }),
+          ...(d.baths       && { bathrooms:   str(d.baths) }),
+          ...(d.sqft        && { sqft:        str(d.sqft) }),
+          // ── Construction ──
+          ...(d.yearBuilt   && { yearBuilt:   str(d.yearBuilt) }),
+          ...(d.homeType    && { homeType:    d.homeType, type: d.homeType }),
+          ...(d.propertySubtype && { propertySubtype: d.propertySubtype }),
+          ...(d.constructionMaterials?.length && { constructionMaterials: arr(d.constructionMaterials) }),
+          ...(d.foundation?.length  && { foundation: arr(d.foundation) }),
+          ...(d.roof?.length        && { roof:       arr(d.roof) }),
+          // ── Interior ──
+          ...(d.fullBathrooms != null && { fullBathrooms:    str(d.fullBathrooms) }),
+          ...(d.heating?.length       && { heating:          arr(d.heating) }),
+          ...(d.cooling?.length       && { cooling:          arr(d.cooling) }),
+          ...(d.appliancesIncluded?.length && { appliancesIncluded: arr(d.appliancesIncluded) }),
+          ...(d.laundry?.length       && { laundry:          arr(d.laundry) }),
+          ...(d.interiorFeatures?.length && { interiorFeatures: arr(d.interiorFeatures) }),
+          ...(d.flooring?.length      && { flooring:         arr(d.flooring) }),
+          ...(d.basement              && { basement:         d.basement }),
+          ...(d.fireplaceCount != null && { fireplaceCount:  str(d.fireplaceCount) }),
+          ...(d.fireplaceFeatures?.length && { fireplaceFeatures: arr(d.fireplaceFeatures) }),
+          ...(d.totalLivableArea      && { totalLivableArea: d.totalLivableArea }),
+          // ── Exterior ──
+          ...(d.stories != null  && { stories:         str(d.stories) }),
+          ...(d.levels           && { levels:           d.levels }),
+          ...(d.patioAndPorch?.length && { patioAndPorch:   arr(d.patioAndPorch) }),
+          ...(d.exteriorFeatures?.length && { exteriorFeatures: arr(d.exteriorFeatures) }),
+          ...(d.poolFeatures?.length && { poolFeatures:   arr(d.poolFeatures) }),
+          ...(d.hasSpa != null   && { hasSpa:           d.hasSpa }),
+          ...(d.spaFeatures?.length && { spaFeatures:    arr(d.spaFeatures) }),
+          ...(d.fencing?.length  && { fencing:          arr(d.fencing) }),
+          // ── Lot ──
+          ...(d.lotFeatures?.length && { lotFeatures:   arr(d.lotFeatures) }),
+          ...(d.parcelNumber     && { parcelNumber:     d.parcelNumber }),
+          // ── Utilities ──
+          ...(d.sewer?.length    && { sewer:            arr(d.sewer) }),
+          ...(d.water?.length    && { water:            arr(d.water) }),
+          ...(d.utilitiesForProperty?.length && { utilitiesForProperty: arr(d.utilitiesForProperty) }),
+          // ── Community & HOA ──
+          ...(d.communityFeatures?.length && { communityFeatures: arr(d.communityFeatures) }),
+          ...(d.hasHOA != null   && { hasHOA:           d.hasHOA }),
+          ...(d.hoaFee           && { hoaFee:           d.hoaFee }),
+          ...(d.subdivision      && { subdivision:      d.subdivision }),
+          // ── Financial / Listing ──
+          ...(d.pricePerSqft     && { pricePerSqft:     d.pricePerSqft }),
+          ...(d.zestimate        && { zestimate:        d.zestimate }),
+          ...(d.rentZestimate    && { rentZestimate:    d.rentZestimate }),
+          ...(d.estimatedSalesRangeLow  && { estimatedSalesRangeLow:  d.estimatedSalesRangeLow }),
+          ...(d.estimatedSalesRangeHigh && { estimatedSalesRangeHigh: d.estimatedSalesRangeHigh }),
+          ...(d.taxAssessedValue && { taxAssessedValue: d.taxAssessedValue }),
+          ...(d.annualTaxAmount  && { annualTaxAmount:  d.annualTaxAmount }),
+          ...(d.daysOnMarket != null && { daysOnMarket: str(d.daysOnMarket) }),
+          ...(d.dateOnMarket     && { dateOnMarket:     d.dateOnMarket }),
+          // ── Climate ──
+          ...(d.floodZone        && { floodZone:           d.floodZone }),
+          ...(d.floodZoneDescription && { floodZoneDescription: d.floodZoneDescription }),
+          ...(d.fireRisk         && { fireRisk:            d.fireRisk }),
+          ...(d.windRisk         && { windRisk:            d.windRisk }),
+          ...(d.airQualityRisk   && { airQualityRisk:      d.airQualityRisk }),
+          // ── Getting Around ──
+          ...(d.walkScore != null  && { walkScore:          str(d.walkScore) }),
+          ...(d.walkScoreDescription && { walkScoreDescription: d.walkScoreDescription }),
+          ...(d.bikeScore != null  && { bikeScore:          str(d.bikeScore) }),
+          ...(d.bikeScoreDescription && { bikeScoreDescription: d.bikeScoreDescription }),
+          ...(d.transitScore != null && { transitScore:     str(d.transitScore) }),
+          ...(d.transitScoreDescription && { transitScoreDescription: d.transitScoreDescription }),
+        }));
+
+        if (d.factsAndFeatures && Object.keys(d.factsAndFeatures).length > 0) {
+          setZillowFacts(d.factsAndFeatures);
+          setZillowFactsOpen(true);
+        }
+        setZillowMsg({ type: "success", text: "Fields pre-filled from Zillow. Add images manually." });
+      } else {
+        setZillowMsg({ type: "error", text: (res as any).message || "Failed to import from Zillow" });
+      }
+    } catch (err: any) {
+      setZillowMsg({ type: "error", text: err?.response?.data?.message || "Failed to fetch Zillow property" });
+    } finally {
+      setZillowLoading(false);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
   const fileInputRef = useRef<HTMLInputElement>(null);
   const managerPhotoRef = useRef<HTMLInputElement>(null);
 
@@ -356,6 +466,69 @@ export default function PropertyForm({
         </div>
       )}
 
+      {/* ── Zillow Import (create mode only) ── */}
+      {mode === "create" && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="mb-2 text-sm font-semibold text-blue-800">Import from Zillow</p>
+          <p className="mb-3 text-xs text-blue-600">
+            Paste a Zillow property detail URL and click Import to auto-fill the form fields.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={zillowUrl}
+              onChange={(e) => setZillowUrl(e.target.value)}
+              placeholder="https://www.zillow.com/homedetails/..."
+              className="flex-1 rounded border border-blue-300 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleZillowImport}
+              disabled={zillowLoading || !zillowUrl.trim()}
+              className="flex-shrink-0 rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {zillowLoading ? "Importing…" : "Import"}
+            </button>
+          </div>
+          {zillowMsg && (
+            <p className={`mt-2 text-xs ${zillowMsg.type === "success" ? "text-green-700" : "text-red-600"}`}>
+              {zillowMsg.type === "success" ? "✓" : "✗"} {zillowMsg.text}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Zillow Facts Preview (dynamic — shows whatever Zillow had on the page) ── */}
+      {mode === "create" && zillowFacts && Object.keys(zillowFacts).length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50">
+          <button
+            type="button"
+            onClick={() => setZillowFactsOpen((o) => !o)}
+            className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+          >
+            <span>📋 Captured Facts &amp; Features ({Object.keys(zillowFacts).length} sections)</span>
+            <span className="text-gray-400">{zillowFactsOpen ? "▲" : "▼"}</span>
+          </button>
+          {zillowFactsOpen && (
+            <div className="divide-y divide-gray-200 px-4 pb-4">
+              {Object.entries(zillowFacts).map(([section, facts]) => (
+                <div key={section} className="pt-3">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">{section}</p>
+                  <dl className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                    {Object.entries(facts).map(([label, value]) => (
+                      <div key={label} className="flex gap-2 text-xs">
+                        <dt className="min-w-0 font-medium text-gray-600 shrink-0">{label}:</dt>
+                        <dd className="min-w-0 text-gray-800 break-words">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Basic Info ── */}
       <Section title="Basic Information">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -462,8 +635,8 @@ export default function PropertyForm({
             <Field label="Days on Market" {...ef("daysOnMarket")}>
               <input type="number" min="0" value={values.daysOnMarket} onChange={(e) => set("daysOnMarket", e.target.value)} placeholder="0" className={inputCls} />
             </Field>
-            <Field label="Listing Terms (comma-separated)" {...ef("listingTerms")}>
-              <input type="text" value={values.listingTerms} onChange={(e) => set("listingTerms", e.target.value)} placeholder="Cash, Conventional, FHA" className={inputCls} />
+            <Field label="Listing Terms" {...ef("listingTerms")}>
+              <TagInput value={values.listingTerms} onChange={(v) => set("listingTerms", v)} placeholder="Cash, Conventional, FHA…" />
             </Field>
           </div>
         )}
@@ -485,8 +658,8 @@ export default function PropertyForm({
             <input type="number" min="0" value={values.sqft} onChange={(e) => set("sqft", e.target.value)} placeholder="0" className={inputCls} />
           </Field>
         </div>
-        <Field label="Features (comma-separated)" {...ef("features")}>
-          <input type="text" value={values.features} onChange={(e) => set("features", e.target.value)} placeholder="Pool, Gym, Rooftop, Parking" className={inputCls} />
+        <Field label="Features" {...ef("features")}>
+          <TagInput value={values.features} onChange={(v) => set("features", v)} placeholder="Pool, Gym, Rooftop… (Enter to add)" />
         </Field>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Latitude" {...ef("latitude")}>
@@ -521,29 +694,29 @@ export default function PropertyForm({
               </Field>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Heating (comma-separated)" {...ef("heating")}>
-                <input type="text" value={values.heating} onChange={(e) => set("heating", e.target.value)} placeholder="Forced Air, Electric" className={inputCls} />
+              <Field label="Heating" {...ef("heating")}>
+                <TagInput value={values.heating} onChange={(v) => set("heating", v)} placeholder="Forced Air, Electric…" />
               </Field>
-              <Field label="Cooling (comma-separated)" {...ef("cooling")}>
-                <input type="text" value={values.cooling} onChange={(e) => set("cooling", e.target.value)} placeholder="Central Air, Wall Unit" className={inputCls} />
+              <Field label="Cooling" {...ef("cooling")}>
+                <TagInput value={values.cooling} onChange={(v) => set("cooling", v)} placeholder="Central Air, Wall Unit…" />
               </Field>
-              <Field label="Appliances Included (comma-separated)" {...ef("appliancesIncluded")}>
-                <input type="text" value={values.appliancesIncluded} onChange={(e) => set("appliancesIncluded", e.target.value)} placeholder="Refrigerator, Washer, Dryer" className={inputCls} />
+              <Field label="Appliances Included" {...ef("appliancesIncluded")}>
+                <TagInput value={values.appliancesIncluded} onChange={(v) => set("appliancesIncluded", v)} placeholder="Refrigerator, Washer, Dryer…" />
               </Field>
-              <Field label="Laundry (comma-separated)" {...ef("laundry")}>
-                <input type="text" value={values.laundry} onChange={(e) => set("laundry", e.target.value)} placeholder="In Unit, Hookups" className={inputCls} />
+              <Field label="Laundry" {...ef("laundry")}>
+                <TagInput value={values.laundry} onChange={(v) => set("laundry", v)} placeholder="In Unit, Hookups…" />
               </Field>
-              <Field label="Interior Features (comma-separated)" {...ef("interiorFeatures")}>
-                <input type="text" value={values.interiorFeatures} onChange={(e) => set("interiorFeatures", e.target.value)} placeholder="Open Floor Plan, High Ceilings" className={inputCls} />
+              <Field label="Interior Features" {...ef("interiorFeatures")}>
+                <TagInput value={values.interiorFeatures} onChange={(v) => set("interiorFeatures", v)} placeholder="Open Floor Plan, High Ceilings…" />
               </Field>
-              <Field label="Flooring (comma-separated)" {...ef("flooring")}>
-                <input type="text" value={values.flooring} onChange={(e) => set("flooring", e.target.value)} placeholder="Hardwood, Tile, Carpet" className={inputCls} />
+              <Field label="Flooring" {...ef("flooring")}>
+                <TagInput value={values.flooring} onChange={(v) => set("flooring", v)} placeholder="Hardwood, Tile, Carpet…" />
               </Field>
-              <Field label="Windows (comma-separated)" {...ef("windows")}>
-                <input type="text" value={values.windows} onChange={(e) => set("windows", e.target.value)} placeholder="Double Pane, Storm Windows" className={inputCls} />
+              <Field label="Windows" {...ef("windows")}>
+                <TagInput value={values.windows} onChange={(v) => set("windows", v)} placeholder="Double Pane, Storm Windows…" />
               </Field>
-              <Field label="Fireplace Features (comma-separated)" {...ef("fireplaceFeatures")}>
-                <input type="text" value={values.fireplaceFeatures} onChange={(e) => set("fireplaceFeatures", e.target.value)} placeholder="Gas, Wood Burning" className={inputCls} />
+              <Field label="Fireplace Features" {...ef("fireplaceFeatures")}>
+                <TagInput value={values.fireplaceFeatures} onChange={(v) => set("fireplaceFeatures", v)} placeholder="Gas, Wood Burning…" />
               </Field>
             </div>
           </Section>
@@ -559,20 +732,20 @@ export default function PropertyForm({
               </Field>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Patio & Porch (comma-separated)" {...ef("patioAndPorch")}>
-                <input type="text" value={values.patioAndPorch} onChange={(e) => set("patioAndPorch", e.target.value)} placeholder="Deck, Covered Porch, Balcony" className={inputCls} />
+              <Field label="Patio & Porch" {...ef("patioAndPorch")}>
+                <TagInput value={values.patioAndPorch} onChange={(v) => set("patioAndPorch", v)} placeholder="Deck, Covered Porch, Balcony…" />
               </Field>
-              <Field label="Exterior Features (comma-separated)" {...ef("exteriorFeatures")}>
-                <input type="text" value={values.exteriorFeatures} onChange={(e) => set("exteriorFeatures", e.target.value)} placeholder="Rain Gutters, Irrigation System" className={inputCls} />
+              <Field label="Exterior Features" {...ef("exteriorFeatures")}>
+                <TagInput value={values.exteriorFeatures} onChange={(v) => set("exteriorFeatures", v)} placeholder="Rain Gutters, Irrigation System…" />
               </Field>
-              <Field label="Pool Features (comma-separated)" {...ef("poolFeatures")}>
-                <input type="text" value={values.poolFeatures} onChange={(e) => set("poolFeatures", e.target.value)} placeholder="Heated, In Ground, Salt Water" className={inputCls} />
+              <Field label="Pool Features" {...ef("poolFeatures")}>
+                <TagInput value={values.poolFeatures} onChange={(v) => set("poolFeatures", v)} placeholder="Heated, In Ground, Salt Water…" />
               </Field>
-              <Field label="Fencing (comma-separated)" {...ef("fencing")}>
-                <input type="text" value={values.fencing} onChange={(e) => set("fencing", e.target.value)} placeholder="Wood, Vinyl, Chain Link" className={inputCls} />
+              <Field label="Fencing" {...ef("fencing")}>
+                <TagInput value={values.fencing} onChange={(v) => set("fencing", v)} placeholder="Wood, Vinyl, Chain Link…" />
               </Field>
-              <Field label="Spa Features (comma-separated)" {...ef("spaFeatures")}>
-                <input type="text" value={values.spaFeatures} onChange={(e) => set("spaFeatures", e.target.value)} placeholder="Heated, In Ground" className={inputCls} />
+              <Field label="Spa Features" {...ef("spaFeatures")}>
+                <TagInput value={values.spaFeatures} onChange={(v) => set("spaFeatures", v)} placeholder="Heated, In Ground…" />
               </Field>
             </div>
             <Toggle label="Has Spa" checked={values.hasSpa} onChange={(v) => set("hasSpa", v)} {...te("hasSpa")} />
@@ -581,8 +754,8 @@ export default function PropertyForm({
           {/* ── Lot ── */}
           <Section title="Lot">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Lot Features (comma-separated)" {...ef("lotFeatures")}>
-                <input type="text" value={values.lotFeatures} onChange={(e) => set("lotFeatures", e.target.value)} placeholder="Corner Lot, Cul-De-Sac" className={inputCls} />
+              <Field label="Lot Features" {...ef("lotFeatures")}>
+                <TagInput value={values.lotFeatures} onChange={(v) => set("lotFeatures", v)} placeholder="Corner Lot, Cul-De-Sac, 1.20 Acres…" />
               </Field>
               <Field label="Additional Structures" {...ef("additionalStructures")}>
                 <input type="text" value={values.additionalStructures} onChange={(e) => set("additionalStructures", e.target.value)} placeholder="e.g. Guest House, Shed" className={inputCls} />
@@ -605,14 +778,14 @@ export default function PropertyForm({
               <Field label="Year Built" {...ef("yearBuilt")}>
                 <input type="number" min="1800" max="2100" value={values.yearBuilt} onChange={(e) => set("yearBuilt", e.target.value)} placeholder="e.g. 2005" className={inputCls} />
               </Field>
-              <Field label="Construction Materials (comma-separated)" {...ef("constructionMaterials")}>
-                <input type="text" value={values.constructionMaterials} onChange={(e) => set("constructionMaterials", e.target.value)} placeholder="Stucco, Block, CBS" className={inputCls} />
+              <Field label="Construction Materials" {...ef("constructionMaterials")}>
+                <TagInput value={values.constructionMaterials} onChange={(v) => set("constructionMaterials", v)} placeholder="Stucco, Block, CBS…" />
               </Field>
-              <Field label="Foundation (comma-separated)" {...ef("foundation")}>
-                <input type="text" value={values.foundation} onChange={(e) => set("foundation", e.target.value)} placeholder="Slab, Block" className={inputCls} />
+              <Field label="Foundation" {...ef("foundation")}>
+                <TagInput value={values.foundation} onChange={(v) => set("foundation", v)} placeholder="Slab, Block…" />
               </Field>
-              <Field label="Roof (comma-separated)" {...ef("roof")}>
-                <input type="text" value={values.roof} onChange={(e) => set("roof", e.target.value)} placeholder="Tile, Metal, Shingle" className={inputCls} />
+              <Field label="Roof" {...ef("roof")}>
+                <TagInput value={values.roof} onChange={(v) => set("roof", v)} placeholder="Tile, Metal, Shingle…" />
               </Field>
             </div>
           </Section>
@@ -620,14 +793,14 @@ export default function PropertyForm({
           {/* ── Utilities ── */}
           <Section title="Utilities">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Field label="Sewer (comma-separated)" {...ef("sewer")}>
-                <input type="text" value={values.sewer} onChange={(e) => set("sewer", e.target.value)} placeholder="Public Sewer" className={inputCls} />
+              <Field label="Sewer" {...ef("sewer")}>
+                <TagInput value={values.sewer} onChange={(v) => set("sewer", v)} placeholder="Public Sewer, Septic Tank…" />
               </Field>
-              <Field label="Water (comma-separated)" {...ef("water")}>
-                <input type="text" value={values.water} onChange={(e) => set("water", e.target.value)} placeholder="Public" className={inputCls} />
+              <Field label="Water" {...ef("water")}>
+                <TagInput value={values.water} onChange={(v) => set("water", v)} placeholder="Public, Well…" />
               </Field>
-              <Field label="Utilities (comma-separated)" {...ef("utilitiesForProperty")}>
-                <input type="text" value={values.utilitiesForProperty} onChange={(e) => set("utilitiesForProperty", e.target.value)} placeholder="Electricity Connected, Cable Available" className={inputCls} />
+              <Field label="Utilities" {...ef("utilitiesForProperty")}>
+                <TagInput value={values.utilitiesForProperty} onChange={(v) => set("utilitiesForProperty", v)} placeholder="Electricity Connected, Cable Available…" />
               </Field>
             </div>
           </Section>
@@ -644,11 +817,11 @@ export default function PropertyForm({
               <Field label="HOA Fee" {...ef("hoaFee")}>
                 <input type="text" value={values.hoaFee} onChange={(e) => set("hoaFee", e.target.value)} placeholder="e.g. $250/month" className={inputCls} />
               </Field>
-              <Field label="Community Features (comma-separated)" {...ef("communityFeatures")}>
-                <input type="text" value={values.communityFeatures} onChange={(e) => set("communityFeatures", e.target.value)} placeholder="Pool, Gym, Clubhouse" className={inputCls} />
+              <Field label="Community Features" {...ef("communityFeatures")}>
+                <TagInput value={values.communityFeatures} onChange={(v) => set("communityFeatures", v)} placeholder="Pool, Gym, Clubhouse…" />
               </Field>
-              <Field label="Security (comma-separated)" {...ef("security")}>
-                <input type="text" value={values.security} onChange={(e) => set("security", e.target.value)} placeholder="Gated, Security Guard" className={inputCls} />
+              <Field label="Security" {...ef("security")}>
+                <TagInput value={values.security} onChange={(v) => set("security", v)} placeholder="Gated, Security Guard…" />
               </Field>
             </div>
             <Toggle label="Has HOA" checked={values.hasHOA} onChange={(v) => set("hasHOA", v)} {...te("hasHOA")} />
@@ -862,6 +1035,84 @@ export default function PropertyForm({
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Tag input — Postman-style list editor for array fields.
+ * - Press Enter or comma to add a tag
+ * - Click × to remove a tag
+ * - Paste a JSON array ["a","b","c"] → auto-parsed
+ * - Paste "a, b, c" → auto-split on comma
+ * Stores internally as comma-separated string (compatible with backend toArray()).
+ */
+function TagInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const tags = value ? value.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const [inputVal, setInputVal] = useState("");
+
+  function commit(raw: string) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    onChange([...tags, trimmed].join(", "));
+    setInputVal("");
+  }
+
+  function remove(i: number) {
+    onChange(tags.filter((_, idx) => idx !== i).join(", "));
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") { e.preventDefault(); commit(inputVal); return; }
+    if (e.key === ",") { e.preventDefault(); commit(inputVal); return; }
+    if (e.key === "Backspace" && !inputVal && tags.length > 0) remove(tags.length - 1);
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const text = e.clipboardData.getData("text").trim();
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        e.preventDefault();
+        const items = parsed.map(String).map((s) => s.trim()).filter(Boolean);
+        if (items.length) onChange([...tags, ...items].join(", "));
+        return;
+      }
+    } catch {}
+    if (text.includes(",")) {
+      e.preventDefault();
+      const items = text.split(",").map((s) => s.trim()).filter(Boolean);
+      if (items.length) onChange([...tags, ...items].join(", "));
+    }
+  }
+
+  return (
+    <div className="flex min-h-[38px] flex-wrap items-center gap-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 focus-within:border-black focus-within:ring-1 focus-within:ring-black">
+      {tags.map((tag, i) => (
+        <span key={i} className="flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+          {tag}
+          <button type="button" onClick={() => remove(i)} tabIndex={-1}
+            className="ml-0.5 leading-none text-gray-400 hover:text-red-500">×</button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={inputVal}
+        onChange={(e) => setInputVal(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        onBlur={() => { if (inputVal.trim()) commit(inputVal); }}
+        placeholder={tags.length === 0 ? (placeholder ?? "Type and press Enter…") : "Add more…"}
+        className="min-w-[140px] flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder-gray-400"
+      />
+    </div>
+  );
+}
 
 const inputCls =
   "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-black focus:outline-none focus:ring-1 focus:ring-black";

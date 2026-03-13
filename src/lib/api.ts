@@ -984,6 +984,14 @@ export class ApiClient {
     return data;
   }
 
+  async adminImportZillow(url: string) {
+    const response = await this.axiosInstance.post<ApiResponse<any>>(
+      "/api/admin/zillow/import",
+      { url }
+    );
+    return response.data;
+  }
+
   async adminCreateProperty(formData: FormData) {
     return this._fetchUpload("POST", "/api/admin/properties", formData);
   }
