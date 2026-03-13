@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "") + "/api";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "";
 
 interface TicketUser {
   id: string;

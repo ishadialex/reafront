@@ -8,7 +8,7 @@ import { TabWrapper } from "./TabWrapper";
 import SupportSkeleton from "@/components/SupportSkeleton";
 import TicketDetailSkeleton from "@/components/TicketDetailSkeleton";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || "";
 
 interface FileAttachment {
   id: string;
