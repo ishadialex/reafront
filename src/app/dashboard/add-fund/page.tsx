@@ -77,39 +77,6 @@ const AddFundPage = () => {
           </div>
         </Link>
 
-        {/* Card Payment */}
-        <Link
-          href="/dashboard/add-fund/card"
-          className="group rounded-xl border border-gray-200 bg-white p-6 text-left shadow-lg transition-all hover:border-primary hover:shadow-xl dark:border-gray-800 dark:bg-gray-dark"
-        >
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/20 transition-colors group-hover:from-primary/10 group-hover:to-primary/20">
-            <svg
-              className="h-7 w-7 text-purple-500 group-hover:text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-              />
-            </svg>
-          </div>
-          <h3 className="mb-2 text-xl font-bold text-black dark:text-white">
-            Credit/Debit Card
-          </h3>
-          <p className="mb-3 text-sm text-body-color dark:text-body-color-dark">
-            Instant deposit using your credit or debit card. Funds available immediately.
-          </p>
-          <div className="flex items-center gap-2 text-xs text-body-color dark:text-body-color-dark">
-            <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <span>Instant • 2.5% fee</span>
-          </div>
-        </Link>
 
         {/* Cryptocurrency */}
         <Link
